@@ -1,23 +1,21 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  title: MyString
-  status: MyString
-  job_type: MyString
-  source: MyString
-  estimated_value: 9.99
-  assigned_to: MyString
-  description: MyText
+  title: Kitchen Remodel Job
+  status: 0
+  job_type: 3
+  estimated_value: 9500.00
+  assigned_to: Carlos V.
+  description: Full kitchen remodel, materials confirmed.
   customer: one
   lead: one
 
 two:
-  title: MyString
-  status: MyString
-  job_type: MyString
-  source: MyString
-  estimated_value: 9.99
-  assigned_to: MyString
-  description: MyText
+  title: Tile Bathroom Job
+  status: 1
+  job_type: 0
+  estimated_value: 3200.00
+  assigned_to: Mia R.
+  description: Porcelain tile install, scheduling pending.
   customer: two
   lead: two
