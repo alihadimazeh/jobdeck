@@ -65,6 +65,6 @@ class LeadsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def lead_params
-      params.expect(lead: [ :title, :status, :job_type, :source, :estimated_value, :assigned_to, :description, :customer_id, :job_id ])
+      params.expect(lead: [ :title, :status, :job_type, :source, :estimated_value, :assigned_to, :description, :customer_id ])
     end
 end
