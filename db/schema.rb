@@ -26,7 +26,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_205613) do
   create_table "jobs", force: :cascade do |t|
     t.string "assigned_to"
     t.datetime "created_at", null: false
-    t.bigint "customer_id"
+    t.bigint "customer_id", null: false
     t.text "description"
     t.decimal "estimated_value"
     t.integer "job_type", default: 0
@@ -42,7 +42,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_205613) do
   create_table "leads", force: :cascade do |t|
     t.string "assigned_to"
     t.datetime "created_at", null: false
-    t.bigint "customer_id"
+    t.bigint "customer_id", null: false
     t.text "description"
     t.decimal "estimated_value", precision: 10, scale: 2
     t.integer "job_type", default: 0

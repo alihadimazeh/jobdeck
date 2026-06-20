@@ -3,5 +3,5 @@ class Job < ApplicationRecord
   enum :job_type, { tile: 0, flooring: 1, materials: 2, kitchen: 3, mixed: 4 }
 
   belongs_to :customer
-  belongs_to :lead
+  belongs_to :lead, optional: true
 end
