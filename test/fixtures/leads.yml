@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  title: Kitchen Remodel Lead
+  status: 0
+  job_type: 3
+  source: 1
+  estimated_value: 9500.00
+  assigned_to: Carlos V.
+  description: Customer wants full kitchen remodel.
+  customer: one
+
+two:
+  title: Tile Bathroom Lead
+  status: 1
+  job_type: 0
+  source: 0
+  estimated_value: 3200.00
+  assigned_to: Mia R.
+  description: Replace vinyl with porcelain tile.
+  customer: two

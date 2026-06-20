@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Alice Example
+  email: alice@example.com
+  phone: 555-100-0001
+  address: 1 Main St, Austin TX 78701
+
+two:
+  name: Bob Example
+  email: bob@example.com
+  phone: 555-100-0002
+  address: 2 Oak Ave, Austin TX 78702

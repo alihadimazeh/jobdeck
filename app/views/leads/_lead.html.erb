@@ -1,0 +1,38 @@
+<div id="<%= dom_id lead %>" class="w-full sm:w-auto my-5 space-y-5">
+  <div>
+    <strong class="block font-medium mb-1">Title:</strong>
+    <%= lead.title %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Status:</strong>
+    <%= lead.status %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Job type:</strong>
+    <%= lead.job_type %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Source:</strong>
+    <%= lead.source %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Estimated value:</strong>
+    <%= lead.estimated_value %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Assigned to:</strong>
+    <%= lead.assigned_to %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Description:</strong>
+    <%= lead.description %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Customer:</strong>
+    <%= lead.customer_id %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Job:</strong>
+    <%= lead.job&.id %>
+  </div>
+</div>
