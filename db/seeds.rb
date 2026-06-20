@@ -8,7 +8,7 @@ customers = [
   { name: "James Okafor",    email: "james.okafor@hotmail.com",  phone: "555-302-7823", address: "87 Birchwood Ave, Austin TX 78702" },
   { name: "Linda Tran",      email: "linda.tran@outlook.com",    phone: "555-410-3356", address: "203 Cedar Ridge, Austin TX 78703" },
   { name: "Marcus Delgado",  email: "m.delgado@yahoo.com",       phone: "555-519-6678", address: "9 Sunflower Ln, Austin TX 78704"  },
-  { name: "Rachel Nguyen",   email: "rachel.nguyen@gmail.com",   phone: "555-623-9901", address: nil                                },
+  { name: "Rachel Nguyen",   email: "rachel.nguyen@gmail.com",   phone: "555-623-9901", address: nil                                }
 ].map { |attrs| Customer.find_or_create_by!(email: attrs[:email]) { |c| c.assign_attributes(attrs) } }
 
 sarah, james, linda, marcus, rachel = customers
