@@ -1,5 +1,5 @@
 class CustomersController < ApplicationController
-  before_action :set_customer, only: [:show, :edit, :update, :destroy]
+  before_action :set_customer, only: [ :show, :edit, :update, :destroy ]
   def index
     @customers = Customer.all
   end
@@ -47,7 +47,6 @@ class CustomersController < ApplicationController
       format.html { redirect_to customers_url, notice: "Customer was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
     end
-
   end
 
   private
