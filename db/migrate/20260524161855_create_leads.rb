@@ -8,6 +8,7 @@ class CreateLeads < ActiveRecord::Migration[8.1]
       t.decimal :estimated_value, precision: 10, scale: 2
       t.string :assigned_to
       t.text :description
+      t.date :follow_up_date
       t.belongs_to :customer, null: false, foreign_key: true
 
       t.timestamps
