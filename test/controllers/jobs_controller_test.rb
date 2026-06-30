@@ -17,7 +17,7 @@ class JobsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create job" do
     assert_difference("Job.count") do
-      post jobs_url, params: { job: { assigned_to: @job.assigned_to, customer_id: @job.customer_id, description: @job.description, estimated_value: @job.estimated_value, job_type: @job.job_type, lead_id: @job.lead_id, source: @job.source, status: @job.status, title: @job.title } }
+      post jobs_url, params: { job: { assigned_to: @job.assigned_to, customer_id: @job.customer_id, description: @job.description, estimated_value: @job.estimated_value, job_type: @job.job_type, lead_id: @job.lead_id, status: @job.status, title: @job.title } }
     end
 
     assert_redirected_to job_url(Job.last)
@@ -34,7 +34,7 @@ class JobsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update job" do
-    patch job_url(@job), params: { job: { assigned_to: @job.assigned_to, customer_id: @job.customer_id, description: @job.description, estimated_value: @job.estimated_value, job_type: @job.job_type, lead_id: @job.lead_id, source: @job.source, status: @job.status, title: @job.title } }
+    patch job_url(@job), params: { job: { assigned_to: @job.assigned_to, customer_id: @job.customer_id, description: @job.description, estimated_value: @job.estimated_value, job_type: @job.job_type, lead_id: @job.lead_id, status: @job.status, title: @job.title } }
     assert_redirected_to job_url(@job)
   end
 

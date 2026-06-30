@@ -15,23 +15,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_205613) do
   enable_extension "pg_catalog.plpgsql"
 
   create_table "customers", force: :cascade do |t|
-    t.string "address"
+    t.string "address_line_1"
+    t.string "address_line_2"
+    t.string "city"
     t.datetime "created_at", null: false
-    t.string "email", null: false
-    t.string "name", null: false
+    t.string "email"
+    t.string "first_name", null: false
+    t.string "last_name", null: false
+    t.text "notes"
     t.string "phone", null: false
+    t.string "postal_code"
+    t.string "province"
+    t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "jobs", force: :cascade do |t|
+    t.string "address_line_1"
+    t.string "address_line_2"
     t.string "assigned_to"
+    t.string "city"
     t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
     t.text "description"
-    t.decimal "estimated_value"
+    t.date "end_date"
+    t.decimal "estimated_value", precision: 10, scale: 2
     t.integer "job_type", default: 0
     t.bigint "lead_id"
-    t.string "source"
+    t.string "postal_code"
+    t.string "province"
+    t.date "start_date"
     t.integer "status", default: 0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
@@ -45,6 +58,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_205613) do
     t.bigint "customer_id", null: false
     t.text "description"
     t.decimal "estimated_value", precision: 10, scale: 2
+    t.date "follow_up_date"
     t.integer "job_type", default: 0
     t.integer "source", default: 0
     t.integer "status", default: 0, null: false

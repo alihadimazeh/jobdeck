@@ -37,12 +37,12 @@ The root entity. Every Lead, Job, and Order belongs to a Customer — this refer
 first_name        string, null: false
 last_name         string, null: false
 email             string
-phone             string
-address_line1     string
-address_line2     string
+phone             string, null: false
+address_line_1    string
+address_line_2    string
 city              string
-state             string
-zip               string
+province          string
+postal_code       string
 status            string, null: false, default: "active"
 notes             text
 ```
@@ -51,7 +51,7 @@ Relationships:
 ```ruby
 has_many :leads
 has_many :jobs
-has_many :orders
+has_many :orders  # added when Order model is created
 ```
 
 ---
@@ -79,8 +79,8 @@ Relationships:
 ```ruby
 belongs_to :customer
 has_one    :job
-has_many   :notes,     as: :notable
-has_many   :documents, as: :documentable
+has_many   :notes,     as: :notable       # added when Note model is created
+has_many   :documents, as: :documentable  # added when Document model is created
 ```
 
 Key behavior: `convert_to_job!` — creates a Job from this Lead's data, links `lead_id` on the new Job, and flips this Lead's status to `"converted"`.
@@ -99,22 +99,25 @@ status            string, null: false, default: "active"
                   # active | on_hold | completed | cancelled
 job_type          string
                   # tile | flooring | materials | mixed
+estimated_value   decimal(10,2)
+assigned_to       string
 start_date        date
 end_date          date
 description       text
-address_line1     string
+address_line_1    string
+address_line_2    string
 city              string
-state             string
-zip               string
+province          string
+postal_code       string
 ```
 
 Relationships:
 ```ruby
 belongs_to :customer
 belongs_to :lead, optional: true
-has_many   :orders
-has_many   :notes,     as: :notable
-has_many   :documents, as: :documentable
+has_many   :orders          # added when Order model is created
+has_many   :notes,     as: :notable       # added when Note model is created
+has_many   :documents, as: :documentable  # added when Document model is created
 ```
 
 Note: job-site address fields are separate from the customer's address since the work location may differ from the customer's home/billing address.
@@ -265,6 +268,6 @@ Order.status: draft | confirmed | invoiced | paid | cancelled
 ## Job Types / Source Reference
 
 ```ruby
-job_type: tile | flooring | materials | mixed
+job_type: tile | flooring | materials | kitchen | mixed
 source:   walk_in | phone | referral | website | other
 ```
