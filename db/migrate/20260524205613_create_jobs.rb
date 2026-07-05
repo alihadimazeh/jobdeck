@@ -14,7 +14,7 @@ class CreateJobs < ActiveRecord::Migration[8.1]
       t.string :city
       t.string :province
       t.string :postal_code
-      t.belongs_to :customer, null: false, foreign_key: true
+      t.belongs_to :customer, null: true, foreign_key: true
       t.belongs_to :lead, null: true, foreign_key: true
 
       t.timestamps
