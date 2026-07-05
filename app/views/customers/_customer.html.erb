@@ -1,25 +1,38 @@
-<div id="<%= dom_id(customer) %>" class="w-full sm:w-auto my-5 space-y-5">
-  <div>
-    <strong class="block font-medium mb-1">Name:</strong>
-    <%= customer.name %>
-  </div>
+<tr id="<%= dom_id(customer) %>" class="hover:bg-gray-50">
+  <td class="px-6 py-4 text-sm font-medium text-gray-900">
+    <%= link_to customer.full_name, customer, class: "hover:text-amber-600" %>
+  </td>
+  <td class="px-6 py-4 text-sm text-gray-600"><%= customer.phone %></td>
+  <td class="px-6 py-4 text-sm text-gray-600"><%= customer.email.presence || "—" %></td>
+  <td class="px-6 py-4">
+    <% badge_class = customer.status == "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500" %>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= badge_class %>">
+      <%= customer.status %>
+    </span>
+  </td>
+  <td class="px-6 py-4 text-right">
+    <div class="relative inline-block" data-controller="dropdown">
 
-  <div>
-    <strong class="block font-medium mb-1">Email:</strong>
-    <%= customer.email %>
-  </div>
+      <%# Trigger button %>
+      <button data-action="click->dropdown#toggle"
+              class="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5" r="1.5"/>
+          <circle cx="12" cy="12" r="1.5"/>
+          <circle cx="12" cy="19" r="1.5"/>
+        </svg>
+      </button>
 
-  <div>
-    <strong class="block font-medium mb-1">Phone Number:</strong>
-    <%= customer.phone %>
-  </div>
+      <%# Dropdown menu %>
+      <div data-dropdown-target="menu"
+           class="hidden fixed z-50 w-36 bg-white rounded-md shadow-lg border border-gray-200 py-1 text-left">
+        <%= link_to "Edit", edit_customer_path(customer),
+              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" %>
+        <%= button_to "Delete", customer, method: :delete,
+              form: { data: { turbo_confirm: "Are you sure you want to delete #{customer.full_name}?" } },
+              class: "block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer bg-transparent border-0" %>
+      </div>
 
-  <div>
-    <strong class="block font-medium mb-1">Address:</strong>
-    <%= customer.address %>
-  </div>
-</div>
-
-<!--
-look into adding more info on each customer - i.e. show their jobs or leads
--->
+    </div>
+  </td>
+</tr>
