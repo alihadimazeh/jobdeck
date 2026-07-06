@@ -1,10 +1,13 @@
-<% content_for :title, "Editing lead" %>
+<% content_for :title, "Edit Lead" %>
+<% content_for :breadcrumbs do %>
+  <%= link_to "Leads", leads_path %> &rsaquo; <%= link_to @lead.title, @lead %> &rsaquo; Edit
+<% end %>
+<% content_for :page_heading do %>
+  Edit <%= @lead.title %>
+<% end %>
 
 <div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing lead</h1>
-
   <%= render "form", lead: @lead %>
 
-  <%= link_to "Show this lead", @lead, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= link_to "Back to leads", leads_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+  <%= link_to "Back to lead", @lead, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
 </div>

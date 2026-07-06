@@ -49,22 +49,23 @@ class LeadsController < ApplicationController
 
   # DELETE /leads/1 or /leads/1.json
   def destroy
-    @lead.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to leads_path, notice: "Lead was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
+    if @lead.destroy
+      respond_to do |format|
+        format.html { redirect_to leads_url, notice: "Lead was successfully deleted.", status: :see_other }
+        format.json { head :no_content }
+      end
+    else
+      redirect_to leads_url, alert: "Could not delete lead.", status: :see_other
     end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_lead
-      @lead = Lead.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def lead_params
-      params.expect(lead: [ :title, :status, :job_type, :source, :estimated_value, :assigned_to, :description, :customer_id ])
-    end
+  def set_lead
+    @lead = Lead.find(params.expect(:id))
+  end
+
+  def lead_params
+    params.expect(lead: [ :title, :status, :job_type, :source, :estimated_value, :assigned_to, :description, :follow_up_date, :customer_id ])
+  end
 end
