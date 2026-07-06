@@ -1,0 +1,81 @@
+<%= form_with model: customer do |form| %>
+  <% if customer.errors.any? %>
+    <div class="mb-6 p-4 bg-red-50 rounded-md">
+      <p class="text-sm font-medium text-red-700 mb-1"><%= pluralize(customer.errors.count, "error") %> prevented this customer from being saved:</p>
+      <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
+        <% customer.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Personal details %>
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Personal Details</legend>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= form.label :first_name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.text_field :first_name, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :last_name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.text_field :last_name, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :phone, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.telephone_field :phone, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :email, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.email_field :email, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <%# Address %>
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Address</legend>
+    <div class="space-y-4">
+      <div>
+        <%= form.label :address_line_1, "Address Line 1", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.text_field :address_line_1, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :address_line_2, "Address Line 2", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.text_field :address_line_2, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <%= form.label :city, class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= form.text_field :city, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+        </div>
+        <div>
+          <%= form.label :province, class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= form.text_field :province, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+        </div>
+        <div>
+          <%= form.label :postal_code, "Postal Code", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= form.text_field :postal_code, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <%# Other %>
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Other</legend>
+    <div class="space-y-4">
+      <div>
+        <%= form.label :status, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.select :status, [["Active", "active"], ["Inactive", "inactive"]], {}, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :notes, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.text_area :notes, rows: 4, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <%= form.submit class: "rounded-md px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium cursor-pointer" %>
+<% end %>

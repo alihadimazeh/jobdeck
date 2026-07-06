@@ -41,11 +41,13 @@ class CustomersController < ApplicationController
   end
 
   def destroy
-    @customer.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to customers_url, notice: "Customer was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
+    if @customer.destroy
+      respond_to do |format|
+        format.html { redirect_to customers_url, notice: "Customer was successfully deleted.", status: :see_other }
+        format.json { head :no_content }
+      end
+    else
+      redirect_to customers_url, alert: "Could not delete customer.", status: :see_other
     end
   end
 
@@ -56,6 +58,6 @@ class CustomersController < ApplicationController
   end
 
   def customer_params
-    params.require(:customer).permit(:name, :email, :password, :password_confirmation)
+    params.require(:customer).permit(:first_name, :last_name, :email, :phone, :address_line_1, :address_line_2, :city, :province, :postal_code, :status, :notes)
   end
 end
