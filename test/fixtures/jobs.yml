@@ -2,20 +2,22 @@
 
 one:
   title: Kitchen Remodel Job
-  status: 0
-  job_type: 3
+  status: active
+  job_type: kitchen
   estimated_value: 9500.00
   assigned_to: Carlos V.
+  start_date: 2026-06-02
   description: Full kitchen remodel, materials confirmed.
   customer: one
   lead: one
 
 two:
   title: Tile Bathroom Job
-  status: 1
-  job_type: 0
+  status: on_hold
+  job_type: tile
   estimated_value: 3200.00
   assigned_to: Mia R.
+  start_date: 2026-07-14
   description: Porcelain tile install, scheduling pending.
   customer: two
   lead: two
