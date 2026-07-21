@@ -49,22 +49,23 @@ class JobsController < ApplicationController
 
   # DELETE /jobs/1 or /jobs/1.json
   def destroy
-    @job.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to jobs_path, notice: "Job was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
+    if @job.destroy
+      respond_to do |format|
+        format.html { redirect_to jobs_url, notice: "Job was successfully deleted.", status: :see_other }
+        format.json { head :no_content }
+      end
+    else
+      redirect_to jobs_url, alert: "Could not delete job.", status: :see_other
     end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_job
-      @job = Job.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def job_params
-      params.expect(job: [ :title, :status, :job_type, :source, :estimated_value, :assigned_to, :description, :customer_id, :lead_id ])
-    end
+  def set_job
+    @job = Job.find(params.expect(:id))
+  end
+
+  def job_params
+    params.expect(job: [ :title, :status, :job_type, :estimated_value, :assigned_to, :start_date, :end_date, :description, :customer_id, :address_line_1, :address_line_2, :city, :province, :postal_code ])
+  end
 end

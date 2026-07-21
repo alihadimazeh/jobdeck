@@ -1,10 +1,13 @@
-<% content_for :title, "Editing job" %>
+<% content_for :title, "Edit Job" %>
+<% content_for :breadcrumbs do %>
+  <%= link_to "Jobs", jobs_path %> &rsaquo; <%= link_to @job.title, @job %> &rsaquo; Edit
+<% end %>
+<% content_for :page_heading do %>
+  Edit <%= @job.title %>
+<% end %>
 
 <div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing job</h1>
-
   <%= render "form", job: @job %>
 
-  <%= link_to "Show this job", @job, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= link_to "Back to jobs", jobs_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+  <%= link_to "Back to job", @job, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
 </div>
