@@ -1,0 +1,13 @@
+<% content_for :title, "Edit Quote" %>
+<% content_for :breadcrumbs do %>
+  <%= link_to "Leads", leads_path %> &rsaquo; <%= link_to @quote.lead.title, @quote.lead %> &rsaquo; <%= link_to @quote.quote_number, @quote %> &rsaquo; Edit
+<% end %>
+<% content_for :page_heading do %>
+  Edit <%= @quote.quote_number %>
+<% end %>
+
+<div class="md:w-3/4 w-full">
+  <%= render "form", quote: @quote %>
+
+  <%= link_to "Back to quote", @quote, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+</div>

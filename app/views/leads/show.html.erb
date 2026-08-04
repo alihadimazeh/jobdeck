@@ -82,3 +82,41 @@
     </table>
   </div>
 <% end %>
+
+<%# Quotes %>
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden <%= "mt-6" if @lead.job.present? %>">
+  <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+    <h2 class="text-sm font-semibold text-gray-700">Quotes</h2>
+    <%= link_to "Create Quote", new_lead_quote_path(@lead), class: "text-sm font-medium text-amber-600 hover:text-amber-500" %>
+  </div>
+  <% if @lead.quotes.any? %>
+    <table class="min-w-full divide-y divide-gray-100">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Quote #</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @lead.quotes.order(created_at: :desc).each do |quote| %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+              <%= link_to quote.quote_number, quote, class: "hover:text-amber-600" %>
+            </td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= quote_status_badge_classes(quote.status) %>">
+                <%= quote.status %>
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              <%= number_to_currency(quote.total) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="px-6 py-8 text-sm text-gray-400 text-center">No quotes yet.</p>
+  <% end %>
+</div>
