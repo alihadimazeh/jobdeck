@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_24_205613) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_25_004757) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -67,7 +67,54 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_205613) do
     t.index ["customer_id"], name: "index_leads_on_customer_id"
   end
 
+  create_table "quote_line_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.integer "item_type", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0"
+    t.bigint "quote_id", null: false
+    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.string "unit"
+    t.decimal "unit_price", precision: 10, scale: 2, default: "0.0"
+    t.datetime "updated_at", null: false
+    t.index ["quote_id"], name: "index_quote_line_items_on_quote_id"
+  end
+
+  create_table "quotes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.date "issued_date"
+    t.bigint "lead_id", null: false
+    t.text "notes"
+    t.string "quote_number"
+    t.integer "status", default: 0, null: false
+    t.decimal "subtotal", precision: 10, scale: 2, default: "0.0"
+    t.decimal "tax_rate", precision: 5, scale: 4, default: "0.0"
+    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.datetime "updated_at", null: false
+    t.date "valid_until"
+    t.index ["customer_id"], name: "index_quotes_on_customer_id"
+    t.index ["lead_id"], name: "index_quotes_on_lead_id"
+    t.index ["quote_number"], name: "index_quotes_on_quote_number", unique: true
+  end
+
+  create_table "rooms", force: :cascade do |t|
+    t.decimal "area", precision: 10, scale: 2
+    t.datetime "created_at", null: false
+    t.decimal "length", precision: 8, scale: 2, null: false
+    t.string "name", null: false
+    t.string "notes"
+    t.bigint "quote_id", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "width", precision: 8, scale: 2, null: false
+    t.index ["quote_id"], name: "index_rooms_on_quote_id"
+  end
+
   add_foreign_key "jobs", "customers"
   add_foreign_key "jobs", "leads"
   add_foreign_key "leads", "customers"
+  add_foreign_key "quote_line_items", "quotes"
+  add_foreign_key "quotes", "customers"
+  add_foreign_key "quotes", "leads"
+  add_foreign_key "rooms", "quotes"
 end
