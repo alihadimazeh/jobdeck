@@ -1,0 +1,132 @@
+<%= form_with model: quote,
+      url: (quote.persisted? ? quote_path(quote) : lead_quotes_path(quote.lead)),
+      html: { data: { controller: "quote-form" } } do |form| %>
+
+  <% if quote.errors.any? %>
+    <div class="mb-6 p-4 bg-red-50 rounded-md">
+      <p class="text-sm font-medium text-red-700 mb-1"><%= pluralize(quote.errors.count, "error") %> prevented this quote from being saved:</p>
+      <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
+        <% quote.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Quote Details</legend>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= form.label :status, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.select :status, Quote.statuses.keys.map { |k| [k.titleize, k] }, {}, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :tax_rate, "Tax Rate (e.g. 0.13 for 13%)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.number_field :tax_rate, step: "0.0001", min: 0, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :issued_date, "Issued Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.date_field :issued_date, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div>
+        <%= form.label :valid_until, "Valid Until", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.date_field :valid_until, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+      <div class="col-span-2">
+        <%= form.label :notes, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.text_area :notes, rows: 3, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Rooms</legend>
+
+    <div class="grid grid-cols-12 gap-3 px-0 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+      <div class="col-span-3">Name</div>
+      <div class="col-span-2">Length</div>
+      <div class="col-span-2">Width</div>
+      <div class="col-span-2">Area</div>
+      <div class="col-span-2">Notes</div>
+      <div class="col-span-1"></div>
+    </div>
+
+    <div data-quote-form-target="roomsContainer">
+      <%= form.fields_for :rooms do |room_form| %>
+        <%= render "room_fields", form: room_form %>
+      <% end %>
+    </div>
+
+    <template data-quote-form-target="roomTemplate">
+      <%= form.fields_for :rooms, Room.new, child_index: "NEW_RECORD" do |room_form| %>
+        <%= render "room_fields", form: room_form %>
+      <% end %>
+    </template>
+
+    <div class="flex justify-between items-center mt-3">
+      <button type="button" data-action="click->quote-form#addRoom"
+              class="text-sm font-medium text-amber-600 hover:text-amber-500 cursor-pointer">
+        + Add Room
+      </button>
+      <p class="text-sm text-gray-600">
+        Total area: <span data-quote-form-target="totalArea"><%= quote.total_area %></span> sqft
+      </p>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Estimation Tool</legend>
+    <div class="grid grid-cols-3 gap-4 items-end">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Labor Rate ($/sqft)</label>
+        <input type="number" step="0.01" min="0" data-quote-form-target="laborRate"
+               class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Material Rate ($/sqft)</label>
+        <input type="number" step="0.01" min="0" data-quote-form-target="materialRate"
+               class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+      <div>
+        <button type="button" data-action="click->quote-form#populateLineItems"
+                class="w-full rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-sm font-medium cursor-pointer">
+          Populate Line Items
+        </button>
+      </div>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">Uses total room area × each rate to replace the line items below with fresh labor/material rows.</p>
+  </fieldset>
+
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Line Items</legend>
+
+    <div class="grid grid-cols-12 gap-3 px-0 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+      <div class="col-span-2">Type</div>
+      <div class="col-span-4">Description</div>
+      <div class="col-span-1">Qty</div>
+      <div class="col-span-1">Unit</div>
+      <div class="col-span-2">Unit Price</div>
+      <div class="col-span-1">Total</div>
+      <div class="col-span-1"></div>
+    </div>
+
+    <div data-quote-form-target="lineItemsContainer">
+      <%= form.fields_for :quote_line_items do |line_item_form| %>
+        <%= render "quote_line_item_fields", form: line_item_form %>
+      <% end %>
+    </div>
+
+    <template data-quote-form-target="lineItemTemplate">
+      <%= form.fields_for :quote_line_items, QuoteLineItem.new, child_index: "NEW_RECORD" do |line_item_form| %>
+        <%= render "quote_line_item_fields", form: line_item_form %>
+      <% end %>
+    </template>
+
+    <button type="button" data-action="click->quote-form#addLineItem"
+            class="text-sm font-medium text-amber-600 hover:text-amber-500 cursor-pointer mt-3">
+      + Add Line Item
+    </button>
+  </fieldset>
+
+  <%= form.submit class: "rounded-md px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium cursor-pointer" %>
+<% end %>

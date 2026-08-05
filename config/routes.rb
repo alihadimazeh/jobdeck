@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   resources :customers
   resources :jobs
-  resources :leads
+  resources :leads do
+    resources :quotes, shallow: true
+  end
 
   root "customers#index"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

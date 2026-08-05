@@ -1,5 +1,6 @@
 class Customer < ApplicationRecord
-  has_many :leads, dependent: :destroy
+  has_many :leads,  dependent: :destroy
+  has_many :quotes, dependent: :destroy
   has_many :jobs
 
   def full_name

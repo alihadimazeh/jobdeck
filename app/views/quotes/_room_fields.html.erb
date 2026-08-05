@@ -1,0 +1,32 @@
+<div data-quote-form-target="roomRow" class="grid grid-cols-12 gap-3 items-center py-2 border-b border-gray-100 last:border-0">
+  <div class="col-span-3">
+    <%= form.text_field :name, placeholder: "Room name", "aria-label": "Room name",
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-2">
+    <%= form.number_field :length, step: "0.01", min: 0, placeholder: "Length", "aria-label": "Length",
+          data: { room_length: true, action: "input->quote-form#updateRoomArea" },
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-2">
+    <%= form.number_field :width, step: "0.01", min: 0, placeholder: "Width", "aria-label": "Width",
+          data: { room_width: true, action: "input->quote-form#updateRoomArea" },
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-2 text-sm text-gray-600">
+    <span data-room-area><%= form.object.area || "—" %></span> sqft
+  </div>
+  <div class="col-span-2">
+    <%= form.text_field :notes, placeholder: "Notes", "aria-label": "Room notes",
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-1 text-right">
+    <%= form.hidden_field :_destroy, data: { room_destroy: true } %>
+    <button type="button" data-action="click->quote-form#removeRoom"
+            class="text-gray-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 cursor-pointer">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+</div>

@@ -4,5 +4,6 @@ class Lead < ApplicationRecord
   enum :source, { walk_in: 0, referral: 1, phone: 2, website: 3, other: 4 }
 
   belongs_to :customer
-  has_one :job, dependent: :nullify
+  has_one  :job,    dependent: :nullify
+  has_many :quotes, dependent: :destroy
 end

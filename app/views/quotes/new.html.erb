@@ -1,0 +1,9 @@
+<% content_for :title, "New Quote" %>
+<% content_for :breadcrumbs do %>
+  <%= link_to "Leads", leads_path %> &rsaquo; <%= link_to @lead.title, @lead %> &rsaquo; New Quote
+<% end %>
+<% content_for :page_heading, "New Quote for #{@lead.title}" %>
+
+<div class="md:w-3/4 w-full">
+  <%= render "form", quote: @quote %>
+</div>
