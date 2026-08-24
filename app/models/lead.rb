@@ -6,4 +6,5 @@ class Lead < ApplicationRecord
   belongs_to :customer
   has_one  :job,    dependent: :nullify
   has_many :quotes, dependent: :destroy
+  has_many :orders, dependent: :restrict_with_error
 end
