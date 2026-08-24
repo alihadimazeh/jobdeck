@@ -1,11 +1,25 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  job: two
+  customer: two
+  status: draft
+  order_number: ORD-2026-0001
+  subtotal: 350.00
+  tax_rate: 0.13
+  total: 395.50
+  issued_date: 2026-06-05
+  due_date: 2026-06-20
+  notes: First order seeded from accepted quote.
+
+two:
+  job: two
+  customer: two
+  status: confirmed
+  order_number: ORD-2026-0002
+  subtotal: 620.00
+  tax_rate: 0.13
+  total: 700.60
+  issued_date: 2026-07-16
+  due_date: 2026-07-30
+  notes: Materials order for bathroom tile job.
