@@ -6,4 +6,6 @@ class Job < ApplicationRecord
 
   belongs_to :customer
   belongs_to :lead, optional: true
+
+  has_many :orders, dependent: :restrict_with_error
 end

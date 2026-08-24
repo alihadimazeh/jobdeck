@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_004757) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_08_224742) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -67,6 +67,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_004757) do
     t.index ["customer_id"], name: "index_leads_on_customer_id"
   end
 
+  create_table "line_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.integer "item_type", null: false
+    t.bigint "order_id", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0"
+    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.string "unit"
+    t.decimal "unit_price", precision: 10, scale: 2, default: "0.0"
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_line_items_on_order_id"
+  end
+
+  create_table "orders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.date "due_date"
+    t.date "issued_date"
+    t.bigint "job_id", null: false
+    t.bigint "lead_id"
+    t.text "notes"
+    t.string "order_number"
+    t.integer "status", default: 0, null: false
+    t.decimal "subtotal", precision: 10, scale: 2, default: "0.0"
+    t.decimal "tax_rate", precision: 5, scale: 4, default: "0.0"
+    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_orders_on_customer_id"
+    t.index ["job_id"], name: "index_orders_on_job_id"
+    t.index ["lead_id"], name: "index_orders_on_lead_id"
+    t.index ["order_number"], name: "index_orders_on_order_number", unique: true
+  end
+
   create_table "quote_line_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "description", null: false
@@ -113,6 +146,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_004757) do
   add_foreign_key "jobs", "customers"
   add_foreign_key "jobs", "leads"
   add_foreign_key "leads", "customers"
+  add_foreign_key "line_items", "orders"
+  add_foreign_key "orders", "customers"
+  add_foreign_key "orders", "jobs"
+  add_foreign_key "orders", "leads"
   add_foreign_key "quote_line_items", "quotes"
   add_foreign_key "quotes", "customers"
   add_foreign_key "quotes", "leads"

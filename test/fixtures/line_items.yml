@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  order: one
+  item_type: material
+  description: Porcelain tile - 12x12
+  quantity: 100
+  unit: sqft
+  unit_price: 3.50
+  total: 350.00
+
+two:
+  order: two
+  item_type: labor
+  description: Installation labor
+  quantity: 20
+  unit: hr
+  unit_price: 31.00
+  total: 620.00
