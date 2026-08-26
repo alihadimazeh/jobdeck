@@ -26,27 +26,42 @@ class QuotesController < ApplicationController
     @quote = @lead.quotes.build(quote_params)
     @quote.customer = @lead.customer
 
-    if @quote.save
-      redirect_to @quote, notice: "Quote was successfully created."
-    else
-      render :new, status: :unprocessable_content
+    respond_to do |format|
+      if @quote.save
+        format.html { redirect_to @quote, notice: "Quote was successfully created." }
+        format.json { render :show, status: :created, location: @quote }
+      else
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @quote.errors, status: :unprocessable_content }
+      end
     end
   end
 
   # PATCH/PUT /quotes/:id
   def update
-    if @quote.update(quote_params)
-      redirect_to @quote, notice: "Quote was successfully updated.", status: :see_other
-    else
-      render :edit, status: :unprocessable_content
+    respond_to do |format|
+      if @quote.update(quote_params)
+        format.html { redirect_to @quote, notice: "Quote was successfully updated.", status: :see_other }
+        format.json { render :show, status: :ok, location: @quote }
+      else
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @quote.errors, status: :unprocessable_content }
+      end
     end
   end
 
   # DELETE /quotes/:id
   def destroy
     @lead = @quote.lead
-    @quote.destroy
-    redirect_to lead_quotes_path(@lead), notice: "Quote was successfully deleted.", status: :see_other
+
+    if @quote.destroy
+      respond_to do |format|
+        format.html { redirect_to lead_quotes_path(@lead), notice: "Quote was successfully deleted.", status: :see_other }
+        format.json { head :no_content }
+      end
+    else
+      redirect_to lead_quotes_path(@lead), alert: "Could not delete quote.", status: :see_other
+    end
   end
 
   private
