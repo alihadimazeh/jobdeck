@@ -1,0 +1,9 @@
+<% content_for :title, "New Order" %>
+<% content_for :breadcrumbs do %>
+  <%= link_to "Jobs", jobs_path %> &rsaquo; <%= link_to @job.title, @job %> &rsaquo; New Order
+<% end %>
+<% content_for :page_heading, "New Order for #{@job.title}" %>
+
+<div class="md:w-3/4 w-full">
+  <%= render "form", order: @order %>
+</div>

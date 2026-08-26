@@ -1,0 +1,36 @@
+<div data-order-form-target="lineItemRow" class="grid grid-cols-12 gap-3 items-center py-2 border-b border-gray-100 last:border-0">
+  <div class="col-span-2">
+    <%= form.select :item_type, LineItem.item_types.keys.map { |k| [k.titleize, k] }, {},
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-4">
+    <%= form.text_field :description, placeholder: "Description", "aria-label": "Description",
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-1">
+    <%= form.number_field :quantity, step: "0.01", min: 0, placeholder: "Qty", "aria-label": "Quantity",
+          data: { line_quantity: true, action: "input->order-form#updateLineItemTotal" },
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-1">
+    <%= form.text_field :unit, placeholder: "Unit", "aria-label": "Unit",
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-2">
+    <%= form.number_field :unit_price, step: "0.01", min: 0, placeholder: "Unit price", "aria-label": "Unit price",
+          data: { line_unit_price: true, action: "input->order-form#updateLineItemTotal" },
+          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+  </div>
+  <div class="col-span-1 text-sm text-gray-600" data-line-total>
+    <%= form.object.total ? number_to_currency(form.object.total) : "$0.00" %>
+  </div>
+  <div class="col-span-1 text-right">
+    <%= form.hidden_field :_destroy, data: { line_destroy: true } %>
+    <button type="button" data-action="click->order-form#removeLineItem"
+            class="text-gray-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 cursor-pointer">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+</div>
