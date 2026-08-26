@@ -1,0 +1,2 @@
+json.extract! quote, :id, :lead_id, :customer_id, :status, :quote_number, :subtotal, :tax_rate, :total, :issued_date, :valid_until, :notes, :created_at, :updated_at
+json.url quote_url(quote, format: :json)
