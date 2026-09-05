@@ -3,6 +3,8 @@ class Lead < ApplicationRecord
   enum :job_type, { tile: 0, flooring: 1, materials: 2, kitchen: 3, mixed: 4 }, suffix: true
   enum :source, { walk_in: 0, phone: 1, referral: 2, website: 3, other: 4 }
 
+  validates :title, presence: true
+
   belongs_to :customer
   has_one  :job,    dependent: :nullify
   has_many :quotes, dependent: :destroy
