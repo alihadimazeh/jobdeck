@@ -46,6 +46,11 @@
       <% end %>
     </div>
     <div class="flex items-center gap-3 ml-6 flex-shrink-0">
+      <% if @quote.draft_status? || @quote.sent_status? %>
+        <%= button_to "Accept Quote", accept_quote_path(@quote), method: :patch,
+              form: { data: { turbo_confirm: "Accept this quote and create a job?" } },
+              class: "text-sm font-medium text-white bg-amber-600 hover:bg-amber-500 rounded-md px-3.5 py-2 cursor-pointer" %>
+      <% end %>
       <%= link_to "Edit", edit_quote_path(@quote), class: "text-sm font-medium text-gray-500 hover:text-gray-700" %>
       <%= button_to "Delete", @quote, method: :delete,
             form: { data: { turbo_confirm: "Are you sure you want to delete this quote?" } },

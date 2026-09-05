@@ -65,6 +65,9 @@
           <% if notice.present? %>
             <p class="mb-5 px-4 py-2.5 bg-green-50 text-green-700 text-sm font-medium rounded-md inline-block"><%= notice %></p>
           <% end %>
+          <% if alert.present? %>
+            <p class="mb-5 px-4 py-2.5 bg-red-50 text-red-700 text-sm font-medium rounded-md inline-block"><%= alert %></p>
+          <% end %>
           <%= yield %>
         </main>
 
