@@ -4,7 +4,11 @@ Rails.application.routes.draw do
     resources :orders, shallow: true
   end
   resources :leads do
-    resources :quotes, shallow: true
+    resources :quotes, shallow: true do
+      member do
+        patch :accept
+      end
+    end
   end
 
 

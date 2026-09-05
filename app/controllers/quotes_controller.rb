@@ -1,6 +1,6 @@
 class QuotesController < ApplicationController
   before_action :set_lead,  only: %i[ index new create ]
-  before_action :set_quote, only: %i[ show edit update destroy ]
+  before_action :set_quote, only: %i[ show edit update destroy accept ]
 
   # GET /leads/:lead_id/quotes
   def index
@@ -48,6 +48,16 @@ class QuotesController < ApplicationController
         format.json { render json: @quote.errors, status: :unprocessable_content }
       end
     end
+  end
+
+  # PATCH /quotes/:id/accept
+  def accept
+    @quote.update!(status: :accepted)
+    redirect_to @quote, notice: "Quote accepted — job created."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @quote, alert: e.record.errors.full_messages.to_sentence
+  rescue => e
+    redirect_to @quote, alert: "Could not convert this quote to a job: #{e.message}"
   end
 
   # DELETE /quotes/:id

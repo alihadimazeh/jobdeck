@@ -11,15 +11,24 @@ class Quote < ApplicationRecord
   accepts_nested_attributes_for :quote_line_items, allow_destroy: true, reject_if: :all_blank
 
   validates :status, presence: true
+  validate  :only_one_accepted_quote_per_lead, if: :accepted_status?
 
   before_create :assign_quote_number
   before_save   :recalculate_totals
+
+  after_save { self.lead.convert_to_job!(self) if saved_change_to_status? to: "accepted" }
 
   def total_area
     rooms.sum { |room| room.area || 0 }
   end
 
   private
+
+  def only_one_accepted_quote_per_lead
+    if lead.quotes.where(status: :accepted).where.not(id: id).exists?
+      errors.add(:status, "already has an accepted quote for this lead")
+    end
+  end
 
   def assign_quote_number
     year = Date.current.year
