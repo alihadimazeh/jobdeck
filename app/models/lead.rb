@@ -6,11 +6,13 @@ class Lead < ApplicationRecord
   validates :title, presence: true
 
   belongs_to :customer
+  has_many :orders, dependent: :restrict_with_error
   has_one  :job,    dependent: :nullify
   has_many :quotes, dependent: :destroy
-  has_many :orders, dependent: :restrict_with_error
 
   def convert_to_job!(quote)
+    raise "This lead has already been converted to a job" if job.present?
+
     transaction do
       job = create_job!(
         attributes.slice("title", "description", "job_type", "assigned_to", "estimated_value")
