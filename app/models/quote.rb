@@ -31,6 +31,10 @@ class Quote < ApplicationRecord
     end
   end
 
+  def assign_customer_from_lead
+    self.customer_id ||= lead&.customer_id
+  end
+
   def assign_quote_number
     year = Date.current.year
     last = Quote.where("quote_number LIKE ?", "QUO-#{year}-%").maximum(:quote_number)
