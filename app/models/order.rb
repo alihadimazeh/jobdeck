@@ -5,7 +5,7 @@ class Order < ApplicationRecord
   belongs_to :customer
   belongs_to :lead, optional: true
 
-  has_many :line_items, dependent: :destroy
+  has_many :line_items, dependent: :destroy, inverse_of: :order
 
   validates :status, presence: true
 

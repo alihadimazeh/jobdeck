@@ -1,5 +1,5 @@
 class Room < ApplicationRecord
-  belongs_to :quote
+  belongs_to :quote, inverse_of: :rooms
 
   validates :name,   presence: true
   validates :length, presence: true, numericality: { greater_than: 0 }
