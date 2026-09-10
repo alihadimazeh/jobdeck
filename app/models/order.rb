@@ -5,16 +5,21 @@ class Order < ApplicationRecord
   belongs_to :customer
   belongs_to :lead, optional: true
 
-  has_many :line_items, dependent: :destroy
+  has_many :line_items, dependent: :destroy, inverse_of: :order
 
   validates :status, presence: true
 
   accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
 
-  before_create :assign_order_number
-  before_save :recalculate_totals
+  before_validation :assign_customer_from_job
+  before_create     :assign_order_number
+  before_save       :recalculate_totals
 
   private
+
+  def assign_customer_from_job
+    self.customer_id ||= job&.customer_id
+  end
 
   def assign_order_number
     year = Date.current.year

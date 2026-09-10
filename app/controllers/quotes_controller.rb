@@ -24,7 +24,6 @@ class QuotesController < ApplicationController
   # POST /leads/:lead_id/quotes
   def create
     @quote = @lead.quotes.build(quote_params)
-    @quote.customer = @lead.customer
 
     respond_to do |format|
       if @quote.save

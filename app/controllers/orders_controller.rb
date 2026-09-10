@@ -23,7 +23,6 @@ class OrdersController < ApplicationController
   # POST /jobs/:job_id/orders/
   def create
     @order = @job.orders.build(order_params)
-    @order.customer = @job.customer
 
     respond_to do |format|
       if @order.save

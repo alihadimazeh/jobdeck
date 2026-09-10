@@ -1,16 +1,18 @@
 class Lead < ApplicationRecord
   enum :status, { new: 0, contacted: 1, quoted: 2, converted: 3, lost: 4 }, suffix: true
   enum :job_type, { tile: 0, flooring: 1, materials: 2, kitchen: 3, mixed: 4 }, suffix: true
-  enum :source, { walk_in: 0, phone: 1, referral: 2, website: 3, other: 4 }
+  enum :source, { walk_in: 0, phone: 1, referral: 2, website: 3, other: 4 }, suffix: true
 
   validates :title, presence: true
 
   belongs_to :customer
+  has_many :orders, dependent: :restrict_with_error
   has_one  :job,    dependent: :nullify
   has_many :quotes, dependent: :destroy
-  has_many :orders, dependent: :restrict_with_error
 
   def convert_to_job!(quote)
+    raise "This lead has already been converted to a job" if job.present?
+
     transaction do
       job = create_job!(
         attributes.slice("title", "description", "job_type", "assigned_to", "estimated_value")

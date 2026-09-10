@@ -4,8 +4,8 @@ class Quote < ApplicationRecord
   belongs_to :lead
   belongs_to :customer
 
-  has_many :rooms,            dependent: :destroy
-  has_many :quote_line_items, dependent: :destroy
+  has_many :rooms,            dependent: :destroy, inverse_of: :quote
+  has_many :quote_line_items, dependent: :destroy, inverse_of: :quote
 
   accepts_nested_attributes_for :rooms,            allow_destroy: true, reject_if: :all_blank
   accepts_nested_attributes_for :quote_line_items, allow_destroy: true, reject_if: :all_blank
@@ -13,8 +13,9 @@ class Quote < ApplicationRecord
   validates :status, presence: true
   validate  :only_one_accepted_quote_per_lead, if: :accepted_status?
 
-  before_create :assign_quote_number
-  before_save   :recalculate_totals
+  before_validation :assign_customer_from_lead
+  before_create     :assign_quote_number
+  before_save       :recalculate_totals
 
   after_save { self.lead.convert_to_job!(self) if saved_change_to_status? to: "accepted" }
 
@@ -28,6 +29,10 @@ class Quote < ApplicationRecord
     if lead.quotes.where(status: :accepted).where.not(id: id).exists?
       errors.add(:status, "already has an accepted quote for this lead")
     end
+  end
+
+  def assign_customer_from_lead
+    self.customer_id ||= lead&.customer_id
   end
 
   def assign_quote_number
