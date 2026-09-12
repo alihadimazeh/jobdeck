@@ -1,6 +1,6 @@
 # Project: Construction PM App
 
-A simple project management web app for a small construction business (flooring/tile installer). General project managers use this to track customers, sales leads, active jobs, and billing.
+A simple project management web app for a small construction business (flooring/tile installer). General project managers use this to track customers, sales leads, quotes, active jobs, and billing.
 
 ## Tech Stack
 
@@ -11,26 +11,67 @@ A simple project management web app for a small construction business (flooring/
 - **Pagy** for pagination
 - **Ransack** for search/filtering
 - Turbo + Stimulus (Rails defaults, no separate frontend framework)
+- **RSpec** (`rspec-rails`, `factory_bot_rails`) — the test framework for the model layer.
+  See "## Testing" below.
+
+## Testing
+
+**RSpec** is the test framework going forward, set up alongside the old Minitest suite
+(`test/` is left as-is — mostly unedited scaffold stubs plus generated controller CRUD
+tests — rather than migrated; new coverage goes in `spec/`, not `test/`).
+
+- `bundle exec rspec` runs the RSpec suite; `bin/rails test` still runs the old Minitest one.
+- `spec/factories/` (FactoryBot) — one factory per model (`customer`, `lead`, `job`, `quote`,
+  `order`, `room`, `quote_line_item`, `line_item`). `FactoryBot::Syntax::Methods` is included
+  globally (`spec/rails_helper.rb`), so specs use `create`/`build` directly.
+  `spec/support/shared_examples/billable_line_item.rb` holds one shared example group
+  ("a billable line item") exercised against both `LineItem` and `QuoteLineItem`, so the
+  `BillableLineItem` concern's contract is tested once and both models are checked against
+  the same expectations rather than duplicating the spec.
+- Every model has its own spec (`spec/models/`): `Customer`, `Lead`, `Job`, `Quote`, `Room`,
+  `Order`, `LineItem`, `QuoteLineItem`. Covers what the Model Review cleanup above touched —
+  `Lead#convert_to_job!` (happy path + the idempotency guard), `Quote#only_one_accepted_quote_per_lead`,
+  the `after_save` → `convert_to_job!` trigger (including the reject-then-accept-a-different-quote
+  regression case), the `dependent: :restrict_with_error` deletion-semantics chain on
+  `Customer`/`Job`/`Lead` (including a regression test for the nested-cascade bug), the
+  `assign_customer_from_lead`/`assign_customer_from_job` auto-set callbacks, `order_number`/
+  `quote_number` generation, `recalculate_totals`, `total_area`, and enum value/ordering
+  regression checks on `Lead`/`Job`/`Quote`/`Order` (guards against another integer-backed enum
+  reorder mistake like the `Lead.source` one).
+- Every controller has a request spec (`spec/requests/`): `Customers`, `Leads`, `Jobs`, `Orders`,
+  `Quotes` — full CRUD per controller plus `QuotesController#accept` (happy path, the
+  `only_one_accepted_quote_per_lead` alert, and the re-conversion-guard alert). Writing these
+  turned up a real gap — `Customer` has no model-level validations at all, so blank required
+  fields are silently accepted instead of hitting the controller's 422 path; see TODO.md → Bugs.
+  The customer request specs intentionally document that actual behavior rather than asserting a
+  validation that doesn't exist yet.
+- **122 examples, 0 failures** (`bundle exec rspec`). Not yet covered: system/feature-level specs
+  (the JS-driven estimation tool, dynamic room/line-item row add/remove) — the old Minitest system
+  test stub (`test/system/smokes_test.rb`) is empty and unused.
 
 ## Domain Overview
 
 The business workflow is:
 
 ```
-Customer → Lead → Job → Order(s) → LineItems
+Customer → Lead → Quote (with Room measurements) → Job → Order(s) → LineItems
 ```
 
-A **Customer** walks in or calls. A **Lead** is logged for them describing what they're interested in. If the lead materializes, it converts into a **Job** (the actual work being done). A Job can have one or more **Orders** (e.g. a materials order, a labor order), and each Order is made up of **LineItems** (the billing breakdown).
+A **Customer** walks in or calls. A **Lead** is logged for them describing what they're interested in. One or more **Quotes** are created for the lead — each includes room measurements (the estimation tool calculates sq footage and multiplies by labor/material rates to produce line items). If the customer accepts the quote, it converts into a **Job** and the quote's line items are seeded into the first **Order**. A Job can have additional Orders (e.g. change orders, materials orders), and each Order is made up of **LineItems**.
 
 At any point, **Notes** and **Documents** (PDFs, Excel sheets, photos) can be attached to a Lead, Job, or Order via polymorphic associations.
 
-### Naming note
-"Job" is used instead of "Project" — it matches how contractors actually talk ("I've got 3 jobs this week"). "Order" is kept as-is rather than renamed to "Invoice."
+### Naming notes
+- "Job" is used instead of "Project" — it matches how contractors actually talk ("I've got 3 jobs this week").
+- "Order" is kept as-is rather than renamed to "Invoice."
+- "Quote" lives on the Lead (pre-commitment). Orders live on the Job (post-commitment). They are intentionally separate models with different lifecycles.
+
+---
 
 ## Models
 
 ### Customer
-The root entity. Every Lead, Job, and Order belongs to a Customer — this reference is **never nullable**.
+The root entity. Every Lead, Job, Quote, and Order belongs to a Customer — this reference is **never nullable**.
 
 ```ruby
 # customers table
@@ -51,13 +92,14 @@ Relationships:
 ```ruby
 has_many :leads
 has_many :jobs
-has_many :orders  # added when Order model is created
+has_many :quotes   # through leads, but direct FK for convenience
+has_many :orders
 ```
 
 ---
 
 ### Lead
-Represents a sales inquiry — interest that hasn't been committed to yet. Tracks pipeline status and converts into a Job when it materializes (the Lead is NOT deleted on conversion — it remains historical record of how the Job originated).
+Represents a sales inquiry — interest that hasn't been committed to yet. Tracks pipeline status and converts into a Job when the quote is accepted (the Lead is NOT deleted on conversion — it remains historical record).
 
 ```ruby
 # leads table
@@ -79,26 +121,113 @@ Relationships:
 ```ruby
 belongs_to :customer
 has_one    :job
-has_many   :notes,     as: :notable       # added when Note model is created
-has_many   :documents, as: :documentable  # added when Document model is created
+has_many   :quotes
+has_many   :notes,     as: :notable
+has_many   :documents, as: :documentable
 ```
 
-Key behavior: `convert_to_job!` — creates a Job from this Lead's data, links `lead_id` on the new Job, and flips this Lead's status to `"converted"`.
+A Lead can have multiple Quotes (e.g. a revised estimate, or separate quotes for tile vs. flooring). At most one of them should be in the `accepted` state.
+
+Key behavior: `convert_to_job!` — takes the accepted Quote, creates a Job from this Lead's data, links `lead_id` on the new Job, creates a first Order seeded from that Quote's line items, and flips this Lead's status to `"converted"`.
+
+---
+
+### Quote
+A formal price estimate presented to the customer before they commit. Belongs to a Lead (and denormalized Customer for convenience). Contains room measurements that drive the estimation tool, and line items that are the output of that tool. Quotes are pre-commitment — they do not require a Job.
+
+```ruby
+# quotes table
+lead_id           references, null: false, foreign_key: true
+customer_id       references, null: false, foreign_key: true
+status            string, null: false, default: "draft"
+                  # draft | sent | accepted | rejected | expired
+quote_number      string, unique
+                  # auto-generated, e.g. QUO-2024-0001
+subtotal          decimal(10,2), default: 0
+tax_rate          decimal(5,4),  default: 0
+total             decimal(10,2), default: 0
+issued_date       date
+valid_until       date
+notes             text
+```
+
+Relationships:
+```ruby
+belongs_to :lead
+belongs_to :customer
+has_many   :rooms
+has_many   :quote_line_items
+```
+
+Key behavior:
+- `quote_number` auto-generated on create (format: `QUO-<year>-<sequential>`)
+- `status` is an integer-backed enum (`draft: 0, sent: 1, accepted: 2, rejected: 3, expired: 4`), consistent with how `Job.status` and `Lead.status` are stored
+- `subtotal`/`total` recalculated from `quote_line_items` before save
+- Accepts nested attributes for `rooms` and `quote_line_items` (`allow_destroy: true, reject_if: :all_blank`) — the Quote form creates/updates the quote plus its rooms and line items in a single submit
+- `total_area` sums `rooms.area`, treating any unsaved/blank room (`area` is `nil` until its own `before_save` runs) as `0`
+- When status flips to `accepted`, `convert_to_job!` is triggered on the Lead
+
+---
+
+### Room
+A room with dimensions, nested under a Quote. Powers the estimation tool — the sq footage from all rooms is summed and used to calculate labor and material line items.
+
+```ruby
+# rooms table
+quote_id          references, null: false, foreign_key: true
+name              string, null: false   # Kitchen, Master Bath, Hallway, etc.
+length            decimal(8,2), null: false
+width             decimal(8,2), null: false
+area              decimal(10,2)         # calculated: length × width
+notes             string                # optional per-room note (e.g. "irregular shape")
+```
+
+Relationships:
+```ruby
+belongs_to :quote
+```
+
+Key behavior: `area = length * width`, calculated before save.
+
+---
+
+### QuoteLineItem
+Individual line items on a Quote. Separate from Order's LineItem — Quotes are pre-commitment and have a different lifecycle. Populated by the estimation tool (labor and material rows from room sq footage) but fully editable before sending.
+
+```ruby
+# quote_line_items table
+quote_id          references, null: false, foreign_key: true
+item_type         integer, null: false
+                  # material | labor | other
+description       string, null: false
+quantity          decimal(10,2), default: 1
+unit              string
+                  # sqft | ea | hr | etc.
+unit_price        decimal(10,2), default: 0
+total             decimal(10,2), default: 0
+```
+
+Relationships:
+```ruby
+belongs_to :quote
+```
+
+Key behavior: `total = quantity * unit_price`, calculated before save.
 
 ---
 
 ### Job
-The actual work being performed (formerly "Project"). Belongs to a Customer. `lead_id` is **nullable** — some jobs are created directly without ever being tracked as a lead (e.g. repeat customers).
+The actual work being performed. Belongs to a Customer. `lead_id` is **nullable** — some jobs are created directly without a tracked lead (e.g. repeat customers who don't go through the quote flow).
 
 ```ruby
 # jobs table
 customer_id       references, null: false, foreign_key: true
 lead_id           references, null: true,  foreign_key: true
 title             string, null: false
-status            string, null: false, default: "active"
+status            integer, null: false, default: "active"
                   # active | on_hold | completed | cancelled
-job_type          string
-                  # tile | flooring | materials | mixed
+job_type          integer
+                  # tile | flooring | materials | kitchen | mixed
 estimated_value   decimal(10,2)
 assigned_to       string
 start_date        date
@@ -115,9 +244,9 @@ Relationships:
 ```ruby
 belongs_to :customer
 belongs_to :lead, optional: true
-has_many   :orders          # added when Order model is created
-has_many   :notes,     as: :notable       # added when Note model is created
-has_many   :documents, as: :documentable  # added when Document model is created
+has_many   :orders
+has_many   :notes,     as: :notable
+has_many   :documents, as: :documentable
 ```
 
 Note: job-site address fields are separate from the customer's address since the work location may differ from the customer's home/billing address.
@@ -125,14 +254,14 @@ Note: job-site address fields are separate from the customer's address since the
 ---
 
 ### Order
-The financial/transactional side of a Job (invoice / work order). Always tied to a Job (**not nullable**) and a Customer (**not nullable**, for billing). `lead_id` is nullable and kept purely for reporting/traceability convenience.
+The financial/transactional side of a Job (invoice / work order). Always tied to a Job (**not nullable**) and a Customer (**not nullable**, for billing). `lead_id` is nullable and kept purely for reporting/traceability convenience. The first Order on a Job is seeded from the accepted Quote's line items.
 
 ```ruby
 # orders table
 job_id            references, null: false, foreign_key: true
 customer_id       references, null: false, foreign_key: true
 lead_id           references, null: true,  foreign_key: true
-status            string, null: false, default: "draft"
+status            integer, null: false, default: "draft"
                   # draft | confirmed | invoiced | paid | cancelled
 order_number      string, unique
                   # auto-generated, e.g. ORD-2024-0001
@@ -162,12 +291,12 @@ Key behavior:
 ---
 
 ### LineItem
-Individual billable rows on an Order (materials, labor, other charges). Managed via nested attributes on the Order form (add/remove rows dynamically).
+Individual billable rows on an Order (materials, labor, other charges). Managed via nested attributes on the Order form (add/remove rows dynamically). Separate from QuoteLineItem — kept distinct to allow independent editing after commitment.
 
 ```ruby
 # line_items table
 order_id          references, null: false, foreign_key: true
-item_type         string, null: false
+item_type         integer, null: false
                   # material | labor | other
 description       string, null: false
 quantity          decimal(10,2), default: 1
@@ -235,34 +364,81 @@ Migrations must run in this order due to foreign key dependencies:
 
 1. `create_customers` — no dependencies
 2. `create_leads` — depends on customers
-3. `create_jobs` — depends on customers, leads
-4. `create_orders` — depends on customers, leads, jobs
-5. `create_line_items` — depends on orders
-6. `create_notes` — polymorphic, no FK constraints
-7. `create_documents` — polymorphic, no FK constraints
-8. `rails active_storage:install` — generates Active Storage tables separately
+3. `create_quotes` — depends on leads, customers
+4. `create_rooms` — depends on quotes
+5. `create_quote_line_items` — depends on quotes
+6. `create_jobs` — depends on customers, leads
+7. `create_orders` — depends on customers, leads, jobs
+8. `create_line_items` — depends on orders
+9. `create_notes` — polymorphic, no FK constraints
+10. `create_documents` — polymorphic, no FK constraints
+11. `rails active_storage:install` — generates Active Storage tables separately
 
 ## Foreign Key Nullability Rules
 
 | Reference | Nullable? | Reasoning |
 |---|---|---|
-| `customer_id` (Lead, Job, Order) | No | Everything traces back to a customer |
+| `customer_id` (Lead, Quote, Job, Order) | No | Everything traces back to a customer |
+| `lead_id` (Quote) | No | A Quote always belongs to a Lead |
 | `lead_id` (Job, Order) | Yes | Jobs/Orders can be created without a tracked Lead |
 | `job_id` (Order) | No | An Order always needs Job context |
+| `quote_id` (Room, QuoteLineItem) | No | Rooms and quote line items always need a Quote |
+
+## Deletion Semantics (`dependent:` conventions)
+
+Three `dependent:` strategies are used across the model layer, chosen by what the
+child record actually represents — not chosen ad hoc per association:
+
+- **`dependent: :destroy`** — the child has no independent value outside its parent;
+  deleting the parent should clean it up. Used for `Customer → leads`, `Customer →
+  quotes`, `Lead → quotes`, `Quote → rooms`/`quote_line_items`, `Order → line_items`.
+- **`dependent: :restrict_with_error`** — the child is financial/billing data with
+  real-world consequences (work performed, money owed) and a `NOT NULL` FK back to the
+  parent, so it must never be silently destroyed or orphaned. Deleting the parent is
+  blocked until the child is dealt with explicitly. Used for `Customer → jobs`,
+  `Customer → orders`, `Job → orders`, `Lead → orders`.
+- **`dependent: :nullify`** — the child is independently meaningful and its FK back to
+  the parent is nullable, so deleting the parent should just decouple it, not destroy
+  or block on it. Used for `Lead → job` (`Job.lead_id` is nullable — a Job and its
+  billing history are real, completed work and shouldn't vanish or block Lead cleanup
+  just because the originating Lead is removed).
+
+When a model declares more than one `restrict_with_error` association, **declaration
+order matters**: `restrict_with_error` is a `before_destroy` callback that `throw(:abort)`s
+on the first non-empty association it checks, halting the rest of that model's own
+callback chain — so whichever guard is declared first is the one whose message the
+caller actually sees. Order them so the most specific/always-true guard comes first
+(see `Customer`: `jobs` before `orders`, since every Order requires a Job, so checking
+`jobs` first always fires when either condition holds).
+
+**Restrict-before-destroy, always:** the ordering rule above generalizes one level
+further — within any single model's `before_destroy` chain, every
+`restrict_with_error` association must be declared *before* any `destroy`/`nullify`
+one. This isn't just style: a `restrict_with_error` guard reached via another model's
+`dependent: :destroy` cascade (e.g. `Customer → leads (destroy)` reaching down into
+`Lead → orders (restrict_with_error)`) does not surface its error message on the
+top-level record, and — because none of the `transaction` calls involved open a real
+savepoint — doesn't cleanly roll back whatever the cascade already did before the
+abort (see TODO.md → Bugs for the full trace this was found from). Declaring the
+restrict checks first on both `Customer` and `Lead` means a blocked delete is caught
+immediately, before any cascade that could partially mutate data even starts.
 
 ## UX / Workflow Notes
 
-- **Lead + Customer creation should happen together** on one form (inline customer fields + lead fields), since requiring a separate customer-creation step first adds friction during a quick walk-in or phone inquiry. Allow searching for an existing customer to avoid duplicates.
-- **Lead → Job conversion** is a single action (e.g. a "Convert to Job" button on the Lead show page) that creates the Job and updates the Lead's status, without deleting the Lead.
+- **Lead + Customer creation should happen together** on one form, since requiring a separate customer-creation step first adds friction during a quick walk-in or phone inquiry.
+- **Quotes live on the Lead show page** — there's a "Create Quote" button that opens the quote form, and the page lists all of the lead's quotes. A lead can have several (revisions, or split scopes), but only one can be `accepted`.
+- **Estimation tool on the Quote form** — a Stimulus-powered room calculator where you enter room name + dimensions. It sums sq footage across all rooms and auto-populates labor and material line items (based on rates you enter). Line items remain fully editable after the tool runs.
+- **Quote → Job conversion** is triggered from the Quote show page ("Accept Quote" button). This calls `convert_to_job!` on the Lead, which creates the Job, creates the first Order seeded from the Quote's line items, and sets the Lead status to `converted`.
 - **Notes and Documents** should use shared partials/components since the UI is identical across Lead, Job, and Order — only the polymorphic association target changes.
 - Dashboard should surface: leads needing follow-up, active jobs, and unpaid/outstanding orders.
 
 ## Status Enums Reference
 
 ```ruby
-Lead.status:  new | contacted | quoted | converted | lost
-Job.status:   active | on_hold | completed | cancelled
-Order.status: draft | confirmed | invoiced | paid | cancelled
+Lead.status:        new | contacted | quoted | converted | lost
+Quote.status:       draft | sent | accepted | rejected | expired
+Job.status:         active | on_hold | completed | cancelled
+Order.status:       draft | confirmed | invoiced | paid | cancelled
 ```
 
 ## Job Types / Source Reference
@@ -271,3 +447,76 @@ Order.status: draft | confirmed | invoiced | paid | cancelled
 job_type: tile | flooring | materials | kitchen | mixed
 source:   walk_in | phone | referral | website | other
 ```
+
+---
+
+## Planned: Authentication, Users & Authorization
+
+These are upcoming goals, not yet built. The intent is to make Jobdeck a
+real, multi-user product other construction businesses could actually run —
+and a portfolio piece that demonstrates auth, RBAC, and SSO done properly.
+
+### Users with login (session-based)
+
+- Add a **User** model with email + password (bcrypt via `has_secure_password`,
+  or Rails 8's built-in authentication generator).
+- **Session-based** auth (not token/JWT) — server-side sessions, `SessionsController`
+  with `new` / `create` / `destroy`, signed cookie holding the session id.
+- Sign-in / sign-out flow, password reset via emailed token, "remember me".
+- `current_user` helper + `require_authentication` before_action; unauthenticated
+  requests redirect to the login page.
+- Every write action attributes the actor — replace the free-text `assigned_to`,
+  `author`, `uploaded_by` string fields with (or back them with) a real
+  `user_id` reference over time.
+
+### Role-based views and permissions
+
+- Roles: **admin**, **project_manager**, **sales**, **viewer** (integer-backed
+  enum on User, consistent with the other status enums).
+  - `admin` — full access, user management, settings.
+  - `project_manager` — full access to customers/leads/quotes/jobs/orders, no user management.
+  - `sales` — customers, leads, quotes; read-only on jobs/orders.
+  - `viewer` — read-only across the board (e.g. an owner who just wants dashboards).
+- Authorization layer via **Pundit** (policy per model) — one policy object per
+  model, `authorize` in every controller action, `policy_scope` on every index.
+- **Role-based views** — navigation, action buttons (Edit / Delete / "Accept Quote" /
+  "Convert to Job"), and whole sections show/hide based on the current user's role.
+  Use `policy(record).action?` in views, not ad-hoc role checks.
+- Deny-by-default: a missing policy method means no access.
+
+### SSO (Single Sign-On)
+
+- Support **OmniAuth**-based SSO so partner companies can bring their own identity provider.
+- Providers: **Google Workspace** (OAuth2) first, then **Microsoft Entra ID**,
+  then generic **SAML 2.0** for enterprise customers.
+- `Identity` / `Authentication` join model: `user_id`, `provider`, `uid`,
+  so one User can link multiple providers and still have a local password fallback.
+- Just-in-time provisioning — first SSO login creates the User with a default
+  role of `viewer`; an admin promotes them.
+- Optional per-deployment config: "SSO only" mode that disables password login.
+
+### Rollout order
+
+1. User model + session-based login/logout + password reset.
+2. Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.
+3. Role-based view gating (nav + buttons + sections).
+4. OmniAuth scaffolding + Google SSO.
+5. Microsoft + SAML providers, JIT provisioning, SSO-only mode.
+
+---
+
+## Planned: UI Revamp
+
+The current UI is the default scaffold styling and needs a full revamp before
+Jobdeck can be shown as a real product / portfolio piece.
+
+- Cohesive visual design with Tailwind — consistent layout, spacing, typography,
+  and color system instead of ad-hoc scaffold markup.
+- Proper app shell: persistent nav / sidebar, page headers, breadcrumbs,
+  flash/toast styling.
+- Reusable view components/partials for tables, forms, buttons, badges, cards,
+  empty states, and the shared Notes / Documents UI.
+- Polished dashboard (leads needing follow-up, active jobs, unpaid orders).
+- Responsive / mobile-friendly layouts.
+- Coordinate with the auth work — role-based nav and action buttons are part of
+  the revamped UI.
