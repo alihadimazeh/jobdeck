@@ -40,15 +40,10 @@ RSpec.describe "Customers", type: :request do
       expect(response).to redirect_to(customer_path(Customer.last))
     end
 
-    # Customer has no model-level validations at all (see TODO.md -> Bugs), even though
-    # first_name/last_name/phone are NOT NULL at the DB level. Blank strings satisfy that
-    # DB constraint, so they're accepted rather than triggering the controller's 422
-    # re-render path. This spec documents the actual (buggy) behavior; it should start
-    # failing -- and get rewritten to assert a 422 -- once presence validations are added.
-    it "currently accepts blank required fields since Customer has no presence validations (known gap)" do
+    it "re-renders the form on blank required fields" do
       params = { customer: { first_name: "", last_name: "", phone: "" } }
-      expect { post customers_path, params: params }.to change(Customer, :count).by(1)
-      expect(response).to redirect_to(customer_path(Customer.last))
+      expect { post customers_path, params: params }.not_to change(Customer, :count)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 
@@ -60,12 +55,11 @@ RSpec.describe "Customers", type: :request do
       expect(customer.reload.first_name).to eq("Updated")
     end
 
-    # See the create spec above -- same underlying gap.
-    it "currently accepts blanking out required fields since Customer has no presence validations (known gap)" do
+    it "re-renders the form on blank required fields" do
       customer = create(:customer)
       patch customer_path(customer), params: { customer: { first_name: "" } }
-      expect(response).to redirect_to(customer_path(customer))
-      expect(customer.reload.first_name).to eq("")
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(customer.reload.first_name).not_to eq("")
     end
   end
 
