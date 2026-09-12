@@ -1,6 +1,20 @@
 require "rails_helper"
 
 RSpec.describe Customer, type: :model do
+  describe "validations" do
+    it "requires first_name, last_name, and phone" do
+      customer = build(:customer, first_name: "", last_name: "", phone: "")
+      expect(customer).not_to be_valid
+      expect(customer.errors[:first_name]).to be_present
+      expect(customer.errors[:last_name]).to be_present
+      expect(customer.errors[:phone]).to be_present
+    end
+
+    it "is valid with sane attributes" do
+      expect(build(:customer)).to be_valid
+    end
+  end
+
   describe "#full_name" do
     it "joins first and last name" do
       customer = build(:customer, first_name: "Ada", last_name: "Lovelace")
