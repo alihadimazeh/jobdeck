@@ -25,6 +25,15 @@ RSpec.describe "Customers", type: :request do
       get customer_path(customer)
       expect(response).to have_http_status(:success)
     end
+
+    it "renders Edit and Delete actions" do
+      customer = create(:customer)
+      get customer_path(customer)
+
+      expect(response.body).to include(">Edit<")
+      expect(response.body).to include(">Delete<")
+      expect(response.body).to include(customer_path(customer))
+    end
   end
 
   describe "GET /customers/new" do
