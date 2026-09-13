@@ -7,6 +7,16 @@ RSpec.describe "Customers", type: :request do
       get customers_path
       expect(response).to have_http_status(:success)
     end
+
+    it "excludes archived customers" do
+      visible  = create(:customer, status: :active)
+      archived = create(:customer, status: :archived)
+
+      get customers_path
+
+      expect(response.body).to include(visible.full_name)
+      expect(response.body).not_to include(archived.full_name)
+    end
   end
 
   describe "GET /customers/:id" do
@@ -70,13 +80,14 @@ RSpec.describe "Customers", type: :request do
       expect(response).to redirect_to(customers_path)
     end
 
-    it "redirects with an alert and does not destroy when the customer has a job" do
+    it "archives instead of destroying when the customer has a job" do
       customer = create(:customer)
       create(:job, customer: customer)
 
       expect { delete customer_path(customer) }.not_to change(Customer, :count)
       expect(response).to redirect_to(customers_path)
-      expect(flash[:alert]).to eq("Could not delete customer.")
+      expect(flash[:notice]).to eq("This customer has history and can't be deleted — archived instead.")
+      expect(customer.reload).to be_archived_status
     end
   end
 end

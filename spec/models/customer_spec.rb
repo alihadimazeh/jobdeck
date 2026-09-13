@@ -1,6 +1,38 @@
 require "rails_helper"
 
 RSpec.describe Customer, type: :model do
+  describe "enums" do
+    it "backs status with the active | inactive | archived values" do
+      expect(described_class.statuses).to eq(
+        "active" => "active", "inactive" => "inactive", "archived" => "archived"
+      )
+    end
+
+    it "exposes suffixed predicates (suffix: true)" do
+      customer = build(:customer, status: :inactive)
+      expect(customer.inactive_status?).to be true
+    end
+  end
+
+  describe "#archive!" do
+    it "sets status to archived" do
+      customer = create(:customer, status: :active)
+      customer.archive!
+      expect(customer.reload).to be_archived_status
+    end
+  end
+
+  describe ".visible" do
+    it "excludes archived customers but includes active and inactive ones" do
+      active_customer   = create(:customer, status: :active)
+      inactive_customer = create(:customer, status: :inactive)
+      archived_customer = create(:customer, status: :archived)
+
+      expect(Customer.visible).to include(active_customer, inactive_customer)
+      expect(Customer.visible).not_to include(archived_customer)
+    end
+  end
+
   describe "validations" do
     it "requires first_name, last_name, and phone" do
       customer = build(:customer, first_name: "", last_name: "", phone: "")
