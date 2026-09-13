@@ -1,7 +1,7 @@
 class CustomersController < ApplicationController
   before_action :set_customer, only: [ :show, :edit, :update, :destroy ]
   def index
-    @customers = Customer.all
+    @customers = Customer.visible
   end
 
   def show
@@ -47,7 +47,8 @@ class CustomersController < ApplicationController
         format.json { head :no_content }
       end
     else
-      redirect_to customers_url, alert: "Could not delete customer.", status: :see_other
+      @customer.archive!
+      redirect_to customers_url, notice: "This customer has history and can't be deleted — archived instead.", status: :see_other
     end
   end
 
