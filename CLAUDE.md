@@ -20,11 +20,16 @@ A simple project management web app for a small construction business (flooring/
 (`test/` is left as-is — mostly unedited scaffold stubs plus generated controller CRUD
 tests — rather than migrated; new coverage goes in `spec/`, not `test/`).
 
+**Policy: all new test files go in `spec/` (RSpec), never `test/` (Minitest), unless
+explicitly stated otherwise.** Any functionality that needs coverage — models, controllers,
+requests, or otherwise — gets an RSpec spec. The existing Minitest suite under `test/` is
+left in place as-is and still runs (`bin/rails test`), but it is not where new tests go.
+
 - `bundle exec rspec` runs the RSpec suite; `bin/rails test` still runs the old Minitest one.
 - `spec/factories/` (FactoryBot) — one factory per model (`customer`, `lead`, `job`, `quote`,
   `order`, `room`, `quote_line_item`, `line_item`). `FactoryBot::Syntax::Methods` is included
   globally (`spec/rails_helper.rb`), so specs use `create`/`build` directly.
-  `spec/support/shared_examples/billable_line_item.rb` holds one shared example group
+  `spec/support/concerns/billable_line_item.rb` holds one shared example group
   ("a billable line item") exercised against both `LineItem` and `QuoteLineItem`, so the
   `BillableLineItem` concern's contract is tested once and both models are checked against
   the same expectations rather than duplicating the spec.
@@ -41,11 +46,10 @@ tests — rather than migrated; new coverage goes in `spec/`, not `test/`).
 - Every controller has a request spec (`spec/requests/`): `Customers`, `Leads`, `Jobs`, `Orders`,
   `Quotes` — full CRUD per controller plus `QuotesController#accept` (happy path, the
   `only_one_accepted_quote_per_lead` alert, and the re-conversion-guard alert). Writing these
-  turned up a real gap — `Customer` has no model-level validations at all, so blank required
-  fields are silently accepted instead of hitting the controller's 422 path; see TODO.md → Bugs.
-  The customer request specs intentionally document that actual behavior rather than asserting a
-  validation that doesn't exist yet.
-- **122 examples, 0 failures** (`bundle exec rspec`). Not yet covered: system/feature-level specs
+  turned up a real gap, since fixed — `Customer` had no model-level validations at all, so blank
+  required fields were silently accepted instead of hitting the controller's 422 path; see
+  TODO.md → Bugs for the fix.
+- **129 examples, 0 failures** (`bundle exec rspec`). Not yet covered: system/feature-level specs
   (the JS-driven estimation tool, dynamic room/line-item row add/remove) — the old Minitest system
   test stub (`test/system/smokes_test.rb`) is empty and unused.
 
@@ -423,6 +427,15 @@ abort (see TODO.md → Bugs for the full trace this was found from). Declaring t
 restrict checks first on both `Customer` and `Lead` means a blocked delete is caught
 immediately, before any cascade that could partially mutate data even starts.
 
+**Customer's archive fallback:** `Customer` is the one model where a blocked delete isn't
+just an error — `CustomersController#destroy` tries `@customer.destroy` first, and if
+that returns `false` (blocked by the `restrict_with_error` chain above), it calls
+`Customer#archive!` instead and shows a different flash message. This works without
+re-deriving "does this customer have history" in the view, because the `restrict_with_error`
+chain is already the single source of truth for that question. Archived customers are
+excluded from default views via `Customer.visible`, but never deleted — see `Customer.status`
+in "Status Enums Reference" below.
+
 ## UX / Workflow Notes
 
 - **Lead + Customer creation should happen together** on one form, since requiring a separate customer-creation step first adds friction during a quick walk-in or phone inquiry.
@@ -435,11 +448,18 @@ immediately, before any cascade that could partially mutate data even starts.
 ## Status Enums Reference
 
 ```ruby
+Customer.status:    active | inactive | archived
 Lead.status:        new | contacted | quoted | converted | lost
 Quote.status:       draft | sent | accepted | rejected | expired
 Job.status:         active | on_hold | completed | cancelled
 Order.status:       draft | confirmed | invoiced | paid | cancelled
 ```
+
+`Customer.status` is string-backed (not integer, unlike the others) and mixes two different
+concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral effect;
+`archived` is a system-driven state set only via `Customer#archive!` (never manually selectable
+in the form) when a delete is blocked by history. `Customer.visible` (`where.not(status:
+:archived)`) is the default scope for customer-facing views — see "Deletion Semantics" above.
 
 ## Job Types / Source Reference
 
