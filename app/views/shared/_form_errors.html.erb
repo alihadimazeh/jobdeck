@@ -1,0 +1,13 @@
+<%# locals: model: - renders nothing when the model has no errors %>
+<% if model.errors.any? %>
+  <div role="alert" tabindex="-1" id="form-errors" class="alert alert-error alert-soft mb-6 items-start" data-controller="autofocus">
+    <div>
+      <p class="font-semibold"><%= pluralize(model.errors.count, "error") %> prevented this <%= model.model_name.human.downcase %> from being saved:</p>
+      <ul class="list-disc list-inside text-sm mt-1">
+        <% model.errors.each do |error| %>
+          <li><%= link_to error.full_message, "##{model.model_name.param_key}_#{error.attribute}" %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,24 @@
+<%#
+  locals: title: nil, actions: nil (captured html), padded: true
+
+  Call as: render "shared/card", { title: "Rooms" } do ... end
+  NOT: render partial: "shared/card", locals: { title: "Rooms" } do ... end
+  The explicit `partial:`/`locals:` keyword form does not support a block the
+  same way - it treats the block as a per-object collection layout and raises
+  ("'nil' is not an ActiveModel-compatible object") since no object/collection
+  is given. Only the bare-string-plus-plain-hash form reaches this via yield.
+%>
+<% padded = local_assigns.fetch(:padded, true) %>
+<div class="card card-border bg-base-100">
+  <% if local_assigns[:title].present? || local_assigns[:actions].present? %>
+    <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-base-300">
+      <h2 class="text-sm font-semibold text-base-content"><%= title if local_assigns[:title].present? %></h2>
+      <% if local_assigns[:actions].present? %>
+        <div><%= actions %></div>
+      <% end %>
+    </div>
+  <% end %>
+  <div class="<%= "card-body" if padded %>">
+    <%= yield %>
+  </div>
+</div>

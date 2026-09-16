@@ -1,0 +1,20 @@
+<%#
+  locals: columns: (Array<String> or Array<{label:, align:}>) - block yields the <tbody> rows
+
+  Call as: render "shared/table", { columns: [...] } do ... end (see shared/_card for why)
+%>
+<div class="overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <% columns.each do |column| %>
+          <% label, align = column.is_a?(Hash) ? [column[:label], column[:align]] : [column, nil] %>
+          <th class="<%= "text-#{align}" if align %>"><%= label %></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <%= yield %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,37 @@
+<%#
+  locals: form:, attr:, label: (nil -> humanized attr), as: (:text/:email/:tel/:date/:number/:textarea/:select),
+          hint: nil, collection: nil (options array for :select), options: {} (extra html attrs on the control)
+%>
+<% as = local_assigns.fetch(:as, :text) %>
+<% label_text = local_assigns[:label] || attr.to_s.humanize %>
+<% hint = local_assigns[:hint] %>
+<% field_options = local_assigns.fetch(:options, {}) %>
+<% has_error = form.object.respond_to?(:errors) && form.object.errors[attr].any? %>
+<% field_id = "#{form.object_name}_#{attr}" %>
+<% describedby = [("#{field_id}_hint" if hint.present?), ("#{field_id}_error" if has_error)].compact %>
+
+<fieldset class="fieldset py-0">
+  <%= form.label attr, label_text, class: "label" %>
+
+  <% control_class = as == :textarea ? "textarea" : (as == :select ? "select" : "input") %>
+  <% shared_opts = {
+       class: "w-full #{control_class}",
+       "aria-invalid": (has_error ? "true" : nil),
+       "aria-describedby": describedby.presence&.join(" ")
+     }.merge(field_options) %>
+
+  <% if as == :select %>
+    <%= form.select attr, local_assigns[:collection], {}, shared_opts %>
+  <% elsif as == :textarea %>
+    <%= form.text_area attr, shared_opts %>
+  <% else %>
+    <%= form.public_send(:"#{as}_field", attr, shared_opts) %>
+  <% end %>
+
+  <% if hint.present? %>
+    <p id="<%= field_id %>_hint" class="form-hint"><%= hint %></p>
+  <% end %>
+  <% if has_error %>
+    <p id="<%= field_id %>_error" class="form-error"><%= form.object.errors[attr].to_sentence %></p>
+  <% end %>
+</fieldset>

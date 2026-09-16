@@ -1,0 +1,26 @@
+<%# locals: edit_path:, delete_path:, delete_confirm:, label:, id: (unique per row, e.g. dom_id(record)) %>
+<div class="text-right">
+  <button type="button"
+          class="btn btn-ghost btn-sm btn-square"
+          popovertarget="row-actions-<%= id %>"
+          style="anchor-name:--row-actions-<%= id %>"
+          aria-label="Actions for <%= label %>">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="5" r="1.5"/>
+      <circle cx="12" cy="12" r="1.5"/>
+      <circle cx="12" cy="19" r="1.5"/>
+    </svg>
+  </button>
+
+  <ul popover
+      id="row-actions-<%= id %>"
+      class="dropdown menu w-36 bg-base-100 rounded-box shadow border border-base-300 p-1"
+      style="position-anchor:--row-actions-<%= id %>">
+    <li><%= link_to "Edit", edit_path %></li>
+    <li>
+      <%= button_to "Delete", delete_path, method: :delete,
+            form: { data: { turbo_confirm: delete_confirm } },
+            class: "text-error w-full text-left" %>
+    </li>
+  </ul>
+</div>

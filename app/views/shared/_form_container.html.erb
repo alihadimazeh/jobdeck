@@ -1,0 +1,9 @@
+<%#
+  locals: width: (:md [default] -> max-w-2xl / :lg -> max-w-3xl)
+
+  Call as: render "shared/form_container", { width: :lg } do ... end (see shared/_card for why)
+%>
+<% width_class = local_assigns.fetch(:width, :md) == :lg ? "max-w-3xl" : "max-w-2xl" %>
+<div class="mx-auto w-full <%= width_class %>">
+  <%= yield %>
+</div>
