@@ -1,7 +1,7 @@
 module ApplicationHelper
   # Status -> daisyUI badge variant, shared across every resource's status enum.
-  # Consumed by status_badge below, which in turn renders app/views/shared/_badge
-  # (arrives in Step 5) - so status_badge is inert/unused until then, and the
+  # Consumed by status_badge below, which renders app/views/shared/_badge (added
+  # in Step 5) - fully callable now, but no real view calls it yet. The
   # per-resource *_status_badge_classes helpers keep doing the real work until
   # each resource's views migrate to status_badge directly (Steps 8-12).
   STATUS_VARIANTS = {
@@ -50,7 +50,7 @@ module ApplicationHelper
   def nav_link(label, path, section: label)
     active = nav_section_active?(section)
     base  = "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-    style = active ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+    style = active ? "bg-primary/15 text-white" : "text-neutral-content/70 hover:text-white hover:bg-white/5"
     link_to(label, path, class: "#{base} #{style}", "aria-current": (active ? "page" : nil))
   end
 end
