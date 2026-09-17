@@ -1,9 +1,10 @@
 <% content_for :title, "New Job" %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Jobs", jobs_path %> &rsaquo; New Job
-<% end %>
-<% content_for :page_heading, "New Job" %>
 
-<div class="md:w-2/3 w-full">
+<%= render partial: "shared/page_header", locals: {
+      title: "New Job",
+      breadcrumbs: [ [ "Jobs", jobs_path ] ]
+    } %>
+
+<%= render "shared/form_container" do %>
   <%= render "form", job: @job %>
-</div>
+<% end %>

@@ -1,140 +1,79 @@
 <% content_for :title, @job.title %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Jobs", jobs_path %> &rsaquo; <%= @job.title %>
+
+<% actions = capture do %>
+  <%= link_to "Edit", edit_job_path(@job), class: "btn btn-ghost btn-sm" %>
+  <%= button_to "Delete", @job, method: :delete,
+        form: { data: { turbo_confirm: "Are you sure you want to delete this job?" } },
+        class: "btn btn-ghost btn-sm text-error" %>
 <% end %>
-<% content_for :page_heading, @job.title %>
+
+<%= render partial: "shared/page_header", locals: {
+      title: @job.title,
+      breadcrumbs: [ [ "Jobs", jobs_path ] ],
+      actions: actions
+    } %>
 
 <%# Job details %>
-<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-  <div class="flex justify-between items-start">
-    <div class="grid grid-cols-2 gap-x-12 gap-y-4 flex-1">
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Customer</p>
-        <p class="text-sm text-gray-900"><%= link_to @job.customer.full_name, @job.customer, class: "hover:text-amber-600" %></p>
+<div class="mb-6">
+  <%= render "shared/card" do %>
+    <%= render partial: "shared/detail_list", locals: { items: [
+          [ "Customer", link_to(@job.customer.full_name, @job.customer, class: "hover:text-primary") ],
+          [ "Status", status_badge(@job) ],
+          [ "Job Type", @job.job_type&.titleize ],
+          [ "Assigned To", @job.assigned_to ],
+          [ "Estimated Value", format_currency(@job.estimated_value) ],
+          [ "Start Date", format_date(@job.start_date) ],
+          [ "End Date", format_date(@job.end_date) ],
+          [ "Job Site", format_address(
+              address_line_1: @job.address_line_1, address_line_2: @job.address_line_2,
+              city: @job.city, province: @job.province, postal_code: @job.postal_code
+            ) ]
+        ] } %>
+    <% if @job.description.present? %>
+      <div class="mt-4 pt-4 border-t border-base-300">
+        <p class="text-xs font-semibold uppercase tracking-wide text-base-content/70 mb-1">Description</p>
+        <p class="text-sm text-base-content"><%= @job.description %></p>
       </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Status</p>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= job_status_badge_classes(@job.status) %>">
-          <%= @job.status.humanize %>
-        </span>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Job Type</p>
-        <p class="text-sm text-gray-900"><%= @job.job_type&.titleize || "—" %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Assigned To</p>
-        <p class="text-sm text-gray-900"><%= @job.assigned_to.presence || "—" %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Estimated Value</p>
-        <p class="text-sm text-gray-900"><%= @job.estimated_value ? number_to_currency(@job.estimated_value) : "—" %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Start Date</p>
-        <p class="text-sm text-gray-900"><%= @job.start_date&.strftime("%b %d, %Y") || "—" %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">End Date</p>
-        <p class="text-sm text-gray-900"><%= @job.end_date&.strftime("%b %d, %Y") || "—" %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Job Site</p>
-        <p class="text-sm text-gray-900">
-          <% if @job.address_line_1.present? %>
-            <%= @job.address_line_1 %><br>
-            <% if @job.address_line_2.present? %>
-              <%= @job.address_line_2 %><br>
-            <% end %>
-            <%= [@job.city, @job.province, @job.postal_code].compact_blank.join(", ") %>
-          <% else %>
-            —
-          <% end %>
-        </p>
-      </div>
-      <% if @job.description.present? %>
-        <div class="col-span-2">
-          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Description</p>
-          <p class="text-sm text-gray-900"><%= @job.description %></p>
-        </div>
-      <% end %>
-    </div>
-    <div class="flex items-center gap-3 ml-6 flex-shrink-0">
-      <%= link_to "Edit", edit_job_path(@job), class: "text-sm font-medium text-gray-500 hover:text-gray-700" %>
-      <%= button_to "Delete", @job, method: :delete,
-            form: { data: { turbo_confirm: "Are you sure you want to delete this job?" } },
-            class: "text-sm font-medium text-red-500 hover:text-red-700 bg-transparent border-0 cursor-pointer p-0" %>
-    </div>
-  </div>
+    <% end %>
+  <% end %>
 </div>
 
 <%# Originating lead %>
 <% if @job.lead.present? %>
-  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
-    <div class="px-6 py-4 border-b border-gray-200">
-      <h2 class="text-sm font-semibold text-gray-700">Originated From</h2>
-    </div>
-    <table class="min-w-full divide-y divide-gray-100">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Lead</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Source</th>
+  <div class="mb-6">
+    <%= render "shared/card", { title: "Originated From", padded: false } do %>
+      <%= render "shared/table", { columns: [ "Lead", "Status", "Source" ] } do %>
+        <tr class="hover">
+          <td class="font-medium text-base-content">
+            <%= link_to @job.lead.title, @job.lead, class: "hover:text-primary" %>
+          </td>
+          <td><%= status_badge(@job.lead) %></td>
+          <td class="text-base-content/70"><%= @job.lead.source&.titleize || "—" %></td>
         </tr>
-      </thead>
-      <tbody>
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm font-medium text-gray-900">
-            <%= link_to @job.lead.title, @job.lead, class: "hover:text-amber-600" %>
-          </td>
-          <td class="px-6 py-4">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= lead_status_badge_classes(@job.lead.status) %>">
-              <%= @job.lead.status %>
-            </span>
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-500">
-            <%= @job.lead.source&.titleize || "—" %>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <% end %>
+    <% end %>
   </div>
 <% end %>
 
 <%# Orders %>
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-  <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-    <h2 class="text-sm font-semibold text-gray-700">Orders</h2>
-    <%= link_to "New Order", new_job_order_path(@job), class: "text-sm font-medium text-amber-600 hover:text-amber-500" %>
-  </div>
-  <% if @job.orders.any? %>
-    <table class="min-w-full divide-y divide-gray-100">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Order #</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+<% order_actions = capture do %>
+  <%= link_to "New Order", new_job_order_path(@job), class: "btn btn-ghost btn-sm text-primary" %>
+<% end %>
+
+<%= render "shared/card", { title: "Orders", actions: order_actions, padded: false } do %>
+  <%= render "shared/table", { columns: [ "Order #", "Status", "Total" ] } do %>
+    <% if @job.orders.any? %>
+      <% @job.orders.order(created_at: :desc).each do |order| %>
+        <tr class="hover">
+          <td class="font-medium text-base-content">
+            <%= link_to order.order_number, order, class: "hover:text-primary" %>
+          </td>
+          <td><%= status_badge(order) %></td>
+          <td class="text-base-content/70"><%= format_currency(order.total) %></td>
         </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        <% @job.orders.order(created_at: :desc).each do |order| %>
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              <%= link_to order.order_number, order, class: "hover:text-amber-600" %>
-            </td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= order_status_badge_classes(order.status) %>">
-                <%= order.status %>
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-              <%= number_to_currency(order.total) %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p class="px-6 py-8 text-sm text-gray-400 text-center">No orders yet.</p>
+      <% end %>
+    <% else %>
+      <%= render partial: "shared/empty_state", locals: { title: "No orders yet.", colspan: 3 } %>
+    <% end %>
   <% end %>
-</div>
+<% end %>

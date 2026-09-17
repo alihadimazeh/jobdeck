@@ -1,13 +1,10 @@
-<% content_for :title, "Edit Job" %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Jobs", jobs_path %> &rsaquo; <%= link_to @job.title, @job %> &rsaquo; Edit
-<% end %>
-<% content_for :page_heading do %>
-  Edit <%= @job.title %>
-<% end %>
+<% content_for :title, "Edit #{@job.title}" %>
 
-<div class="md:w-2/3 w-full">
+<%= render partial: "shared/page_header", locals: {
+      title: "Edit #{@job.title}",
+      breadcrumbs: [ [ "Jobs", jobs_path ], [ @job.title, job_path(@job) ] ]
+    } %>
+
+<%= render "shared/form_container" do %>
   <%= render "form", job: @job %>
-
-  <%= link_to "Back to job", @job, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-</div>
+<% end %>
