@@ -1,5 +1,5 @@
 class Customer < ApplicationRecord
-  enum :status, { active: "active", inactive: "inactive" }, suffix: true
+  enum :status, { active: "active", inactive: "inactive", archived: "archived" }, suffix: true
 
   validates :status, presence: true
   validates :first_name, :last_name, :phone, presence: true
@@ -9,7 +9,13 @@ class Customer < ApplicationRecord
   has_many :leads,  dependent: :destroy
   has_many :quotes, dependent: :destroy
 
+  scope :visible, -> { where.not(status: :archived) }
+
   def full_name
     "#{first_name} #{last_name}"
+  end
+
+  def archive!
+    update!(status: "archived")
   end
 end

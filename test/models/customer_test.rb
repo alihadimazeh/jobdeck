@@ -13,9 +13,16 @@ class CustomerTest < ActiveSupport::TestCase
     assert customer.inactive_status?
   end
 
+  test "status accepts archived" do
+    customer = customers(:one)
+    customer.status = "archived"
+    assert customer.valid?
+    assert customer.archived_status?
+  end
+
   test "status rejects values outside the enum" do
     customer = customers(:one)
-    assert_raises(ArgumentError) { customer.status = "archived" }
+    assert_raises(ArgumentError) { customer.status = "bogus" }
   end
 
   test "status must be present" do
