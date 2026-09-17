@@ -1,30 +1,17 @@
 <% content_for :title, "Customers" %>
-<% content_for :breadcrumbs, "Customers" %>
-<% content_for :page_heading, "Customers" %>
 
-<div class="flex justify-end mb-6">
-  <%= link_to "New Customer", new_customer_path, class: "rounded-md px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium" %>
-</div>
+<%= render partial: "shared/page_header", locals: {
+      title: "Customers",
+      action: { label: "New Customer", path: new_customer_path }
+    } %>
 
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-        <th class="px-6 py-3"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      <% if @customers.any? %>
-        <%= render @customers %>
-      <% else %>
-        <tr>
-          <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">No customers yet. <%= link_to "Add the first one", new_customer_path, class: "text-amber-600 hover:underline" %>.</td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%= render "shared/table", { columns: [ "Name", "Phone", "Email", "Status", "" ] } do %>
+  <% if @customers.any? %>
+    <%= render @customers %>
+  <% else %>
+    <%= render partial: "shared/empty_state", locals: {
+          title: "No customers yet.", colspan: 5,
+          cta: { label: "Add the first one", path: new_customer_path }
+        } %>
+  <% end %>
+<% end %>

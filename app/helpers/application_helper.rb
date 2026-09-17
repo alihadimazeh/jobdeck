@@ -1,15 +1,15 @@
 module ApplicationHelper
   # Status -> daisyUI badge variant, shared across every resource's status enum.
-  # Consumed by status_badge below, which renders app/views/shared/_badge (added
-  # in Step 5) - fully callable now, but no real view calls it yet. The
-  # per-resource *_status_badge_classes helpers keep doing the real work until
-  # each resource's views migrate to status_badge directly (Steps 8-12).
+  # "archived" is :error (not :neutral like "inactive") to preserve the visual
+  # distinction the old inline badge hash made (customers/_customer.html.erb,
+  # pre-Step-8: active=green, inactive=gray, archived=red) - archiving is a more
+  # final state than just being inactive.
   STATUS_VARIANTS = {
     "new" => :neutral, "contacted" => :info, "quoted" => :warning, "converted" => :success, "lost" => :error,
     "draft" => :neutral, "sent" => :info, "accepted" => :success, "rejected" => :error, "expired" => :warning,
     "active" => :success, "on_hold" => :warning, "completed" => :info, "cancelled" => :error,
     "confirmed" => :info, "invoiced" => :warning, "paid" => :success,
-    "inactive" => :neutral, "archived" => :neutral
+    "inactive" => :neutral, "archived" => :error
   }.freeze
 
   def status_badge(record, status = nil)
@@ -23,6 +23,20 @@ module ApplicationHelper
 
   def format_currency(amount, fallback = "—")
     amount ? number_to_currency(amount) : fallback
+  end
+
+  # The repeated "address line 1 / address line 2 / city, province, postal"
+  # block used on Customer and Job show pages. Returns nil (not "—") when
+  # there's no address at all, so callers relying on shared/_detail_list's own
+  # blank-value fallback ("value.presence || —") get that "—" instead of a
+  # dangling empty line.
+  def format_address(address_line_1:, address_line_2: nil, city: nil, province: nil, postal_code: nil)
+    return nil if address_line_1.blank?
+
+    lines = [ address_line_1, address_line_2 ].compact_blank
+    region_line = [ city, province, postal_code ].compact_blank.join(", ")
+    lines << region_line if region_line.present?
+    safe_join(lines, tag.br)
   end
 
   # link_to/button_to wrapper that applies daisyUI's btn classes consistently.

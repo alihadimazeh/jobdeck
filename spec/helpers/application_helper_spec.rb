@@ -25,6 +25,48 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#format_address" do
+    it "returns nil when there is no address line 1 (so shared/_detail_list falls back to —)" do
+      expect(helper.format_address(address_line_1: nil)).to be_nil
+      expect(helper.format_address(address_line_1: "")).to be_nil
+    end
+
+    it "joins the given lines with <br>, omitting blank ones" do
+      html = helper.format_address(
+        address_line_1: "1 Main St", address_line_2: "Unit 4",
+        city: "Ottawa", province: "ON", postal_code: "K1A 0A1"
+      )
+      expect(html).to eq("1 Main St<br>Unit 4<br>Ottawa, ON, K1A 0A1")
+      expect(html).to be_html_safe
+    end
+
+    it "omits address_line_2 and the region line when they're blank" do
+      html = helper.format_address(address_line_1: "1 Main St")
+      expect(html).to eq("1 Main St")
+    end
+  end
+
+  describe "#status_badge" do
+    it "renders the humanized status with its mapped variant" do
+      customer = build(:customer, status: "active")
+      html = helper.status_badge(customer)
+      expect(html).to have_selector("span.badge.badge-success", text: "Active")
+    end
+
+    it "gives archived a distinct (error) variant from inactive (neutral)" do
+      customer = build(:customer, status: "archived")
+      expect(helper.status_badge(customer)).to have_selector("span.badge.badge-error", text: "Archived")
+
+      customer.status = "inactive"
+      expect(helper.status_badge(customer)).to have_selector("span.badge.badge-neutral", text: "Inactive")
+    end
+
+    it "accepts an explicit status, overriding the record's own" do
+      customer = build(:customer, status: "active")
+      expect(helper.status_badge(customer, "archived")).to have_selector(".badge-error", text: "Archived")
+    end
+  end
+
   describe "#btn" do
     it "renders a link for the default GET method" do
       html = helper.btn("Edit", "/customers/1")
