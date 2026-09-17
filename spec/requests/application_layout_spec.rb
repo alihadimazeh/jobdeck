@@ -13,7 +13,7 @@ RSpec.describe "Application layout", type: :request do
   it "renders the daisyUI drawer structure wired to a single toggle checkbox" do
     get customers_path
 
-    expect(response.body).to include('<input id="app-drawer" type="checkbox" class="drawer-toggle">')
+    expect(response.body).to include('<input id="app-drawer" type="checkbox" class="drawer-toggle" data-drawer-target="checkbox">')
     expect(response.body).to include('drawer-side')
     # both the mobile hamburger and the overlay close-label target the same checkbox
     expect(response.body.scan('for="app-drawer"').size).to eq(2)

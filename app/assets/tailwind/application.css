@@ -83,6 +83,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .drawer-side > *, .dropdown, .toast > * { transition: none !important; }
+    /* .drawer-side itself carries the open/close transition (opacity + a
+       delayed visibility flip) - not just its children as originally written
+       here in Step 3, before Step 7 actually exercised it and found this. */
+    .drawer-side, .drawer-side > *, .dropdown, .toast > * { transition: none !important; }
   }
 }
