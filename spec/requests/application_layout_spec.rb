@@ -47,12 +47,13 @@ RSpec.describe "Application layout", type: :request do
   end
 
   it "renders an alert-role flash after a redirect with an alert" do
-    # deleting a customer with an order is blocked -> redirects back with an alert
-    customer = create(:customer)
-    job = create(:job, customer: customer)
-    create(:order, job: job, customer: customer)
+    # deleting a job with an order is blocked (dependent: :restrict_with_error) ->
+    # redirects back with an alert. (Deleting a *customer* with history no longer
+    # alerts as of feature/customer-archive - it archives instead and notices.)
+    job = create(:job)
+    create(:order, job: job, customer: job.customer)
 
-    delete customer_path(customer)
+    delete job_path(job)
     follow_redirect!
 
     expect(response.body).to match(/alert-error/)
