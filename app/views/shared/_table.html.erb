@@ -1,5 +1,6 @@
 <%#
-  locals: columns: (Array<String> or Array<{label:, align:}>) - block yields the <tbody> rows
+  locals: columns: (Array<String> or Array<{label:, align:}>), footer: nil (captured <tr>...</tr>
+          html for a summary/totals row, rendered inside <tfoot>) - block yields the <tbody> rows
 
   Call as: render "shared/table", { columns: [...] } do ... end (see shared/_card for why)
 %>
@@ -16,5 +17,8 @@
     <tbody>
       <%= yield %>
     </tbody>
+    <% if local_assigns[:footer].present? %>
+      <tfoot><%= footer %></tfoot>
+    <% end %>
   </table>
 </div>
