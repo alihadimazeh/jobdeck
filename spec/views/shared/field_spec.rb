@@ -28,6 +28,14 @@ RSpec.describe "shared/_field", type: :view do
     expect(rendered).to have_selector("option[value='active']", text: "Active")
   end
 
+  it "passes select_options through to Rails' own select options (include_blank, prompt, etc.)" do
+    render partial: "shared/field", locals: {
+      form: form, attr: :status, as: :select,
+      collection: [ [ "Active", "active" ] ], select_options: { include_blank: "None" }
+    }
+    expect(rendered).to have_selector("select option[value='']", text: "None")
+  end
+
   it "renders a textarea" do
     render partial: "shared/field", locals: { form: form, attr: :notes, as: :textarea }
     expect(rendered).to have_selector("textarea.textarea.w-full#customer_notes")

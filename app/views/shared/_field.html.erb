@@ -1,6 +1,8 @@
 <%#
   locals: form:, attr:, label: (nil -> humanized attr), as: (:text/:email/:tel/:date/:number/:textarea/:select),
-          hint: nil, collection: nil (options array for :select), options: {} (extra html attrs on the control)
+          hint: nil, collection: nil (options array for :select),
+          select_options: {} (:select only - Rails' own select "options" arg, e.g. include_blank/prompt/selected -
+            distinct from the html attrs below), options: {} (extra html attrs on the control)
 %>
 <% as = local_assigns.fetch(:as, :text) %>
 <% label_text = local_assigns[:label] || attr.to_s.humanize %>
@@ -21,7 +23,7 @@
      }.merge(field_options) %>
 
   <% if as == :select %>
-    <%= form.select attr, local_assigns[:collection], {}, shared_opts %>
+    <%= form.select attr, local_assigns[:collection], local_assigns.fetch(:select_options, {}), shared_opts %>
   <% elsif as == :textarea %>
     <%= form.text_area attr, shared_opts %>
   <% else %>

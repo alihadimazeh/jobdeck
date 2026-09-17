@@ -80,4 +80,45 @@ RSpec.describe "Leads", type: :request do
       expect(flash[:alert]).to eq("Could not delete lead.")
     end
   end
+
+  describe "restyled UI (Step 9)" do
+    it "index: renders the page header, a status badge per row, and the row-actions popover trigger" do
+      lead = create(:lead, customer: customer, status: :contacted)
+      get leads_path
+
+      expect(response.body).to include('<h1 class="text-xl font-semibold text-base-content">Leads</h1>')
+      expect(response.body).to include('href="' + new_lead_path + '"')
+      expect(response.body).to match(/badge badge-soft badge-info">\s*Contacted/)
+      expect(response.body).to include("popovertarget=\"row-actions-lead_#{lead.id}\"")
+    end
+
+    it "show: renders the detail list, description block, and (when present) the related Job and Quotes" do
+      lead = create(:lead, customer: customer, description: "Wants the whole kitchen redone")
+      job = create(:job, :from_lead, lead: lead, customer: customer)
+      quote = create(:quote, lead: lead, customer: customer)
+
+      get lead_path(lead)
+
+      expect(response.body).to include('<dt class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Customer</dt>')
+      expect(response.body).to include("Wants the whole kitchen redone")
+      expect(response.body).to include(job.title)
+      expect(response.body).to include(quote.quote_number)
+      expect(response.body).to include('href="' + new_lead_quote_path(lead) + '"')
+    end
+
+    it "show: renders an empty state for Quotes and omits the Job section when there is no job" do
+      lead = create(:lead, customer: customer)
+      get lead_path(lead)
+
+      expect(response.body).to include("No quotes yet.")
+      expect(response.body).not_to include(">Job<")
+    end
+
+    it "form: has a blank prompt on the Customer select and None on Job Type/Source" do
+      get new_lead_path
+
+      expect(response.body).to match(%r{<option value="">Select a customer</option>})
+      expect(response.body.scan('<option value="">None</option>').size).to eq(2)
+    end
+  end
 end
