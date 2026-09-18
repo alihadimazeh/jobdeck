@@ -103,4 +103,14 @@
        here in Step 3, before Step 7 actually exercised it and found this. */
     .drawer-side, .drawer-side > *, .dropdown, .toast > * { transition: none !important; }
   }
+
+  /* Zebra-striped table rows - own rule rather than daisyUI's `table-zebra` class
+     (which hardcodes --color-base-200, already used elsewhere as the page canvas
+     color) so the stripe stays a step lighter than that and reads as a table-only
+     effect. color-mix off base-content keeps it theme-agnostic - same stripe on
+     both the orange and navy/blue palettes, since only the brand tokens differ
+     between them, not base-content/base-100. */
+  .table tbody tr:nth-child(even) {
+    background-color: color-mix(in oklab, var(--color-base-content) 6%, var(--color-base-100));
+  }
 }
