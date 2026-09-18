@@ -23,7 +23,12 @@
   --color-base-content: #0F172A;
 
   --color-primary: #EA580C;         /* safety orange - primary actions */
-  --color-primary-content: #FFFFFF;
+  --color-primary-content: #0F172A; /* dark, not white - white-on-#EA580C measured at
+                                        3.56:1 during the Step 16 sweep, below WCAG AA's
+                                        4.5:1 for normal text; dark-on-#EA580C is 5.02:1.
+                                        Keeps the brand orange itself unchanged - checked
+                                        every other -content pairing too, only this one
+                                        failed. */
   --color-secondary: #475569;       /* slate - secondary buttons / quiet emphasis */
   --color-secondary-content: #FFFFFF;
   --color-accent: #C2410C;          /* darker orange - hover/active */
@@ -72,9 +77,19 @@
   .form-hint  { @apply mt-1 text-xs text-base-content/70; }
   .form-error { @apply mt-1 text-xs text-error; }
 
-  /* daisyUI btn-md is ~40px tall; enforce a 44px touch target */
+  /* Enforce a 44px touch target on every button, including -sm - measured via a real
+     headless-browser check during the Step 16 sweep that the original 36px .btn-sm
+     override (kept from daisyUI's own default) left the kebab row-actions trigger and
+     the room/line-item remove buttons under the target this was meant to fix (A2/U8).
+     -sm still reads as visually compact (smaller padding/font-size from daisyUI itself);
+     only the minimum tap height is unified with .btn. */
   .btn    { min-height: 2.75rem; height: auto; }
-  .btn-sm { min-height: 2.25rem; }
+  .btn-sm { min-height: 2.75rem; height: auto; }
+
+  /* The row-actions popover menu's Edit/Delete items aren't .btn at all (plain daisyUI
+     `menu` links/buttons) - same 44px floor, free of any table-density cost since this
+     menu floats rather than sitting inline in a row. */
+  .menu :where(li > a, li > button) { min-height: 2.75rem; }
 
   /* unmistakable focus ring on the orange/slate palette */
   :where(.btn, .input, .select, .textarea, .menu a, summary, [popovertarget]):focus-visible {

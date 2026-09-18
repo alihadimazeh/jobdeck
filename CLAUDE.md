@@ -6,10 +6,16 @@ A simple project management web app for a small construction business (flooring/
 
 - **Ruby on Rails 8**
 - **PostgreSQL**
-- **Tailwind CSS** (via `tailwindcss-rails`) — chosen intentionally over Bulma for learning purposes
+- **Tailwind CSS v4** (via `tailwindcss-rails`, CSS-first config, standalone CLI — no
+  Node/npm anywhere in this stack)
+- **daisyUI** — Tailwind plugin, vendored as standalone `.mjs` files
+  (`app/assets/tailwind/daisyui.mjs`, `daisyui-theme.mjs`) rather than an npm package.
+  The component/theme layer for the whole UI. See "## Design System" below.
+- **Inter** — self-hosted variable font (`app/assets/fonts/inter/`), no external font
+  requests.
 - **Active Storage** for file uploads (PDFs, Excel sheets, images)
-- **Pagy** for pagination
-- **Ransack** for search/filtering
+- **Pagy** for pagination — planned, not yet added to the Gemfile
+- **Ransack** for search/filtering — planned, not yet added to the Gemfile
 - Turbo + Stimulus (Rails defaults, no separate frontend framework)
 - **RSpec** (`rspec-rails`, `factory_bot_rails`) — the test framework for the model layer.
   See "## Testing" below.
@@ -525,18 +531,86 @@ and a portfolio piece that demonstrates auth, RBAC, and SSO done properly.
 
 ---
 
-## Planned: UI Revamp
+## Design System
 
-The current UI is the default scaffold styling and needs a full revamp before
-Jobdeck can be shown as a real product / portfolio piece.
+The UI has been fully rebuilt on **daisyUI** (branch `feature/ui-foundation-prep`,
+16 chunked steps). This section is the durable reference; the design intent and full
+build history live in `~/.claude/plans/using-the-design-skill-immutable-hippo.md`
+(original design plan) and `~/.claude/plans/let-s-tackle-the-ui-ux-fancy-pnueli.md`
+(chunked execution plan + what actually shipped at each step).
 
-- Cohesive visual design with Tailwind — consistent layout, spacing, typography,
-  and color system instead of ad-hoc scaffold markup.
-- Proper app shell: persistent nav / sidebar, page headers, breadcrumbs,
-  flash/toast styling.
-- Reusable view components/partials for tables, forms, buttons, badges, cards,
-  empty states, and the shared Notes / Documents UI.
-- Polished dashboard (leads needing follow-up, active jobs, unpaid orders).
-- Responsive / mobile-friendly layouts.
-- Coordinate with the auth work — role-based nav and action buttons are part of
-  the revamped UI.
+### Theme & rule
+
+- One custom daisyUI theme, `jobdeck` — "industrial slate + safety orange" — defined
+  entirely in `app/assets/tailwind/application.css` via `@plugin "./daisyui-theme.mjs"`.
+  Light only for now; every color reference in view code is a semantic token
+  (`bg-base-200`, `text-base-content`, `badge-success`, …), never raw hex or Tailwind's
+  default scales, so a `jobdeck-dark` theme is a later drop-in with zero view changes.
+- **Rule: always use daisyUI's semantic classes, never `amber-*`/`gray-*`/raw hex in a
+  view.** (`amber-*` was the old accent before this redesign — if you see it, it's a
+  regression.)
+- Font is self-hosted **Inter** (`app/assets/fonts/inter/`, variable weight) — no
+  external font requests, works offline on a job site.
+
+| Role | Hex | Used for |
+|---|---|---|
+| `base-100` / `base-200` / `base-300` | `#FFFFFF` / `#F8FAFC` / `#E2E8F0` | cards & tables / app canvas / hairline borders |
+| `base-content` | `#0F172A` | body text (muted text is `text-base-content/70`) |
+| `primary` | `#EA580C` | primary actions |
+| `neutral` | `#1E293B` | sidebar |
+| `info` / `success` / `warning` / `error` | `#1D4ED8` / `#15803D` / `#B45309` / `#DC2626` | status badges — see `ApplicationHelper::STATUS_VARIANTS` for the status → variant map |
+
+### Shared components (`app/views/shared/`)
+
+`_page_header` (breadcrumb + H1 + action slot — suppresses the breadcrumb entirely when
+its last segment duplicates the title), `_form_container`, `_form_errors`
+(`role="alert"`, autofocused, links each error to its field), `_field` (label/input/
+select/textarea + hint/error — not used by the 12-column line-item/room editor rows,
+those stay hand-written because they're the JS-templated ones), `_card`, `_table`
+(optional `footer:` for a real `<tfoot>` totals row), `_detail_list`, `_stats`, `_badge`,
+`_row_actions` (the kebab menu — daisyUI's Popover API, not JS), `_empty_state`, `_flash`.
+Plus `layouts/_sidebar` and `layouts/_navbar` for the app shell.
+
+Note the two block-rendering partials' calling convention: `render "shared/card", { title:
+"X" } do ... end` (bare string + plain hash), **not** `render partial:, locals:` — the
+latter doesn't support a block the same way. See `shared/_card.html.erb`'s own comment.
+
+### Helpers (`app/helpers/application_helper.rb`)
+
+`status_badge(record)`, `format_date`, `format_currency`, `format_address`, `btn` (daisyUI
+button wrapper), `nav_link`/`nav_section_active?`/`SECTION_CONTROLLERS` (a nested
+resource, e.g. a Quote, still highlights its parent Leads/Jobs nav item).
+
+### App shell & JS
+
+- `layouts/application.html.erb`: daisyUI `drawer` — a permanent sidebar rail `>=lg`,
+  a toggleable overlay drawer below it, from one markup (`lg:drawer-open`). Skip link,
+  `<html lang="en">`, `aria-label` on both nav landmarks.
+- `app/javascript/controllers/drawer_controller.js` — a11y layer on top of the
+  checkbox-driven drawer (focus management, Escape-to-close, `aria-expanded`); the
+  drawer itself needs no JS to open/close.
+- `quote_form_controller.js` / `order_form_controller.js` (the estimation tool, dynamic
+  room/line-item rows) are unchanged by the redesign — only the row markup's classes
+  were reworked to stack on mobile, every `data-*` hook they depend on was preserved.
+- `dropdown_controller.js` and `hello_controller.js` were deleted (fully replaced by
+  `shared/_row_actions` and dead scaffold, respectively).
+
+### Root / dashboard
+
+`root "dashboard#show"` (was `customers#index`) — `DashboardController` shows leads
+needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and
+outstanding orders (`Order.outstanding`), each a 5-row preview with a true total count.
+
+### Not done yet
+
+- **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
+- **A different color scheme** — trying "navy + blue CTA" instead of the current
+  "industrial slate + safety orange" is tracked in `TODO.md` → Follow-up PRs,
+  deliberately deferred until after this redesign.
+- **Shared Notes/Documents UI** — blocked on those models not existing yet (Phase 4).
+- **Role-based nav/action-button gating** — blocked on the auth work (Phase 5) below;
+  the shell is built to have `policy(record).action?` checks layered in later.
+- **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
+  (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
+  `before_validation` normalization and touches both Quote's and Order's show pages.
+- Pagy/Ransack integration into the index pages (see Tech Stack above — not added yet).
