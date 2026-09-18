@@ -11,7 +11,10 @@
   logs: false;
 }
 
-/* ---- light theme (default) - "industrial slate + safety orange" ---- */
+/* ---- light theme (default) - "navy + blue CTA" (trial alt palette, see
+   feature/navy-blue-theme / TODO.md -> Follow-up PRs; base/status colors below are
+   unchanged from the "industrial slate + safety orange" original, only the brand
+   tokens - primary/secondary/accent/neutral - were retinted) ---- */
 @plugin "./daisyui-theme.mjs" {
   name: "jobdeck";
   default: true;
@@ -22,18 +25,15 @@
   --color-base-300: #E2E8F0;   /* hairline borders, dividers */
   --color-base-content: #0F172A;
 
-  --color-primary: #EA580C;         /* safety orange - primary actions */
-  --color-primary-content: #0F172A; /* dark, not white - white-on-#EA580C measured at
-                                        3.56:1 during the Step 16 sweep, below WCAG AA's
-                                        4.5:1 for normal text; dark-on-#EA580C is 5.02:1.
-                                        Keeps the brand orange itself unchanged - checked
-                                        every other -content pairing too, only this one
-                                        failed. */
-  --color-secondary: #475569;       /* slate - secondary buttons / quiet emphasis */
+  --color-primary: #0369A1;         /* blue CTA - primary actions. White text on this
+                                        measures 5.93:1, so unlike the old safety-orange
+                                        palette, primary-content can just be white. */
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #334155;       /* slate-blue - secondary buttons / quiet emphasis */
   --color-secondary-content: #FFFFFF;
-  --color-accent: #C2410C;          /* darker orange - hover/active */
+  --color-accent: #075985;          /* darker blue - hover/active */
   --color-accent-content: #FFFFFF;
-  --color-neutral: #1E293B;         /* drives the dark sidebar */
+  --color-neutral: #0F172A;         /* navy - drives the dark sidebar */
   --color-neutral-content: #CBD5E1;
 
   --color-info: #1D4ED8;    --color-info-content: #FFFFFF;
