@@ -1,0 +1,72 @@
+<% content_for :title, "Dashboard" %>
+
+<%= render partial: "shared/page_header", locals: { title: "Dashboard" } %>
+
+<div class="mb-6">
+  <%= render partial: "shared/stats", locals: { items: [
+        { title: "Leads Needing Follow-up", value: @follow_up_leads_count },
+        { title: "Active Jobs", value: @active_jobs_count },
+        { title: "Outstanding Orders", value: @outstanding_orders_count }
+      ] } %>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <%# Leads needing follow-up %>
+  <% leads_actions = capture do %>
+    <%= link_to "View all", leads_path, class: "btn btn-ghost btn-sm text-primary" %>
+  <% end %>
+  <%= render "shared/card", { title: "Leads Needing Follow-up", actions: leads_actions, padded: false } do %>
+    <%= render "shared/table", { columns: [ "Title", "Customer", "Follow-up" ] } do %>
+      <% if @follow_up_leads.any? %>
+        <% @follow_up_leads.each do |lead| %>
+          <tr class="hover">
+            <td class="font-medium text-base-content"><%= link_to lead.title, lead, class: "hover:text-primary" %></td>
+            <td class="text-base-content/70"><%= lead.customer.full_name %></td>
+            <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <%= render partial: "shared/empty_state", locals: { title: "Nothing needs follow-up.", colspan: 3 } %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%# Active jobs %>
+  <% jobs_actions = capture do %>
+    <%= link_to "View all", jobs_path, class: "btn btn-ghost btn-sm text-primary" %>
+  <% end %>
+  <%= render "shared/card", { title: "Active Jobs", actions: jobs_actions, padded: false } do %>
+    <%= render "shared/table", { columns: [ "Title", "Customer", "Start Date" ] } do %>
+      <% if @active_jobs.any? %>
+        <% @active_jobs.each do |job| %>
+          <tr class="hover">
+            <td class="font-medium text-base-content"><%= link_to job.title, job, class: "hover:text-primary" %></td>
+            <td class="text-base-content/70"><%= job.customer.full_name %></td>
+            <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <%= render partial: "shared/empty_state", locals: { title: "No active jobs.", colspan: 3 } %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%# Outstanding orders - no unscoped orders index exists (orders are nested under
+      Jobs), so there's no "View all" target here unlike the other two cards. %>
+  <%= render "shared/card", { title: "Outstanding Orders", padded: false } do %>
+    <%= render "shared/table", { columns: [ "Order #", "Customer", "Status", "Total" ] } do %>
+      <% if @outstanding_orders.any? %>
+        <% @outstanding_orders.each do |order| %>
+          <tr class="hover">
+            <td class="font-medium text-base-content"><%= link_to order.order_number, order, class: "hover:text-primary" %></td>
+            <td class="text-base-content/70"><%= order.customer.full_name %></td>
+            <td><%= status_badge(order) %></td>
+            <td class="font-medium text-base-content"><%= format_currency(order.total) %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <%= render partial: "shared/empty_state", locals: { title: "Nothing outstanding.", colspan: 4 } %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

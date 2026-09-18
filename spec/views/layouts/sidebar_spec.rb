@@ -6,6 +6,7 @@ RSpec.describe "layouts/_sidebar", type: :view do
 
     expect(rendered).to have_selector("span", text: "Jobdeck")
     expect(rendered).to have_selector("nav[aria-label='Primary'] ul.menu")
+    expect(rendered).to have_selector("nav[aria-label='Primary'] a[href='/']", text: "Dashboard")
     expect(rendered).to have_selector("nav[aria-label='Primary'] a[href='/customers']", text: "Customers")
     expect(rendered).to have_selector("nav[aria-label='Primary'] a[href='/leads']", text: "Leads")
     expect(rendered).to have_selector("nav[aria-label='Primary'] a[href='/jobs']", text: "Jobs")

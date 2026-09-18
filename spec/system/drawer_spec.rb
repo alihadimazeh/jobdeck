@@ -34,7 +34,7 @@ RSpec.describe "Navigation drawer", type: :system do
 
       expect(hamburger["aria-expanded"]).to eq("true")
       expect(page).to have_css("nav[aria-label='Primary'] a", visible: true)
-      wait_for_active_element_text("Customers")
+      wait_for_active_element_text("Dashboard") # first nav link, since Step 14 added it
       expect(page).to have_css("body.overflow-hidden")
     end
 

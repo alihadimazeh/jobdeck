@@ -11,6 +11,9 @@ class Order < ApplicationRecord
 
   accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
 
+  # Orders that still owe work or money - not yet paid, not cancelled.
+  scope :outstanding, -> { where(status: [ :draft, :confirmed, :invoiced ]) }
+
   before_validation :assign_customer_from_job
   before_create     :assign_order_number
   before_save       :recalculate_totals
