@@ -1,1 +1,116 @@
 @import "tailwindcss";
+
+/* keep daisyUI's own bundle out of the utility-class source scan */
+@source not "./daisyui{,*}.mjs";
+/* classes only ever added by JS at runtime (row soft-delete in the
+   quote/order line-item editors) - guarantee they survive purge */
+@source inline("hidden");
+
+@plugin "./daisyui.mjs" {
+  themes: jobdeck --default; /* emit ONLY our theme - no built-ins, no dark yet */
+  logs: false;
+}
+
+/* ---- light theme (default) - "navy + blue CTA" (trial alt palette, see
+   feature/navy-blue-theme / TODO.md -> Follow-up PRs; base/status colors below are
+   unchanged from the "industrial slate + safety orange" original, only the brand
+   tokens - primary/secondary/accent/neutral - were retinted) ---- */
+@plugin "./daisyui-theme.mjs" {
+  name: "jobdeck";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #FFFFFF;   /* cards, navbar, inputs, menus */
+  --color-base-200: #F8FAFC;   /* app canvas */
+  --color-base-300: #E2E8F0;   /* hairline borders, dividers */
+  --color-base-content: #0F172A;
+
+  --color-primary: #0369A1;         /* blue CTA - primary actions. White text on this
+                                        measures 5.93:1, so unlike the old safety-orange
+                                        palette, primary-content can just be white. */
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #334155;       /* slate-blue - secondary buttons / quiet emphasis */
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #075985;          /* darker blue - hover/active */
+  --color-accent-content: #FFFFFF;
+  --color-neutral: #0F172A;         /* navy - drives the dark sidebar */
+  --color-neutral-content: #CBD5E1;
+
+  --color-info: #1D4ED8;    --color-info-content: #FFFFFF;
+  --color-success: #15803D; --color-success-content: #FFFFFF;
+  --color-warning: #B45309; --color-warning-content: #FFFFFF;
+  --color-error: #DC2626;   --color-error-content: #FFFFFF;
+
+  --radius-selector: 0.375rem;
+  --radius-field: 0.375rem;   /* buttons, inputs, badges */
+  --radius-box: 0.5rem;       /* cards, alerts, modals */
+  --border: 1px;
+  --depth: 0;                 /* flat, Swiss - no faux depth */
+  --noise: 0;
+}
+
+/* ---- dark theme: AUTHORED LATER, NOT NOW ----
+   A second @plugin "./daisyui-theme.mjs" { name: "jobdeck-dark"; ... } block
+   plus a theme toggle writing data-theme on <html>. Not part of this pass. */
+
+/* ---- Inter, self-hosted (app/assets/fonts/inter/) ---- */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("inter/InterVariable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("inter/InterVariable-Italic.woff2") format("woff2");
+}
+
+/* ---- small overrides - daisyUI covers ~95% of components ---- */
+@layer components {
+  .form-hint  { @apply mt-1 text-xs text-base-content/70; }
+  .form-error { @apply mt-1 text-xs text-error; }
+
+  /* Enforce a 44px touch target on every button, including -sm - measured via a real
+     headless-browser check during the Step 16 sweep that the original 36px .btn-sm
+     override (kept from daisyUI's own default) left the kebab row-actions trigger and
+     the room/line-item remove buttons under the target this was meant to fix (A2/U8).
+     -sm still reads as visually compact (smaller padding/font-size from daisyUI itself);
+     only the minimum tap height is unified with .btn. */
+  .btn    { min-height: 2.75rem; height: auto; }
+  .btn-sm { min-height: 2.75rem; height: auto; }
+
+  /* The row-actions popover menu's Edit/Delete items aren't .btn at all (plain daisyUI
+     `menu` links/buttons) - same 44px floor, free of any table-density cost since this
+     menu floats rather than sitting inline in a row. */
+  .menu :where(li > a, li > button) { min-height: 2.75rem; }
+
+  /* unmistakable focus ring on the orange/slate palette */
+  :where(.btn, .input, .select, .textarea, .menu a, summary, [popovertarget]):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* .drawer-side itself carries the open/close transition (opacity + a
+       delayed visibility flip) - not just its children as originally written
+       here in Step 3, before Step 7 actually exercised it and found this. */
+    .drawer-side, .drawer-side > *, .dropdown, .toast > * { transition: none !important; }
+  }
+
+  /* Zebra-striped table rows - own rule rather than daisyUI's `table-zebra` class
+     (which hardcodes --color-base-200, already used elsewhere as the page canvas
+     color) so the stripe stays a step lighter than that and reads as a table-only
+     effect. color-mix off base-content keeps it theme-agnostic - same stripe on
+     both the orange and navy/blue palettes, since only the brand tokens differ
+     between them, not base-content/base-100. */
+  .table tbody tr:nth-child(even) {
+    background-color: color-mix(in oklab, var(--color-base-content) 6%, var(--color-base-100));
+  }
+}

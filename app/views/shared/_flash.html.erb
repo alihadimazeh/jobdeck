@@ -1,0 +1,15 @@
+<%# reads the current flash - no locals %>
+<div class="toast toast-top toast-end z-50" aria-live="polite">
+  <% flash.each do |type, message| %>
+    <% next if message.blank? %>
+    <% variant = type.to_s == "alert" ? "error" : "success" %>
+    <div class="alert alert-<%= variant %> alert-soft shadow"<%= ' role="alert"'.html_safe if type.to_s == "alert" %>>
+      <span><%= message %></span>
+      <button type="button" class="btn btn-ghost btn-xs" aria-label="Dismiss" onclick="this.closest('.alert').remove()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  <% end %>
+</div>

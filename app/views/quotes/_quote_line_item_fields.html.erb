@@ -1,37 +1,53 @@
-<div data-quote-form-target="lineItemRow" class="grid grid-cols-12 gap-3 items-center py-2 border-b border-gray-100 last:border-0">
-  <div class="col-span-2">
+<%#
+  R4 responsive rework - see quote_form_controller.js for the invariants this preserves:
+  data-quote-form-target="lineItemRow" on the row root; [data-line-type]/[data-line-description]/
+  [data-line-quantity]/[data-line-unit]/[data-line-unit-price]/[data-line-destroy] on the same
+  inputs; [data-line-total] moved from the outer div (original markup) onto its own bare inner
+  span - it has to be a dedicated element now that there's a "Total" sibling label, otherwise
+  the controller's `row.querySelector("[data-line-total]").textContent = ...` would overwrite
+  that label along with the number.
+%>
+<div data-quote-form-target="lineItemRow"
+     class="grid grid-cols-1 gap-2 py-3 border-b border-base-300 last:border-0 sm:grid-cols-12 sm:gap-3 sm:items-center sm:py-2">
+  <div class="sm:col-span-2">
+    <span class="sm:hidden text-xs font-medium text-base-content/70">Type</span>
     <%= form.select :item_type, QuoteLineItem.item_types.keys.map { |k| [k.titleize, k] }, {},
           data: { line_type: true },
-          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+          class: "select select-sm w-full" %>
   </div>
-  <div class="col-span-4">
+  <div class="sm:col-span-4">
+    <span class="sm:hidden text-xs font-medium text-base-content/70">Description</span>
     <%= form.text_field :description, placeholder: "Description", "aria-label": "Description",
           data: { line_description: true },
-          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+          class: "input input-sm w-full" %>
   </div>
-  <div class="col-span-1">
+  <div class="sm:col-span-1">
+    <span class="sm:hidden text-xs font-medium text-base-content/70">Qty</span>
     <%= form.number_field :quantity, step: "0.01", min: 0, placeholder: "Qty", "aria-label": "Quantity",
           data: { line_quantity: true, action: "input->quote-form#updateLineItemTotal" },
-          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+          class: "input input-sm w-full" %>
   </div>
-  <div class="col-span-1">
+  <div class="sm:col-span-1">
+    <span class="sm:hidden text-xs font-medium text-base-content/70">Unit</span>
     <%= form.text_field :unit, placeholder: "Unit", "aria-label": "Unit",
           data: { line_unit: true },
-          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+          class: "input input-sm w-full" %>
   </div>
-  <div class="col-span-2">
+  <div class="sm:col-span-2">
+    <span class="sm:hidden text-xs font-medium text-base-content/70">Unit Price</span>
     <%= form.number_field :unit_price, step: "0.01", min: 0, placeholder: "Unit price", "aria-label": "Unit price",
           data: { line_unit_price: true, action: "input->quote-form#updateLineItemTotal" },
-          class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+          class: "input input-sm w-full" %>
   </div>
-  <div class="col-span-1 text-sm text-gray-600" data-line-total>
-    <%= form.object.total ? number_to_currency(form.object.total) : "$0.00" %>
+  <div class="sm:col-span-1 text-sm text-base-content/70">
+    <span class="sm:hidden">Total </span><span data-line-total><%= form.object.total ? number_to_currency(form.object.total) : "$0.00" %></span>
   </div>
-  <div class="col-span-1 text-right">
+  <div class="flex justify-end sm:col-span-1 sm:block sm:text-right">
     <%= form.hidden_field :_destroy, data: { line_destroy: true } %>
     <button type="button" data-action="click->quote-form#removeLineItem"
-            class="text-gray-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 cursor-pointer">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            class="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-error"
+            aria-label="Remove line item">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>

@@ -1,0 +1,22 @@
+<%# locals: title:, breadcrumbs: (Array<[label, path]>, default []), action: ({label:,path:,method:} or nil), actions: (captured html, or nil) %>
+<% breadcrumbs = local_assigns.fetch(:breadcrumbs, []) %>
+<% show_breadcrumbs = breadcrumbs.present? && breadcrumbs.last&.first != title %>
+<div class="mb-6">
+  <% if show_breadcrumbs %>
+    <nav aria-label="Breadcrumb" class="breadcrumbs text-xs mb-1">
+      <ul>
+        <% breadcrumbs.each do |label, path| %>
+          <li><%= path.present? ? link_to(label, path) : label %></li>
+        <% end %>
+      </ul>
+    </nav>
+  <% end %>
+  <div class="flex items-center justify-between gap-4">
+    <h1 class="text-xl font-semibold text-base-content"><%= title %></h1>
+    <% if local_assigns[:actions].present? %>
+      <div class="flex items-center gap-2"><%= actions %></div>
+    <% elsif local_assigns[:action].present? %>
+      <%= btn action[:label], action[:path], method: action.fetch(:method, :get) %>
+    <% end %>
+  </div>
+</div>

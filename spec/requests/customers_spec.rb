@@ -7,6 +7,16 @@ RSpec.describe "Customers", type: :request do
       get customers_path
       expect(response).to have_http_status(:success)
     end
+
+    it "excludes archived customers" do
+      visible  = create(:customer, status: :active)
+      archived = create(:customer, status: :archived)
+
+      get customers_path
+
+      expect(response.body).to include(visible.full_name)
+      expect(response.body).not_to include(archived.full_name)
+    end
   end
 
   describe "GET /customers/:id" do
@@ -14,6 +24,15 @@ RSpec.describe "Customers", type: :request do
       customer = create(:customer)
       get customer_path(customer)
       expect(response).to have_http_status(:success)
+    end
+
+    it "renders Edit and Delete actions" do
+      customer = create(:customer)
+      get customer_path(customer)
+
+      expect(response.body).to include(">Edit<")
+      expect(response.body).to include(">Delete<")
+      expect(response.body).to include(customer_path(customer))
     end
   end
 
@@ -70,13 +89,61 @@ RSpec.describe "Customers", type: :request do
       expect(response).to redirect_to(customers_path)
     end
 
-    it "redirects with an alert and does not destroy when the customer has a job" do
+    it "archives instead of destroying when the customer has a job" do
       customer = create(:customer)
       create(:job, customer: customer)
 
       expect { delete customer_path(customer) }.not_to change(Customer, :count)
       expect(response).to redirect_to(customers_path)
-      expect(flash[:alert]).to eq("Could not delete customer.")
+      expect(flash[:notice]).to eq("This customer has history and can't be deleted — archived instead.")
+      expect(customer.reload).to be_archived_status
+    end
+  end
+
+  describe "restyled UI (Step 8 - daisyUI components, not just old markup that happens to say Edit/Delete)" do
+    it "index: renders the page header, a status badge per row, and the row-actions popover trigger" do
+      customer = create(:customer, status: :active)
+      get customers_path
+
+      expect(response.body).to include('<h1 class="text-xl font-semibold text-base-content">Customers</h1>')
+      expect(response.body).to include('href="' + new_customer_path + '"')
+      expect(response.body).to match(/badge badge-soft badge-success">\s*Active/)
+      expect(response.body).to include("popovertarget=\"row-actions-customer_#{customer.id}\"")
+    end
+
+    it "index: renders the empty state with a working call to action when there are no customers" do
+      # test/fixtures/customers.yml rows can be sitting in the shared test DB from a
+      # Minitest run (RSpec's per-example rollback doesn't touch data already
+      # committed before its transaction started) - clear explicitly for a true empty
+      # case. disable_referential_integrity so leftover fixture jobs/leads/etc that
+      # reference these customers don't FK-block the delete.
+      ActiveRecord::Base.connection.disable_referential_integrity { Customer.delete_all }
+      get customers_path
+      expect(response.body).to include("No customers yet.")
+      expect(response.body).to include('href="' + new_customer_path + '"')
+    end
+
+    it "show: renders the detail list, the stats block, and a status badge" do
+      customer = create(:customer, status: :inactive)
+      create(:job, customer: customer)
+
+      get customer_path(customer)
+
+      expect(response.body).to include('<dt class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Phone</dt>')
+      expect(response.body).to include("stats stats-vertical")
+      expect(response.body).to include("stat-value")
+      expect(response.body).to match(/badge badge-soft badge-neutral">\s*Inactive/)
+    end
+
+    it "form: renders labeled daisyUI inputs and links a failed-submit's errors to their fields" do
+      post customers_path, params: { customer: { first_name: "", last_name: "", phone: "" } }
+
+      expect(response.body).to include('id="form-errors"')
+      expect(response.body).to include('role="alert"')
+      expect(response.body).to include('data-controller="autofocus"')
+      expect(response.body).to include('href="#customer_first_name"')
+      expect(response.body).to include('aria-invalid="true"')
+      expect(response.body).to include('class="label" for="customer_first_name"')
     end
   end
 end

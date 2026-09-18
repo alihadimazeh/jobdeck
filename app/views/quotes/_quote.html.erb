@@ -1,39 +1,17 @@
-<tr id="<%= dom_id(quote) %>" class="hover:bg-gray-50">
-  <td class="px-6 py-4 text-sm font-medium text-gray-900">
-    <%= link_to quote.quote_number, quote, class: "hover:text-amber-600" %>
+<tr id="<%= dom_id(quote) %>" class="hover">
+  <td class="font-medium text-base-content">
+    <%= link_to quote.quote_number, quote, class: "hover:text-primary" %>
   </td>
-  <td class="px-6 py-4">
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= quote_status_badge_classes(quote.status) %>">
-      <%= quote.status %>
-    </span>
-  </td>
-  <td class="px-6 py-4 text-sm text-gray-500">
-    <%= quote.issued_date&.strftime("%b %d, %Y") || "—" %>
-  </td>
-  <td class="px-6 py-4 text-sm text-gray-900 font-medium">
-    <%= number_to_currency(quote.total) %>
-  </td>
-  <td class="px-6 py-4 text-right">
-    <div class="relative inline-block" data-controller="dropdown">
-
-      <button data-action="click->dropdown#toggle"
-              class="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="1.5"/>
-          <circle cx="12" cy="12" r="1.5"/>
-          <circle cx="12" cy="19" r="1.5"/>
-        </svg>
-      </button>
-
-      <div data-dropdown-target="menu"
-           class="hidden fixed z-50 w-36 bg-white rounded-md shadow-lg border border-gray-200 py-1 text-left">
-        <%= link_to "Edit", edit_quote_path(quote),
-              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" %>
-        <%= button_to "Delete", quote, method: :delete,
-              form: { data: { turbo_confirm: "Are you sure you want to delete this quote?" } },
-              class: "block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer bg-transparent border-0" %>
-      </div>
-
-    </div>
+  <td><%= status_badge(quote) %></td>
+  <td class="text-base-content/70"><%= format_date(quote.issued_date) %></td>
+  <td class="font-medium text-base-content"><%= format_currency(quote.total) %></td>
+  <td>
+    <%= render partial: "shared/row_actions", locals: {
+          edit_path: edit_quote_path(quote),
+          delete_path: quote_path(quote),
+          delete_confirm: "Are you sure you want to delete this quote?",
+          label: quote.quote_number,
+          id: dom_id(quote)
+        } %>
   </td>
 </tr>

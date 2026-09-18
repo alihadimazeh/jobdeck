@@ -1,9 +1,10 @@
 <% content_for :title, "New Quote" %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Leads", leads_path %> &rsaquo; <%= link_to @lead.title, @lead %> &rsaquo; New Quote
-<% end %>
-<% content_for :page_heading, "New Quote for #{@lead.title}" %>
 
-<div class="md:w-3/4 w-full">
+<%= render partial: "shared/page_header", locals: {
+      title: "New Quote for #{@lead.title}",
+      breadcrumbs: [ [ "Leads", leads_path ], [ @lead.title, lead_path(@lead) ] ]
+    } %>
+
+<%= render "shared/form_container", { width: :lg } do %>
   <%= render "form", quote: @quote %>
-</div>
+<% end %>

@@ -1,137 +1,81 @@
 <% content_for :title, @customer.full_name %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Customers", customers_path %> &rsaquo; <%= @customer.full_name %>
+
+<% actions = capture do %>
+  <%= link_to "Edit", edit_customer_path(@customer), class: "btn btn-ghost btn-sm" %>
+  <%= button_to "Delete", @customer, method: :delete,
+        form: { data: { turbo_confirm: "Are you sure you want to delete #{@customer.full_name}?" } },
+        class: "btn btn-ghost btn-sm text-error" %>
 <% end %>
-<% content_for :page_heading, @customer.full_name %>
+
+<%= render partial: "shared/page_header", locals: {
+      title: @customer.full_name,
+      breadcrumbs: [ [ "Customers", customers_path ] ],
+      actions: actions
+    } %>
 
 <%# Customer details %>
-<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-  <div class="flex justify-between items-start">
-    <div class="grid grid-cols-2 gap-x-12 gap-y-4">
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Phone</p>
-        <p class="text-sm text-gray-900"><%= @customer.phone %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Email</p>
-        <p class="text-sm text-gray-900"><%= @customer.email.presence || "—" %></p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Address</p>
-        <p class="text-sm text-gray-900">
-          <% if @customer.address_line_1.present? %>
-            <%= @customer.address_line_1 %><br>
-            <% if @customer.address_line_2.present? %>
-              <%= @customer.address_line_2 %><br>
-            <% end %>
-            <%= [@customer.city, @customer.province, @customer.postal_code].compact_blank.join(", ") %>
-          <% else %>
-            —
-          <% end %>
-        </p>
-      </div>
-      <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Status</p>
-        <% badge_class = @customer.status == "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500" %>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide <%= badge_class %>">
-          <%= @customer.status %>
-        </span>
-      </div>
-    </div>
-    <%= link_to "Edit", edit_customer_path(@customer), class: "text-sm font-medium text-gray-500 hover:text-gray-700" %>
-  </div>
+<div class="mb-6">
+  <%= render "shared/card" do %>
+    <%= render partial: "shared/detail_list", locals: { items: [
+          [ "Phone", @customer.phone ],
+          [ "Email", @customer.email ],
+          [ "Address", format_address(
+              address_line_1: @customer.address_line_1, address_line_2: @customer.address_line_2,
+              city: @customer.city, province: @customer.province, postal_code: @customer.postal_code
+            ) ],
+          [ "Status", status_badge(@customer) ]
+        ] } %>
+  <% end %>
 </div>
 
 <%# Stat cards %>
-<div class="grid grid-cols-4 gap-4 mb-6">
-  <div class="bg-white rounded-lg border border-gray-200 p-4">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Active Jobs</p>
-    <p class="text-2xl font-semibold text-gray-900"><%= @customer.jobs.count %></p>
-  </div>
-  <div class="bg-white rounded-lg border border-gray-200 p-4">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Leads</p>
-    <p class="text-2xl font-semibold text-gray-900"><%= @customer.leads.count %></p>
-  </div>
-  <div class="bg-white rounded-lg border border-gray-200 p-4">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Lifetime Value</p>
-    <p class="text-2xl font-semibold text-gray-400">—</p>
-  </div>
-  <div class="bg-white rounded-lg border border-gray-200 p-4">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Outstanding</p>
-    <p class="text-2xl font-semibold text-gray-400">—</p>
-  </div>
+<div class="mb-6">
+  <%= render partial: "shared/stats", locals: { items: [
+        { title: "Active Jobs", value: @customer.jobs.count },
+        { title: "Leads", value: @customer.leads.count },
+        { title: "Lifetime Value", value: "—" },
+        { title: "Outstanding", value: "—" }
+      ] } %>
 </div>
 
 <%# Leads section %>
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
-  <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-    <h2 class="text-sm font-semibold text-gray-700">Leads</h2>
-  </div>
-  <% if @customer.leads.any? %>
-    <table class="min-w-full divide-y divide-gray-100">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Title</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Follow-up</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
+<div class="mb-6">
+  <%= render "shared/card", { title: "Leads", padded: false } do %>
+    <%= render "shared/table", { columns: [ "Title", "Status", "Follow-up" ] } do %>
+      <% if @customer.leads.any? %>
         <% @customer.leads.each do |lead| %>
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              <%= link_to lead.title, lead, class: "hover:text-amber-600" %>
+          <tr class="hover">
+            <td class="font-medium text-base-content">
+              <%= link_to lead.title, lead, class: "hover:text-primary" %>
             </td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide bg-gray-100 text-gray-600">
-                <%= lead.status %>
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-              <%= lead.follow_up_date&.strftime("%b %d, %Y") || "—" %>
-            </td>
+            <td><%= status_badge(lead) %></td>
+            <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
           </tr>
         <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p class="px-6 py-8 text-sm text-gray-400 text-center">No leads yet.</p>
+      <% else %>
+        <%= render partial: "shared/empty_state", locals: { title: "No leads yet.", colspan: 3 } %>
+      <% end %>
+    <% end %>
   <% end %>
 </div>
 
 <%# Jobs section %>
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-  <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-    <h2 class="text-sm font-semibold text-gray-700">Jobs</h2>
-  </div>
-  <% if @customer.jobs.any? %>
-    <table class="min-w-full divide-y divide-gray-100">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Title</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Start Date</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
+<div>
+  <%= render "shared/card", { title: "Jobs", padded: false } do %>
+    <%= render "shared/table", { columns: [ "Title", "Status", "Start Date" ] } do %>
+      <% if @customer.jobs.any? %>
         <% @customer.jobs.each do |job| %>
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              <%= link_to job.title, job, class: "hover:text-amber-600" %>
+          <tr class="hover">
+            <td class="font-medium text-base-content">
+              <%= link_to job.title, job, class: "hover:text-primary" %>
             </td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide bg-gray-100 text-gray-600">
-                <%= job.status %>
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-              <%= job.start_date&.strftime("%b %d, %Y") || "—" %>
-            </td>
+            <td><%= status_badge(job) %></td>
+            <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
           </tr>
         <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p class="px-6 py-8 text-sm text-gray-400 text-center">No jobs yet.</p>
+      <% else %>
+        <%= render partial: "shared/empty_state", locals: { title: "No jobs yet.", colspan: 3 } %>
+      <% end %>
+    <% end %>
   <% end %>
 </div>

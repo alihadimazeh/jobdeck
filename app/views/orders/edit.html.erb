@@ -1,13 +1,14 @@
-<% content_for :title, "Edit Order" %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Jobs", jobs_path %> &rsaquo; <%= link_to @order.job.title, @order.job %> &rsaquo; <%= link_to @order.order_number, @order %> &rsaquo; Edit
-<% end %>
-<% content_for :page_heading do %>
-  Edit <%= @order.order_number %>
-<% end %>
+<% content_for :title, "Edit #{@order.order_number}" %>
 
-<div class="md:w-3/4 w-full">
+<%= render partial: "shared/page_header", locals: {
+      title: "Edit #{@order.order_number}",
+      breadcrumbs: [
+        [ "Jobs", jobs_path ],
+        [ @order.job.title, job_path(@order.job) ],
+        [ @order.order_number, order_path(@order) ]
+      ]
+    } %>
+
+<%= render "shared/form_container", { width: :lg } do %>
   <%= render "form", order: @order %>
-
-  <%= link_to "Back to order", @order, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-</div>
+<% end %>

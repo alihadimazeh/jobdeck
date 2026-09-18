@@ -1,96 +1,59 @@
 <%= form_with model: job do |form| %>
-  <% if job.errors.any? %>
-    <div class="mb-6 p-4 bg-red-50 rounded-md">
-      <p class="text-sm font-medium text-red-700 mb-1"><%= pluralize(job.errors.count, "error") %> prevented this job from being saved:</p>
-      <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
-        <% job.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+  <%= render partial: "shared/form_errors", locals: { model: job } %>
 
   <fieldset class="mb-6">
-    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Job Details</legend>
+    <legend class="text-sm font-semibold text-base-content uppercase tracking-wide mb-3">Job Details</legend>
     <div class="space-y-4">
-      <div>
-        <%= form.label :title, class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.text_field :title, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div>
-        <%= form.label :customer_id, "Customer", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.collection_select :customer_id, Customer.order(:last_name, :first_name), :id, :full_name, { prompt: "Select a customer" }, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <%= form.label :status, class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= form.select :status, Job.statuses.keys.map { |k| [k.humanize, k] }, {}, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-        </div>
-        <div>
-          <%= form.label :job_type, "Job Type", class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= form.select :job_type, Job.job_types.keys.map { |k| [k.titleize, k] }, { prompt: "None" }, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-        </div>
-      </div>
-    </div>
-  </fieldset>
-
-  <fieldset class="mb-6">
-    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Schedule & Assignment</legend>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <%= form.label :start_date, "Start Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.date_field :start_date, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div>
-        <%= form.label :end_date, "End Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.date_field :end_date, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div>
-        <%= form.label :assigned_to, "Assigned To", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.text_field :assigned_to, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div>
-        <%= form.label :estimated_value, "Estimated Value ($)", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.number_field :estimated_value, step: "0.01", min: 0, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
+      <%= render partial: "shared/field", locals: { form: form, attr: :title } %>
+      <%= render partial: "shared/field", locals: {
+            form: form, attr: :customer_id, label: "Customer", as: :select,
+            collection: Customer.order(:last_name, :first_name).map { |c| [ c.full_name, c.id ] },
+            select_options: { include_blank: "Select a customer" }
+          } %>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <%= render partial: "shared/field", locals: {
+              form: form, attr: :status, as: :select,
+              collection: Job.statuses.keys.map { |k| [ k.humanize, k ] }
+            } %>
+        <%= render partial: "shared/field", locals: {
+              form: form, attr: :job_type, label: "Job Type", as: :select,
+              collection: Job.job_types.keys.map { |k| [ k.titleize, k ] },
+              select_options: { include_blank: "None" }
+            } %>
       </div>
     </div>
   </fieldset>
 
   <fieldset class="mb-6">
-    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Job Site Address</legend>
+    <legend class="text-sm font-semibold text-base-content uppercase tracking-wide mb-3">Schedule &amp; Assignment</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <%= render partial: "shared/field", locals: { form: form, attr: :start_date, label: "Start Date", as: :date } %>
+      <%= render partial: "shared/field", locals: { form: form, attr: :end_date, label: "End Date", as: :date } %>
+      <%= render partial: "shared/field", locals: { form: form, attr: :assigned_to, label: "Assigned To" } %>
+      <%= render partial: "shared/field", locals: {
+            form: form, attr: :estimated_value, label: "Estimated Value ($)", as: :number,
+            options: { step: "0.01", min: 0 }
+          } %>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-6">
+    <legend class="text-sm font-semibold text-base-content uppercase tracking-wide mb-3">Job Site Address</legend>
     <div class="space-y-4">
-      <div>
-        <%= form.label :address_line_1, "Address Line 1", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.text_field :address_line_1, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div>
-        <%= form.label :address_line_2, "Address Line 2", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.text_field :address_line_2, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-      </div>
-      <div class="grid grid-cols-3 gap-4">
-        <div>
-          <%= form.label :city, class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= form.text_field :city, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-        </div>
-        <div>
-          <%= form.label :province, class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= form.text_field :province, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-        </div>
-        <div>
-          <%= form.label :postal_code, "Postal Code", class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= form.text_field :postal_code, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-        </div>
+      <%= render partial: "shared/field", locals: { form: form, attr: :address_line_1, label: "Address Line 1" } %>
+      <%= render partial: "shared/field", locals: { form: form, attr: :address_line_2, label: "Address Line 2" } %>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <%= render partial: "shared/field", locals: { form: form, attr: :city } %>
+        <%= render partial: "shared/field", locals: { form: form, attr: :province } %>
+        <%= render partial: "shared/field", locals: { form: form, attr: :postal_code, label: "Postal Code" } %>
       </div>
     </div>
   </fieldset>
 
   <fieldset class="mb-6">
-    <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Description</legend>
-    <div>
-      <%= form.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
-      <%= form.text_area :description, rows: 4, class: "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" %>
-    </div>
+    <legend class="text-sm font-semibold text-base-content uppercase tracking-wide mb-3">Description</legend>
+    <%= render partial: "shared/field", locals: { form: form, attr: :description, as: :textarea } %>
   </fieldset>
 
-  <%= form.submit class: "rounded-md px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium cursor-pointer" %>
+  <%= form.submit class: "btn btn-primary", data: { turbo_submits_with: "Saving…" } %>
 <% end %>

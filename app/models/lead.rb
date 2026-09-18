@@ -10,6 +10,11 @@ class Lead < ApplicationRecord
   has_one  :job,    dependent: :nullify
   has_many :quotes, dependent: :destroy
 
+  # Leads still in the pipeline (not converted or lost) with a follow-up date today or
+  # earlier. NULL follow_up_date rows are excluded automatically - `<= value` is never
+  # true against NULL in SQL, no explicit `.where.not(follow_up_date: nil)` needed.
+  scope :needs_follow_up, -> { where(follow_up_date: ..Date.current).where.not(status: [ :converted, :lost ]) }
+
   def convert_to_job!(quote)
     raise "This lead has already been converted to a job" if job.present?
 

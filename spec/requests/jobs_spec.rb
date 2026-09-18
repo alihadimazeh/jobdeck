@@ -79,4 +79,50 @@ RSpec.describe "Jobs", type: :request do
       expect(flash[:alert]).to eq("Could not delete job.")
     end
   end
+
+  describe "restyled UI (Step 10)" do
+    it "index: renders the page header, a status badge per row, and the row-actions popover trigger" do
+      job = create(:job, customer: customer, status: :on_hold)
+      get jobs_path
+
+      expect(response.body).to include('<h1 class="text-xl font-semibold text-base-content">Jobs</h1>')
+      expect(response.body).to include('href="' + new_job_path + '"')
+      expect(response.body).to match(/badge badge-soft badge-warning">\s*On hold/)
+      expect(response.body).to include("popovertarget=\"row-actions-job_#{job.id}\"")
+    end
+
+    it "show: renders the detail list, job site address, and Edit/Delete actions" do
+      job = create(:job, customer: customer, address_line_1: "1 Main St", city: "Ottawa")
+      get job_path(job)
+
+      expect(response.body).to include('<dt class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Job Site</dt>')
+      expect(response.body).to include("1 Main St<br>Ottawa")
+      expect(response.body).to include(">Edit<")
+      expect(response.body).to include(">Delete<")
+    end
+
+    it "show: renders the Originated From section only when the job has a lead" do
+      lead_job = create(:job, :from_lead, customer: customer)
+      get job_path(lead_job)
+      expect(response.body).to include("Originated From")
+      expect(response.body).to include(lead_job.lead.title)
+
+      plain_job = create(:job, customer: customer)
+      get job_path(plain_job)
+      expect(response.body).not_to include("Originated From")
+    end
+
+    it "show: renders an empty state for Orders when there are none" do
+      job = create(:job, customer: customer)
+      get job_path(job)
+      expect(response.body).to include("No orders yet.")
+      expect(response.body).to include('href="' + new_job_order_path(job) + '"')
+    end
+
+    it "form: has a blank prompt on Customer and None on Job Type" do
+      get new_job_path
+      expect(response.body).to match(%r{<option value="">Select a customer</option>})
+      expect(response.body).to match(%r{<option value="">None</option>})
+    end
+  end
 end

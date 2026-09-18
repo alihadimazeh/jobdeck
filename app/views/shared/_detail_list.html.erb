@@ -1,0 +1,10 @@
+<%# locals: items: (Array<[label, value]>, value may be html_safe), columns: 2 %>
+<% columns = local_assigns.fetch(:columns, 2) %>
+<dl class="grid grid-cols-1 <%= columns == 2 ? "sm:grid-cols-2" : "sm:grid-cols-#{columns}" %> gap-x-12 gap-y-4">
+  <% items.each do |label, value| %>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-wide text-base-content/70"><%= label %></dt>
+      <dd class="text-sm mt-1"><%= value.presence || "—" %></dd>
+    </div>
+  <% end %>
+</dl>

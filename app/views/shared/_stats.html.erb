@@ -1,0 +1,12 @@
+<%# locals: items: (Array<{title:, value:, desc: nil}>) %>
+<div class="stats stats-vertical sm:stats-horizontal border border-base-300 w-full">
+  <% items.each do |item| %>
+    <div class="stat">
+      <div class="stat-title"><%= item[:title] %></div>
+      <div class="stat-value text-2xl"><%= item[:value] %></div>
+      <% if item[:desc].present? %>
+        <div class="stat-desc"><%= item[:desc] %></div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

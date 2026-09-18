@@ -81,4 +81,48 @@ RSpec.describe "Orders", type: :request do
       expect(response).to redirect_to(job_orders_path(job))
     end
   end
+
+  describe "restyled UI (Step 12)" do
+    it "index: renders the page header, a status badge per row, and the row-actions popover trigger" do
+      order = create(:order, job: job, customer: customer, status: :invoiced)
+      get job_orders_path(job)
+
+      expect(response.body).to include("Orders for #{job.title}")
+      expect(response.body).to include('href="' + new_job_order_path(job) + '"')
+      expect(response.body).to match(/badge badge-soft badge-warning">\s*Invoiced/)
+      expect(response.body).to include("popovertarget=\"row-actions-order_#{order.id}\"")
+    end
+
+    it "show: renders the detail list and a totals footer when there are line items" do
+      order = create(:order, job: job, customer: customer)
+      create(:line_item, order: order, description: "Grout")
+
+      get order_path(order)
+
+      expect(response.body).to include('<dt class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Subtotal</dt>')
+      expect(response.body).to include("Grout")
+      expect(response.body).to include("<tfoot>")
+    end
+
+    it "show: renders an empty state (no tfoot) when there are no line items" do
+      order = create(:order, job: job, customer: customer)
+      get order_path(order)
+
+      expect(response.body).to include("No line items added yet.")
+      expect(response.body).not_to include("<tfoot>")
+    end
+
+    it "form: renders the line-item editor rows with their JS data hooks intact" do
+      order = create(:order, job: job, customer: customer)
+      create(:line_item, order: order)
+
+      get edit_order_path(order)
+
+      expect(response.body).to include('data-order-form-target="lineItemRow"')
+      expect(response.body).to include("data-line-quantity")
+      expect(response.body).to include("data-line-total")
+      expect(response.body).to include('data-order-form-target="lineItemTemplate"')
+      expect(response.body).to include("NEW_RECORD")
+    end
+  end
 end

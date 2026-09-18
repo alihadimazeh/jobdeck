@@ -1,32 +1,18 @@
 <% content_for :title, "Quotes for #{@lead.title}" %>
-<% content_for :breadcrumbs do %>
-  <%= link_to "Leads", leads_path %> &rsaquo; <%= link_to @lead.title, @lead %> &rsaquo; Quotes
+
+<%= render partial: "shared/page_header", locals: {
+      title: "Quotes for #{@lead.title}",
+      breadcrumbs: [ [ "Leads", leads_path ], [ @lead.title, lead_path(@lead) ] ],
+      action: { label: "New Quote", path: new_lead_quote_path(@lead) }
+    } %>
+
+<%= render "shared/table", { columns: [ "Quote #", "Status", "Issued", "Total", "" ] } do %>
+  <% if @quotes.any? %>
+    <%= render @quotes %>
+  <% else %>
+    <%= render partial: "shared/empty_state", locals: {
+          title: "No quotes yet.", colspan: 5,
+          cta: { label: "Add the first one", path: new_lead_quote_path(@lead) }
+        } %>
+  <% end %>
 <% end %>
-<% content_for :page_heading, "Quotes for #{@lead.title}" %>
-
-<div class="flex justify-end mb-6">
-  <%= link_to "New Quote", new_lead_quote_path(@lead), class: "rounded-md px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium" %>
-</div>
-
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Quote #</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Issued</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
-        <th class="px-6 py-3"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      <% if @quotes.any? %>
-        <%= render @quotes %>
-      <% else %>
-        <tr>
-          <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">No quotes yet. <%= link_to "Add the first one", new_lead_quote_path(@lead), class: "text-amber-600 hover:underline" %>.</td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>

@@ -115,4 +115,59 @@ RSpec.describe "Quotes", type: :request do
       expect(Job.where(lead: lead).count).to eq(1)
     end
   end
+
+  describe "restyled UI (Step 11)" do
+    it "index: renders the page header, a status badge per row, and the row-actions popover trigger" do
+      quote = create(:quote, lead: lead, customer: customer, status: :sent)
+      get lead_quotes_path(lead)
+
+      expect(response.body).to include("Quotes for #{lead.title}")
+      expect(response.body).to include('href="' + new_lead_quote_path(lead) + '"')
+      expect(response.body).to match(/badge badge-soft badge-info">\s*Sent/)
+      expect(response.body).to include("popovertarget=\"row-actions-quote_#{quote.id}\"")
+    end
+
+    it "show: renders the detail list, room/line-item tables with a totals footer, and Accept Quote only while draft/sent" do
+      quote = create(:quote, :with_line_items, lead: lead, customer: customer, status: :draft)
+      create(:room, quote: quote, name: "Kitchen")
+
+      get quote_path(quote)
+
+      expect(response.body).to include('<dt class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Subtotal</dt>')
+      expect(response.body).to include("Kitchen")
+      expect(response.body).to include("<tfoot>")
+      expect(response.body).to include(">Accept Quote<")
+
+      accepted = create(:quote, lead: lead, customer: customer, status: :accepted)
+      get quote_path(accepted)
+      expect(response.body).not_to include(">Accept Quote<")
+    end
+
+    it "show: renders empty states for Rooms and Line Items (no tfoot) when there are none" do
+      quote = create(:quote, lead: lead, customer: customer)
+      get quote_path(quote)
+
+      expect(response.body).to include("No rooms added yet.")
+      expect(response.body).to include("No line items added yet.")
+      expect(response.body).not_to include("<tfoot>")
+    end
+
+    it "form: renders the room/line-item editor rows with their JS data hooks intact" do
+      quote = create(:quote, lead: lead, customer: customer)
+      create(:room, quote: quote)
+      create(:quote_line_item, quote: quote)
+
+      get edit_quote_path(quote)
+
+      expect(response.body).to include('data-quote-form-target="roomRow"')
+      expect(response.body).to include("data-room-length")
+      expect(response.body).to include("data-room-area")
+      expect(response.body).to include('data-quote-form-target="lineItemRow"')
+      expect(response.body).to include("data-line-quantity")
+      expect(response.body).to include("data-line-total")
+      expect(response.body).to include('data-quote-form-target="roomTemplate"')
+      expect(response.body).to include('data-quote-form-target="lineItemTemplate"')
+      expect(response.body).to include("NEW_RECORD")
+    end
+  end
 end

@@ -1,0 +1,23 @@
+<%# Rendered once inside the daisyUI drawer-side (app/views/layouts/application.html.erb,
+    Step 6) - daisyUI's `lg:drawer-open` makes that single element behave as a permanent
+    rail >=lg and a toggleable overlay below it, so there's no separate desktop/mobile copy. %>
+<div class="flex flex-col h-full w-56 bg-neutral text-neutral-content">
+  <div class="px-5 py-6 flex items-center gap-3">
+    <div class="grid grid-cols-2 gap-0.5">
+      <div class="w-2.5 h-2.5 bg-primary rounded-sm"></div>
+      <div class="w-2.5 h-2.5 bg-primary/50 rounded-sm"></div>
+      <div class="w-2.5 h-2.5 bg-primary/50 rounded-sm"></div>
+      <div class="w-2.5 h-2.5 bg-primary rounded-sm"></div>
+    </div>
+    <span class="font-semibold tracking-wide text-sm text-neutral-content">Jobdeck</span>
+  </div>
+
+  <nav aria-label="Primary" class="flex-1 px-3 pb-6">
+    <ul class="menu w-full p-0 gap-0.5">
+      <li><%= nav_link "Dashboard", root_path %></li>
+      <li><%= nav_link "Customers", customers_path %></li>
+      <li><%= nav_link "Leads", leads_path %></li>
+      <li><%= nav_link "Jobs", jobs_path %></li>
+    </ul>
+  </nav>
+</div>
