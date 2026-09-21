@@ -6,6 +6,7 @@ class Order < ApplicationRecord
   belongs_to :lead, optional: true
 
   has_many :line_items, dependent: :destroy, inverse_of: :order
+  has_many :activity_notes, as: :notable, dependent: :destroy
 
   validates :status, presence: true
 

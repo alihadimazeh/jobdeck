@@ -9,6 +9,7 @@ class Lead < ApplicationRecord
   has_many :orders, dependent: :restrict_with_error
   has_one  :job,    dependent: :nullify
   has_many :quotes, dependent: :destroy
+  has_many :activity_notes, as: :notable, dependent: :destroy
 
   # Leads still in the pipeline (not converted or lost) with a follow-up date today or
   # earlier. NULL follow_up_date rows are excluded automatically - `<= value` is never

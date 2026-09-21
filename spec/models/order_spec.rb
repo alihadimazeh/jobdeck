@@ -31,6 +31,14 @@ RSpec.describe Order, type: :model do
       order.destroy
       expect(LineItem.exists?(line_item.id)).to be false
     end
+
+    it "destroys its activity notes when destroyed" do
+      order = create(:order)
+      note  = order.activity_notes.create!(body: "test note")
+
+      order.destroy
+      expect(ActivityNote.exists?(note.id)).to be false
+    end
   end
 
   describe "#assign_order_number" do
