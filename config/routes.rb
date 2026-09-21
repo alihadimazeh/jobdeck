@@ -3,8 +3,10 @@ Rails.application.routes.draw do
   resources :jobs do
     resources :orders, shallow: true do
       resources :activity_notes, only: [ :create ]
+      resources :documents,      only: [ :create ]
     end
     resources :activity_notes, only: [ :create ]
+    resources :documents,      only: [ :create ]
   end
   resources :leads do
     resources :quotes, shallow: true do
@@ -13,8 +15,10 @@ Rails.application.routes.draw do
       end
     end
     resources :activity_notes, only: [ :create ]
+    resources :documents,      only: [ :create ]
   end
   resources :activity_notes, only: [ :edit, :update, :destroy ]
+  resources :documents,      only: [ :destroy ]
 
 
   root "dashboard#show"

@@ -1,7 +1,10 @@
-<%# locals: edit_path:, delete_path:, delete_confirm:, label:, id: (unique per row, e.g. dom_id(record)),
-          turbo_frame: nil (delete-button escape hatch - set to "f_top" when this partial renders
+<%# locals: edit_path: nil, delete_path:, delete_confirm:, label:, id: (unique per row, e.g. dom_id(record)),
+          turbo_frame: nil (delete-button escape hatch - set to "_top" when this partial renders
           inside a <turbo-frame>, e.g. ActivityNotes, so the delete request isn't frame-scoped
-          against a frame id that won't exist in the response once the record is gone) %>
+          against a frame id that won't exist in the response once the record is gone)
+
+          edit_path is optional - omit it for a destroy-only resource (e.g. Documents,
+          where re-uploading beats an in-place edit) and the Edit item is skipped. %>
 <div class="text-center">
   <button type="button"
           class="btn btn-ghost btn-sm btn-square"
@@ -19,7 +22,9 @@
       id="row-actions-<%= id %>"
       class="dropdown menu w-36 bg-base-100 rounded-box shadow border border-base-300 p-1"
       style="position-anchor:--row-actions-<%= id %>">
-    <li><%= link_to "Edit", edit_path %></li>
+    <% if local_assigns[:edit_path].present? %>
+      <li><%= link_to "Edit", edit_path %></li>
+    <% end %>
     <li>
       <%= button_to "Delete", delete_path, method: :delete,
             form: { data: { turbo_confirm: delete_confirm, turbo_frame: local_assigns[:turbo_frame] }.compact },
