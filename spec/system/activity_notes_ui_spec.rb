@@ -20,12 +20,13 @@ RSpec.describe "ActivityNotes UI (Milestone 4 - Turbo Frames)", type: :system do
     visit lead_path(lead)
 
     find("button[aria-label='Actions for #{note.body}']").click
-    click_link "Edit"
+    within "#activity_note_#{note.id}" do
+      click_link "Edit"
+      expect(page).to have_field("Note", with: "Original body")
 
-    expect(page).to have_field("Note", with: "Original body")
-
-    fill_in "Note", with: "Updated body"
-    click_button "Save"
+      fill_in "Note", with: "Updated body"
+      click_button "Save"
+    end
 
     expect(page).to have_content("Updated body")
     expect(page).not_to have_content("Original body")
@@ -38,9 +39,11 @@ RSpec.describe "ActivityNotes UI (Milestone 4 - Turbo Frames)", type: :system do
     visit lead_path(lead)
 
     find("button[aria-label='Actions for #{note.body}']").click
-    click_link "Edit"
-    fill_in "Note", with: ""
-    click_button "Save"
+    within "#activity_note_#{note.id}" do
+      click_link "Edit"
+      fill_in "Note", with: ""
+      click_button "Save"
+    end
 
     expect(page).to have_content("Body can't be blank")
     expect(page).to have_field("Note", with: "")
