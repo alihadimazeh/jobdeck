@@ -1,7 +1,10 @@
 Rails.application.routes.draw do
   resources :customers
   resources :jobs do
-    resources :orders, shallow: true
+    resources :orders, shallow: true do
+      resources :activity_notes, only: [ :create ]
+    end
+    resources :activity_notes, only: [ :create ]
   end
   resources :leads do
     resources :quotes, shallow: true do
@@ -9,7 +12,9 @@ Rails.application.routes.draw do
         patch :accept
       end
     end
+    resources :activity_notes, only: [ :create ]
   end
+  resources :activity_notes, only: [ :edit, :update, :destroy ]
 
 
   root "dashboard#show"

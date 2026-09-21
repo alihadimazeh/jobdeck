@@ -1,4 +1,7 @@
-<%# locals: edit_path:, delete_path:, delete_confirm:, label:, id: (unique per row, e.g. dom_id(record)) %>
+<%# locals: edit_path:, delete_path:, delete_confirm:, label:, id: (unique per row, e.g. dom_id(record)),
+          turbo_frame: nil (delete-button escape hatch - set to "f_top" when this partial renders
+          inside a <turbo-frame>, e.g. ActivityNotes, so the delete request isn't frame-scoped
+          against a frame id that won't exist in the response once the record is gone) %>
 <div class="text-center">
   <button type="button"
           class="btn btn-ghost btn-sm btn-square"
@@ -19,7 +22,7 @@
     <li><%= link_to "Edit", edit_path %></li>
     <li>
       <%= button_to "Delete", delete_path, method: :delete,
-            form: { data: { turbo_confirm: delete_confirm } },
+            form: { data: { turbo_confirm: delete_confirm, turbo_frame: local_assigns[:turbo_frame] }.compact },
             class: "text-error w-full text-left" %>
     </li>
   </ul>
