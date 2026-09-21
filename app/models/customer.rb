@@ -8,6 +8,7 @@ class Customer < ApplicationRecord
   has_many :orders, dependent: :restrict_with_error
   has_many :leads,  dependent: :destroy
   has_many :quotes, dependent: :destroy
+  has_many :activity_notes, as: :notable, dependent: :destroy
 
   scope :visible, -> { where.not(status: :archived) }
 
@@ -17,5 +18,13 @@ class Customer < ApplicationRecord
 
   def archive!
     update!(status: "archived")
+  end
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[first_name last_name phone email status]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    []
   end
 end

@@ -17,6 +17,29 @@ RSpec.describe "Customers", type: :request do
       expect(response.body).to include(visible.full_name)
       expect(response.body).not_to include(archived.full_name)
     end
+
+    it "filters by the search query across name/phone/email" do
+      match     = create(:customer, first_name: "Zebra", last_name: "Findme")
+      no_match  = create(:customer, first_name: "Other", last_name: "Person")
+
+      get customers_path, params: { q: { first_name_or_last_name_or_phone_or_email_cont: "Findme" } }
+
+      expect(response.body).to include(match.full_name)
+      expect(response.body).not_to include(no_match.full_name)
+    end
+
+    it "paginates when there are more customers than one page" do
+      customers = create_list(:customer, 21)
+      last_customer = customers.max_by(&:id)
+
+      get customers_path
+      expect(response.body).to include("page=2")
+      expect(response.body).not_to include(last_customer.full_name)
+
+      get customers_path, params: { page: 2 }
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include(last_customer.full_name)
+    end
   end
 
   describe "GET /customers/:id" do
