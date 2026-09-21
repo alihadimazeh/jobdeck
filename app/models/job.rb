@@ -8,4 +8,5 @@ class Job < ApplicationRecord
   belongs_to :lead, optional: true
 
   has_many :orders, dependent: :restrict_with_error
+  has_many :activity_notes, as: :notable, dependent: :destroy
 end

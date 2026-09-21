@@ -109,5 +109,13 @@ RSpec.describe Lead, type: :model do
       expect(lead.destroy).to be_truthy
       expect(Quote.exists?(quote.id)).to be false
     end
+
+    it "destroys its activity notes when destroyed with no orders in the way" do
+      lead = create(:lead)
+      note = lead.activity_notes.create!(body: "test note")
+
+      expect(lead.destroy).to be_truthy
+      expect(ActivityNote.exists?(note.id)).to be false
+    end
   end
 end
