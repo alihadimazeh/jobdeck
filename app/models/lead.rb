@@ -38,4 +38,12 @@ class Lead < ApplicationRecord
       update!(status: :converted)
     end
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[title status job_type source follow_up_date]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    %w[customer]
+  end
 end
