@@ -9,6 +9,43 @@ RSpec.describe "Leads", type: :request do
       get leads_path
       expect(response).to have_http_status(:success)
     end
+
+    it "filters by the search query across title/customer name" do
+      match_customer = create(:customer, first_name: "Zebra", last_name: "Findme")
+      match    = create(:lead, customer: match_customer, title: "Kitchen retile")
+      no_match = create(:lead, customer: customer, title: "Bathroom job")
+
+      get leads_path, params: { q: { title_or_customer_first_name_or_customer_last_name_cont: "Findme" } }
+
+      expect(response.body).to include(match.title)
+      expect(response.body).not_to include(no_match.title)
+    end
+
+    it "filters by status using the enum's integer value, not its label" do
+      # Regression test: Ransack's *_eq predicate doesn't understand Rails enums - it
+      # naively casts a non-numeric string label via #to_i (e.g. "contacted".to_i == 0),
+      # which would silently match "new" leads instead of raising. The <select> must
+      # submit Lead.statuses' integer values, not the string keys.
+      new_lead       = create(:lead, customer: customer, status: :new)
+      contacted_lead = create(:lead, customer: customer, status: :contacted)
+
+      get leads_path, params: { q: { status_eq: Lead.statuses["contacted"] } }
+
+      expect(response.body).to include(contacted_lead.title)
+      expect(response.body).not_to include(new_lead.title)
+    end
+
+    it "paginates when there are more leads than one page" do
+      leads = create_list(:lead, 21, customer: customer)
+      last_lead = leads.max_by(&:id)
+
+      get leads_path
+      expect(response.body).to include("page=2")
+      expect(response.body).not_to include(last_lead.title)
+
+      get leads_path, params: { page: 2 }
+      expect(response.body).to include(last_lead.title)
+    end
   end
 
   describe "GET /leads/:id" do
