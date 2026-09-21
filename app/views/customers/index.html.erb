@@ -5,6 +5,12 @@
       action: { label: "New Customer", path: new_customer_path }
     } %>
 
+<%= search_form_for @q, url: customers_path, class: "mb-4 flex gap-2 max-w-sm" do |f| %>
+  <%= f.search_field :first_name_or_last_name_or_phone_or_email_cont,
+        class: "input input-sm w-full", placeholder: "Search customers…" %>
+  <%= f.submit "Search", class: "btn btn-sm" %>
+<% end %>
+
 <%= render "shared/table", { columns: [ "Name", "Phone", "Email", "Status", "" ] } do %>
   <% if @customers.any? %>
     <%= render @customers %>
@@ -15,3 +21,5 @@
         } %>
   <% end %>
 <% end %>
+
+<%== @pagy.series_nav if @pagy.pages > 1 %>
