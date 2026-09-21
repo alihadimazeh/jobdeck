@@ -1,0 +1,16 @@
+<%# locals: documentable: %>
+<%= render "shared/card", { title: "Documents", padded: false } do %>
+  <div class="p-6 border-b border-base-300">
+    <%# Document.new(documentable:), not documentable.documents.build - the latter would
+        pollute the association's cached target the same way it did for ActivityNote's
+        section partial (see that file's comment / TODO.md -> Bugs for the full story). %>
+    <%= render "documents/form", documentable: documentable, document: Document.new(documentable: documentable) %>
+  </div>
+  <div class="px-6 pb-2">
+    <% if documentable.documents.any? %>
+      <%= render documentable.documents.order(created_at: :desc) %>
+    <% else %>
+      <%= render partial: "shared/empty_state", locals: { title: "No documents yet." } %>
+    <% end %>
+  </div>
+<% end %>

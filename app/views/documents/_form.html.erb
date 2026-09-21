@@ -1,0 +1,20 @@
+<%# locals: documentable:, document: %>
+<%= form_with model: document, url: polymorphic_path([ documentable, :documents ]), multipart: true, class: "space-y-3" do |form| %>
+  <%= render partial: "shared/form_errors", locals: { model: document } %>
+
+  <fieldset class="fieldset py-0">
+    <%= form.label :file, "File", class: "label" %>
+    <%= form.file_field :file, class: "file-input w-full" %>
+  </fieldset>
+
+  <%= render partial: "shared/field", locals: { form: form, attr: :label } %>
+  <%= render partial: "shared/field", locals: {
+        form: form, attr: :document_type, as: :select,
+        collection: Document.document_types.keys.map { |k| [ k.titleize, k ] },
+        select_options: { include_blank: "None" }
+      } %>
+
+  <div class="flex justify-end">
+    <%= form.submit "Add Document", class: "btn btn-primary btn-sm", data: { turbo_submits_with: "Uploading…" } %>
+  </div>
+<% end %>
