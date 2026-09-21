@@ -7,6 +7,7 @@ class Order < ApplicationRecord
 
   has_many :line_items, dependent: :destroy, inverse_of: :order
   has_many :activity_notes, as: :notable, dependent: :destroy
+  has_many :documents, as: :documentable, dependent: :destroy
 
   validates :status, presence: true
 

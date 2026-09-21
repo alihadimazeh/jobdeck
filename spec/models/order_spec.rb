@@ -39,6 +39,14 @@ RSpec.describe Order, type: :model do
       order.destroy
       expect(ActivityNote.exists?(note.id)).to be false
     end
+
+    it "destroys its documents when destroyed" do
+      order = create(:order)
+      document = create(:document, documentable: order)
+
+      order.destroy
+      expect(Document.exists?(document.id)).to be false
+    end
   end
 
   describe "#assign_order_number" do

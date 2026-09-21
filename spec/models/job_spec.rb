@@ -61,5 +61,13 @@ RSpec.describe Job, type: :model do
       expect(job.destroy).to be_truthy
       expect(ActivityNote.exists?(note.id)).to be false
     end
+
+    it "destroys its documents when destroyed with no orders in the way" do
+      job = create(:job)
+      document = create(:document, documentable: job)
+
+      expect(job.destroy).to be_truthy
+      expect(Document.exists?(document.id)).to be false
+    end
   end
 end
