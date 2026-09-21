@@ -29,7 +29,7 @@
       <input id="app-drawer" type="checkbox" class="drawer-toggle" data-drawer-target="checkbox">
 
       <%# Drawer content: navbar (mobile only) + header + page body %>
-      <div class="drawer-content flex flex-col h-full min-w-0">
+      <div class="drawer-content flex flex-col h-full min-h-0 min-w-0">
         <%= render "layouts/navbar" %>
 
         <header class="bg-base-100 border-b border-base-300 px-4 sm:px-8 py-4">
@@ -43,7 +43,7 @@
           <% end %>
         </header>
 
-        <main id="main" tabindex="-1" class="flex-1 overflow-auto p-4 sm:p-8">
+        <main id="main" tabindex="-1" class="flex-1 min-h-0 overflow-auto p-4 sm:p-8">
           <%= render "shared/flash" %>
           <%= yield %>
         </main>
