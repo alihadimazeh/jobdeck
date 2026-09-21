@@ -6,6 +6,7 @@
     } %>
 
 <%= search_form_for @q, url: leads_path, class: "mb-4 flex gap-2 max-w-lg" do |f| %>
+  <%= f.label :title_or_customer_first_name_or_customer_last_name_cont, "Search leads", class: "sr-only" %>
   <%= f.search_field :title_or_customer_first_name_or_customer_last_name_cont,
         class: "input input-sm w-full", placeholder: "Search leads…" %>
   <%# Ransack's *_eq predicate on an enum column needs the underlying integer, not the
