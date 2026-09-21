@@ -9,4 +9,5 @@ class Job < ApplicationRecord
 
   has_many :orders, dependent: :restrict_with_error
   has_many :activity_notes, as: :notable, dependent: :destroy
+  has_many :documents, as: :documentable, dependent: :destroy
 end

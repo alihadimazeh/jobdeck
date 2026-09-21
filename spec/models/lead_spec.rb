@@ -117,5 +117,13 @@ RSpec.describe Lead, type: :model do
       expect(lead.destroy).to be_truthy
       expect(ActivityNote.exists?(note.id)).to be false
     end
+
+    it "destroys its documents when destroyed with no orders in the way" do
+      lead = create(:lead)
+      document = create(:document, documentable: lead)
+
+      expect(lead.destroy).to be_truthy
+      expect(Document.exists?(document.id)).to be false
+    end
   end
 end
