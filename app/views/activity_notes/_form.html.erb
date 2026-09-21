@@ -1,0 +1,19 @@
+<%# locals: notable:, activity_note: %>
+<%= form_with model: activity_note,
+      url: (activity_note.new_record? ? polymorphic_path([ notable, :activity_notes ]) : activity_note_path(activity_note)),
+      class: "space-y-3" do |form| %>
+  <%= render partial: "shared/form_errors", locals: { model: activity_note } %>
+
+  <%= render partial: "shared/field", locals: { form: form, attr: :body, as: :textarea, label: "Note" } %>
+  <%= render partial: "shared/field", locals: { form: form, attr: :author, label: "Author" } %>
+
+  <label class="label cursor-pointer gap-2 w-fit">
+    <%= form.check_box :pinned, class: "checkbox checkbox-sm" %>
+    <span class="label-text">Pinned</span>
+  </label>
+
+  <div class="flex justify-end">
+    <%= form.submit activity_note.new_record? ? "Add Note" : "Save",
+          class: "btn btn-primary btn-sm", data: { turbo_submits_with: "Saving…" } %>
+  </div>
+<% end %>
