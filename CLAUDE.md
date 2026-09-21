@@ -13,9 +13,14 @@ A simple project management web app for a small construction business (flooring/
   The component/theme layer for the whole UI. See "## Design System" below.
 - **Inter** — self-hosted variable font (`app/assets/fonts/inter/`), no external font
   requests.
-- **Active Storage** for file uploads (PDFs, Excel sheets, images)
-- **Pagy** for pagination — planned, not yet added to the Gemfile
-- **Ransack** for search/filtering — planned, not yet added to the Gemfile
+- **Active Storage** for file uploads (PDFs, Excel sheets, images) — used by `Document`
+- **Pagy** for pagination — wired into the Customer and Lead index pages so far
+  (`Job`/`Quote`/`Order` indexes don't have it yet). See "Search & Pagination" under
+  "## Design System" below for the real (43.x) API, which is a full rewrite of Pagy's
+  classic `Backend`/`Frontend` docs.
+- **Ransack** for search/filtering — same two index pages, same caveat. Every searched
+  model needs explicit `ransackable_attributes`/`ransackable_associations` class methods
+  (a security allow-list) — see `Customer`/`Lead`.
 - Turbo + Stimulus (Rails defaults, no separate frontend framework)
 - **RSpec** (`rspec-rails`, `factory_bot_rails`) — the test framework for the model layer.
   See "## Testing" below.
@@ -50,14 +55,18 @@ left in place as-is and still runs (`bin/rails test`), but it is not where new t
   regression checks on `Lead`/`Job`/`Quote`/`Order` (guards against another integer-backed enum
   reorder mistake like the `Lead.source` one).
 - Every controller has a request spec (`spec/requests/`): `Customers`, `Leads`, `Jobs`, `Orders`,
-  `Quotes` — full CRUD per controller plus `QuotesController#accept` (happy path, the
-  `only_one_accepted_quote_per_lead` alert, and the re-conversion-guard alert). Writing these
-  turned up a real gap, since fixed — `Customer` had no model-level validations at all, so blank
-  required fields were silently accepted instead of hitting the controller's 422 path; see
-  TODO.md → Bugs for the fix.
-- **129 examples, 0 failures** (`bundle exec rspec`). Not yet covered: system/feature-level specs
-  (the JS-driven estimation tool, dynamic room/line-item row add/remove) — the old Minitest system
-  test stub (`test/system/smokes_test.rb`) is empty and unused.
+  `Quotes`, `ActivityNotes`, `Documents` — full CRUD per controller plus `QuotesController#accept`
+  (happy path, the `only_one_accepted_quote_per_lead` alert, and the re-conversion-guard alert).
+  Writing these turned up a real gap, since fixed — `Customer` had no model-level validations at
+  all, so blank required fields were silently accepted instead of hitting the controller's 422
+  path; see TODO.md → Bugs for the fix.
+- `ActivityNote`/`Document` also have model specs and a small system-spec pair
+  (`spec/system/*_ui_spec.rb`) alongside their request specs, plus a `spec/factories/documents.rb`
+  that attaches a real fixture file (`spec/fixtures/files/sample.pdf`).
+- **267 examples, 0 failures** (`bundle exec rspec`, excluding `spec/system/**`). System specs
+  (Capybara/Selenium) don't run in this sandbox — no real browser is available here
+  (`Selenium::WebDriver::Error::WebDriverError`), a pre-existing environment limitation, not a
+  regression; they're written and expected to pass wherever a browser driver is available.
 
 ## Domain Overview
 
@@ -69,7 +78,10 @@ Customer → Lead → Quote (with Room measurements) → Job → Order(s) → Li
 
 A **Customer** walks in or calls. A **Lead** is logged for them describing what they're interested in. One or more **Quotes** are created for the lead — each includes room measurements (the estimation tool calculates sq footage and multiplies by labor/material rates to produce line items). If the customer accepts the quote, it converts into a **Job** and the quote's line items are seeded into the first **Order**. A Job can have additional Orders (e.g. change orders, materials orders), and each Order is made up of **LineItems**.
 
-At any point, **Notes** and **Documents** (PDFs, Excel sheets, photos) can be attached to a Lead, Job, or Order via polymorphic associations.
+At any point, **ActivityNotes** (a running log/timeline entry) and **Documents** (PDFs, Excel
+sheets, photos) can be attached to a Lead, Job, or Order via polymorphic associations. These are
+deliberately separate from the free-text `notes` column that already exists on `Quote`/`Order` —
+see "### ActivityNote (polymorphic)" below for why it isn't just called `Note`.
 
 ### Naming notes
 - "Job" is used instead of "Project" — it matches how contractors actually talk ("I've got 3 jobs this week").
@@ -100,11 +112,16 @@ notes             text
 
 Relationships:
 ```ruby
-has_many :leads
-has_many :jobs
-has_many :quotes   # through leads, but direct FK for convenience
-has_many :orders
+has_many :jobs,   dependent: :restrict_with_error
+has_many :orders, dependent: :restrict_with_error
+has_many :leads,  dependent: :destroy
+has_many :quotes  # through leads, but direct FK for convenience — dependent: :destroy
+has_many :activity_notes, as: :notable, dependent: :destroy
 ```
+
+`activity_notes` was added deliberately ahead of `Document`/views for it — Customer doesn't have
+a `documents` association yet, and the Customer show page doesn't render the ActivityNote section
+partial yet either. Wiring that up (association exists, UI doesn't) is open work, not a bug.
 
 ---
 
@@ -130,10 +147,11 @@ description       text
 Relationships:
 ```ruby
 belongs_to :customer
-has_one    :job
-has_many   :quotes
-has_many   :notes,     as: :notable
-has_many   :documents, as: :documentable
+has_many :orders, dependent: :restrict_with_error
+has_one  :job,    dependent: :nullify
+has_many :quotes, dependent: :destroy
+has_many :activity_notes, as: :notable, dependent: :destroy
+has_many :documents,      as: :documentable, dependent: :destroy
 ```
 
 A Lead can have multiple Quotes (e.g. a revised estimate, or separate quotes for tile vs. flooring). At most one of them should be in the `accepted` state.
@@ -254,9 +272,9 @@ Relationships:
 ```ruby
 belongs_to :customer
 belongs_to :lead, optional: true
-has_many   :orders
-has_many   :notes,     as: :notable
-has_many   :documents, as: :documentable
+has_many   :orders, dependent: :restrict_with_error
+has_many   :activity_notes, as: :notable, dependent: :destroy
+has_many   :documents,      as: :documentable, dependent: :destroy
 ```
 
 Note: job-site address fields are separate from the customer's address since the work location may differ from the customer's home/billing address.
@@ -288,9 +306,9 @@ Relationships:
 belongs_to :job
 belongs_to :customer
 belongs_to :lead, optional: true
-has_many   :line_items
-has_many   :notes,     as: :notable
-has_many   :documents, as: :documentable
+has_many   :line_items, dependent: :destroy, inverse_of: :order
+has_many   :activity_notes, as: :notable, dependent: :destroy
+has_many   :documents,      as: :documentable, dependent: :destroy
 ```
 
 Key behavior:
@@ -325,13 +343,18 @@ Key behavior: `total = quantity * unit_price`, calculated before save.
 
 ---
 
-### Note (polymorphic)
-Free-text notes attachable to a Lead, Job, or Order. One model/controller/view reused across all three via `notable_type` / `notable_id`.
+### ActivityNote (polymorphic)
+A running log/timeline entry attachable to a Lead, Job, or Order. One model/controller/view
+reused across all three via `notable_type` / `notable_id`. **Named `ActivityNote`, not `Note`**,
+specifically to avoid colliding with the pre-existing free-text `notes` column on `Quote` and
+`Order` — those stay as-is (a single free-text field on the record itself), this is a separate
+one-to-many log. Rendered via `activity_notes/_section.html.erb`, included on `leads/show`,
+`jobs/show`, `orders/show` (not yet on `customers/show` — see the Customer model section above).
 
 ```ruby
-# notes table
-notable_type      string, null: false   # "Lead" | "Job" | "Order"
-notable_id        integer, null: false
+# activity_notes table
+notable_type      string, null: false   # "Lead" | "Job" | "Order" (also "Customer" at the model
+notable_id        integer, null: false  # level, but no view renders it there yet)
 body              text, null: false
 author            string
 pinned            boolean, null: false, default: false
@@ -342,10 +365,18 @@ Relationships:
 belongs_to :notable, polymorphic: true
 ```
 
+Validations: `body` presence.
+
+Built as a Turbo Frame per row (`turbo_frame_tag activity_note`) so inline edit/delete don't
+reload the page; the row's own delete link needs `data-turbo-frame="_top"` to escape its own
+frame on destroy (see `shared/_row_actions.html.erb`'s optional `turbo_frame:` local).
+
 ---
 
 ### Document (polymorphic + Active Storage)
-File uploads (PDFs, Excel sheets, images) attachable to a Lead, Job, or Order. Same polymorphic pattern as Note.
+File uploads (PDFs, Excel sheets, images) attachable to a Lead, Job, or Order. Same polymorphic
+pattern as ActivityNote — rendered via `documents/_section.html.erb` on the same three show
+pages (also not yet on Customer's).
 
 ```ruby
 # documents table
@@ -362,9 +393,24 @@ Relationships:
 ```ruby
 belongs_to :documentable, polymorphic: true
 has_one_attached :file
+enum :document_type, { estimate: "estimate", invoice: "invoice", plan: "plan",
+                        contract: "contract", photo: "photo", other: "other" }, suffix: true
 ```
 
-Validations: restrict accepted content types to PDF, XLS/XLSX, JPEG, PNG. Max file size 50MB.
+Validations (`acceptable_file`, a single custom validation): `file` must be attached; its
+`content_type` must be one of `Document::ACCEPTED_TYPES` (PDF, XLS/XLSX, JPEG, PNG); its
+`blob.byte_size` must be ≤ `Document::MAX_SIZE` (50MB).
+
+**Gotcha found while testing this**: Active Storage doesn't trust the `content_type:` a form (or
+a test) declares on upload — it re-sniffs the actual file bytes via Marcel and overwrites it. A
+test that reuses a real PDF fixture but *claims* a different content type still gets correctly
+re-identified as `application/pdf`, so exercising the "rejected content type" validation path
+needs a file whose *bytes* are actually a non-accepted type (see `document_spec.rb`).
+
+PDF documents get an inline "View" link (`rails_blob_path(disposition: "inline")`, opens in a
+new tab); every other type gets "Download" (`disposition: "attachment"`). Photo-type (JPEG/PNG)
+documents don't get an inline preview yet even though the browser could render them — open item,
+see TODO.md → "UI/UX Audit findings (2026-09-21)".
 
 ---
 
@@ -380,7 +426,7 @@ Migrations must run in this order due to foreign key dependencies:
 6. `create_jobs` — depends on customers, leads
 7. `create_orders` — depends on customers, leads, jobs
 8. `create_line_items` — depends on orders
-9. `create_notes` — polymorphic, no FK constraints
+9. `create_activity_notes` — polymorphic, no FK constraints
 10. `create_documents` — polymorphic, no FK constraints
 11. `rails active_storage:install` — generates Active Storage tables separately
 
@@ -448,7 +494,10 @@ in "Status Enums Reference" below.
 - **Quotes live on the Lead show page** — there's a "Create Quote" button that opens the quote form, and the page lists all of the lead's quotes. A lead can have several (revisions, or split scopes), but only one can be `accepted`.
 - **Estimation tool on the Quote form** — a Stimulus-powered room calculator where you enter room name + dimensions. It sums sq footage across all rooms and auto-populates labor and material line items (based on rates you enter). Line items remain fully editable after the tool runs.
 - **Quote → Job conversion** is triggered from the Quote show page ("Accept Quote" button). This calls `convert_to_job!` on the Lead, which creates the Job, creates the first Order seeded from the Quote's line items, and sets the Lead status to `converted`.
-- **Notes and Documents** should use shared partials/components since the UI is identical across Lead, Job, and Order — only the polymorphic association target changes.
+- **ActivityNotes and Documents** use shared partials (`activity_notes/_section.html.erb`,
+  `documents/_section.html.erb`) since the UI is identical across Lead, Job, and Order — only
+  the polymorphic association target (`notable:`/`documentable:`) changes. Built and live on
+  those three show pages; not yet on Customer's (see Customer/ActivityNote model sections above).
 - Dashboard should surface: leads needing follow-up, active jobs, and unpaid/outstanding orders.
 
 ## Status Enums Reference
@@ -533,31 +582,40 @@ and a portfolio piece that demonstrates auth, RBAC, and SSO done properly.
 
 ## Design System
 
-The UI has been fully rebuilt on **daisyUI** (branch `feature/ui-foundation-prep`,
-16 chunked steps). This section is the durable reference; the design intent and full
-build history live in `~/.claude/plans/using-the-design-skill-immutable-hippo.md`
-(original design plan) and `~/.claude/plans/let-s-tackle-the-ui-ux-fancy-pnueli.md`
-(chunked execution plan + what actually shipped at each step).
+The UI has been fully rebuilt on **daisyUI**. Built on `feature/ui-foundation-prep`
+(16 chunked steps), then retinted on `feature/navy-blue-theme`; both merged to `main`
+via PR #42 (2026-09-18) — the navy + blue palette below is what's actually live, not a
+trial. This section is the durable reference; the design intent and full build history
+live in `~/.claude/plans/using-the-design-skill-immutable-hippo.md` (original design
+plan) and `~/.claude/plans/let-s-tackle-the-ui-ux-fancy-pnueli.md` (chunked execution
+plan + what actually shipped at each step) — neither covers the post-merge palette swap
+or the two small table polish items below, which happened after that plan finished.
 
 ### Theme & rule
 
-- One custom daisyUI theme, `jobdeck` — "industrial slate + safety orange" — defined
-  entirely in `app/assets/tailwind/application.css` via `@plugin "./daisyui-theme.mjs"`.
-  Light only for now; every color reference in view code is a semantic token
-  (`bg-base-200`, `text-base-content`, `badge-success`, …), never raw hex or Tailwind's
-  default scales, so a `jobdeck-dark` theme is a later drop-in with zero view changes.
+- One custom daisyUI theme, `jobdeck` — "navy + blue CTA" — defined entirely in
+  `app/assets/tailwind/application.css` via `@plugin "./daisyui-theme.mjs"`. Light only
+  for now; every color reference in view code is a semantic token (`bg-base-200`,
+  `text-base-content`, `badge-success`, …), never raw hex or Tailwind's default scales,
+  so a `jobdeck-dark` theme is a later drop-in with zero view changes.
 - **Rule: always use daisyUI's semantic classes, never `amber-*`/`gray-*`/raw hex in a
-  view.** (`amber-*` was the old accent before this redesign — if you see it, it's a
-  regression.)
+  view.** (`amber-*` was the pre-redesign accent — if you see it, it's a regression.)
 - Font is self-hosted **Inter** (`app/assets/fonts/inter/`, variable weight) — no
   external font requests, works offline on a job site.
+- The original redesign shipped an "industrial slate + safety orange" palette first
+  (primary `#EA580C`); it was retinted to navy + blue right after, on its own branch,
+  precisely so the contrast/badge-variant work below didn't need re-checking per
+  resource. The orange values still exist in git history (`cdc4e38` on
+  `feature/ui-foundation-prep`) if ever needed again, but nothing on `main` uses them.
 
 | Role | Hex | Used for |
 |---|---|---|
 | `base-100` / `base-200` / `base-300` | `#FFFFFF` / `#F8FAFC` / `#E2E8F0` | cards & tables / app canvas / hairline borders |
 | `base-content` | `#0F172A` | body text (muted text is `text-base-content/70`) |
-| `primary` | `#EA580C` | primary actions |
-| `neutral` | `#1E293B` | sidebar |
+| `primary` | `#0369A1` | primary actions / CTA — white button text measures 5.93:1 |
+| `secondary` | `#334155` | secondary buttons / quiet emphasis |
+| `accent` | `#075985` | hover/active state on primary |
+| `neutral` | `#0F172A` | sidebar (navy) |
 | `info` / `success` / `warning` / `error` | `#1D4ED8` / `#15803D` / `#B45309` / `#DC2626` | status badges — see `ApplicationHelper::STATUS_VARIANTS` for the status → variant map |
 
 ### Shared components (`app/views/shared/`)
@@ -567,9 +625,14 @@ its last segment duplicates the title), `_form_container`, `_form_errors`
 (`role="alert"`, autofocused, links each error to its field), `_field` (label/input/
 select/textarea + hint/error — not used by the 12-column line-item/room editor rows,
 those stay hand-written because they're the JS-templated ones), `_card`, `_table`
-(optional `footer:` for a real `<tfoot>` totals row), `_detail_list`, `_stats`, `_badge`,
-`_row_actions` (the kebab menu — daisyUI's Popover API, not JS), `_empty_state`, `_flash`.
-Plus `layouts/_sidebar` and `layouts/_navbar` for the app shell.
+(optional `footer:` for a real `<tfoot>` totals row; every table renders through this one
+partial, so its rows are zebra-striped app-wide via a single CSS rule —
+`.table tbody tr:nth-child(even)` in `application.css`, `color-mix()` off `base-content`
+rather than daisyUI's own `table-zebra` class so the stripe doesn't reuse `base-200`,
+which is already the page canvas color), `_detail_list`, `_stats`, `_badge`,
+`_row_actions` (the kebab menu — daisyUI's Popover API, not JS; the trigger button is
+centered in its column, not right-aligned), `_empty_state`, `_flash`. Plus
+`layouts/_sidebar` and `layouts/_navbar` for the app shell.
 
 Note the two block-rendering partials' calling convention: `render "shared/card", { title:
 "X" } do ... end` (bare string + plain hash), **not** `render partial:, locals:` — the
@@ -601,16 +664,39 @@ resource, e.g. a Quote, still highlights its parent Leads/Jobs nav item).
 needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and
 outstanding orders (`Order.outstanding`), each a 5-row preview with a true total count.
 
+### Search & Pagination (Ransack + Pagy)
+
+Wired into the **Customer and Lead index pages only** — `Job`/`Quote`/`Order` indexes are still
+plain unfiltered/unpaginated `render @collection` (see TODO.md for that gap).
+
+- Controller pattern: `@q = Model.ransack(params[:q])` then `@pagy, @records =
+  pagy(@q.result(distinct: true))`. Every ransack-able model needs explicit
+  `ransackable_attributes`/`ransackable_associations` class methods — Ransack raises
+  `Ransack::InvalidSearchError` without them (a deliberate security allow-list, not boilerplate
+  you can skip).
+- View pattern: `search_form_for @q do |f| ... end`, then `@pagy.series_nav if @pagy.pages > 1`
+  below the results.
+- **Pagy 43.x is a full rewrite** of the classic docs most tutorials show — there's no
+  `Pagy::Backend`/`Pagy::Frontend`/`pagy_nav` helper in this version. `Pagy::Method` is included
+  in `ApplicationController`; `pagy(collection)` returns `[pagy_instance, collection]`; the nav
+  method (`series_nav`) is called directly on that instance in the view.
+- **Real bug found and fixed**: Ransack's `_eq` predicate on an integer-backed `enum` column
+  (e.g. `Lead.status`) doesn't know about Rails enums — it naively casts a non-numeric string
+  label via `String#to_i` (`"contacted".to_i == 0`), so a `<select>` built from
+  `Lead.statuses.keys` silently matched "new" leads regardless of what was picked, with no error.
+  Fix: build the `<select>` from `Lead.statuses` **values** (the integers), not the keys — see
+  `leads/index.html.erb` and its regression spec in `leads_spec.rb`. Worth checking for the same
+  trap on any future enum-column filter.
+
 ### Not done yet
 
 - **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
-- **A different color scheme** — trying "navy + blue CTA" instead of the current
-  "industrial slate + safety orange" is tracked in `TODO.md` → Follow-up PRs,
-  deliberately deferred until after this redesign.
-- **Shared Notes/Documents UI** — blocked on those models not existing yet (Phase 4).
+- **ActivityNote/Document UI on Customer's show page** — the `activity_notes` association exists
+  on `Customer` but no view renders it there yet; `Customer` has no `documents` association at
+  all yet either.
+- **Ransack/Pagy on Job/Quote/Order indexes** — see "Search & Pagination" above.
 - **Role-based nav/action-button gating** — blocked on the auth work (Phase 5) below;
   the shell is built to have `policy(record).action?` checks layered in later.
 - **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
   (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
   `before_validation` normalization and touches both Quote's and Order's show pages.
-- Pagy/Ransack integration into the index pages (see Tech Stack above — not added yet).
