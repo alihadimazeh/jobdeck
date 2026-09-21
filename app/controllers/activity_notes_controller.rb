@@ -55,11 +55,11 @@ class ActivityNotesController < ApplicationController
   def set_notable
     @notable = if params[:lead_id]
                  Lead.find(params[:lead_id])
-               elsif params[:order_id]
+    elsif params[:order_id]
                  Order.find(params[:order_id])
-               elsif params[:job_id]
+    elsif params[:job_id]
                  Job.find(params[:job_id])
-               end
+    end
   end
 
   def set_activity_note
