@@ -38,11 +38,11 @@ class DocumentsController < ApplicationController
   def set_documentable
     @documentable = if params[:lead_id]
                        Lead.find(params[:lead_id])
-                     elsif params[:order_id]
+    elsif params[:order_id]
                        Order.find(params[:order_id])
-                     elsif params[:job_id]
+    elsif params[:job_id]
                        Job.find(params[:job_id])
-                     end
+    end
   end
 
   def set_document
