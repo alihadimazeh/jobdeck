@@ -1,4 +1,9 @@
 module ApplicationHelper
+  # No Pagy frontend include needed: this Pagy version (43.x) puts nav-rendering
+  # methods (e.g. #series_nav) directly on the Pagy object #pagy returns in the
+  # controller, called in views as `@pagy.series_nav` - not a separate helper
+  # module. See app/controllers/application_controller.rb (`include Pagy::Method`).
+
   # Status -> daisyUI badge variant, shared across every resource's status enum.
   # "archived" is :error (not :neutral like "inactive") to preserve the visual
   # distinction the old inline badge hash made (customers/_customer.html.erb,
