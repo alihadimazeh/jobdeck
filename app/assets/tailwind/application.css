@@ -39,7 +39,7 @@
   --color-info: #1D4ED8;    --color-info-content: #FFFFFF;
   --color-success: #15803D; --color-success-content: #FFFFFF;
   --color-warning: #B45309; --color-warning-content: #FFFFFF;
-  --color-error: #DC2626;   --color-error-content: #FFFFFF;
+  --color-error: #B91C1C;   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.375rem;
   --radius-field: 0.375rem;   /* buttons, inputs, badges */

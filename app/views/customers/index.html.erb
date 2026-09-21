@@ -6,6 +6,7 @@
     } %>
 
 <%= search_form_for @q, url: customers_path, class: "mb-4 flex gap-2 max-w-sm" do |f| %>
+  <%= f.label :first_name_or_last_name_or_phone_or_email_cont, "Search customers", class: "sr-only" %>
   <%= f.search_field :first_name_or_last_name_or_phone_or_email_cont,
         class: "input input-sm w-full", placeholder: "Search customers…" %>
   <%= f.submit "Search", class: "btn btn-sm" %>

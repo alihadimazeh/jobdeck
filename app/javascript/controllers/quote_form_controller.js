@@ -56,6 +56,7 @@ export default class extends Controller {
 
     const laborRate    = parseFloat(this.laborRateTarget.value)    || 0
     const materialRate = parseFloat(this.materialRateTarget.value) || 0
+    if (laborRate <= 0 && materialRate <= 0) return
 
     this.lineItemRowTargets.forEach(row => {
       row.querySelector("[data-line-destroy]").value = "1"
