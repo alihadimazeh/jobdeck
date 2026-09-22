@@ -80,10 +80,10 @@
 
 <%# Activity notes %>
 <div class="mt-6">
-  <%= render "activity_notes/section", notable: @job %>
+  <%= render "activity_notes/section", notable: @job, activity_note: @activity_note %>
 </div>
 
 <%# Documents %>
 <div class="mt-6">
-  <%= render "documents/section", documentable: @job %>
+  <%= render "documents/section", documentable: @job, document: @document %>
 </div>

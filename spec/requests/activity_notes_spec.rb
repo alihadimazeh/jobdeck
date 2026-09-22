@@ -15,12 +15,16 @@ RSpec.describe "ActivityNotes", type: :request do
       expect(note.author).to eq("Jane")
     end
 
-    it "redirects back to the parent with an alert on invalid params, without creating anything" do
-      params = { activity_note: { body: "" } }
+    it "re-renders the lead with a 422, the field error, and the user's input on invalid params" do
+      params = { activity_note: { body: "", author: "Jane" } }
       expect { post lead_activity_notes_path(lead), params: params }.not_to change(ActivityNote, :count)
 
-      expect(response).to redirect_to(lead_path(lead))
-      expect(flash[:alert]).to eq("Body can't be blank")
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include(lead.title)
+      expect(response.body).to include("Body can&#39;t be blank")
+      expect(response.body).to include('value="Jane"')
+      # The unsaved note must not leak into the list below the form.
+      expect(response.body).to include("No activity yet.")
     end
   end
 
@@ -44,6 +48,18 @@ RSpec.describe "ActivityNotes", type: :request do
       expect { post order_activity_notes_path(order), params: params }.to change(ActivityNote, :count).by(1)
       expect(response).to redirect_to(order_path(order))
       expect(ActivityNote.last.notable).to eq(order)
+    end
+  end
+
+  describe "POST /orders/:order_id/activity_notes with invalid params" do
+    it "re-renders the order's show page with a 422" do
+      job   = create(:job, customer: customer)
+      order = create(:order, job: job, customer: customer)
+      post order_activity_notes_path(order), params: { activity_note: { body: "" } }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include(order.order_number)
+      expect(response.body).to include("Body can&#39;t be blank")
     end
   end
 

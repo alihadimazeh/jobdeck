@@ -1,4 +1,6 @@
 class DocumentsController < ApplicationController
+  include RendersParentShow
+
   before_action :set_documentable, only: %i[ create ]
   before_action :set_document,     only: %i[ destroy ]
 
@@ -6,14 +8,14 @@ class DocumentsController < ApplicationController
   # POST /jobs/:job_id/documents
   # POST /jobs/:job_id/orders/:order_id/documents
   def create
-    @document = @documentable.documents.build(document_params)
+    @document = Document.new(document_params.merge(documentable: @documentable))
 
     respond_to do |format|
       if @document.save
         format.html { redirect_to @document.documentable, notice: "Document added." }
         format.json { render :show, status: :created, location: @document }
       else
-        format.html { redirect_to @documentable, alert: @document.errors.full_messages.to_sentence }
+        format.html { render_parent_show @documentable }
         format.json { render json: @document.errors, status: :unprocessable_content }
       end
     end

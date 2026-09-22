@@ -1,4 +1,6 @@
 class ActivityNotesController < ApplicationController
+  include RendersParentShow
+
   before_action :set_notable,      only: %i[ create ]
   before_action :set_activity_note, only: %i[ edit update destroy ]
 
@@ -6,14 +8,14 @@ class ActivityNotesController < ApplicationController
   # POST /jobs/:job_id/activity_notes
   # POST /jobs/:job_id/orders/:order_id/activity_notes
   def create
-    @activity_note = @notable.activity_notes.build(activity_note_params)
+    @activity_note = ActivityNote.new(activity_note_params.merge(notable: @notable))
 
     respond_to do |format|
       if @activity_note.save
         format.html { redirect_to @activity_note.notable, notice: "Note added." }
         format.json { render :show, status: :created, location: @activity_note }
       else
-        format.html { redirect_to @notable, alert: @activity_note.errors.full_messages.to_sentence }
+        format.html { render_parent_show @notable }
         format.json { render json: @activity_note.errors, status: :unprocessable_content }
       end
     end

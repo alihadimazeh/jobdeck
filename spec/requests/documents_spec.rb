@@ -16,23 +16,26 @@ RSpec.describe "Documents", type: :request do
       expect(document.label).to eq("Site plan")
     end
 
-    it "redirects back to the parent with an alert when no file is given, without creating anything" do
+    it "re-renders the lead with a 422, the field error, and the user's input when no file is given" do
       params = { document: { label: "No file" } }
       expect { post lead_documents_path(lead), params: params }.not_to change(Document, :count)
 
-      expect(response).to redirect_to(lead_path(lead))
-      expect(flash[:alert]).to eq("File must be attached")
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include(lead.title)
+      expect(response.body).to include("File must be attached")
+      expect(response.body).to include('value="No file"')
+      expect(response.body).to include("No documents yet.")
     end
 
-    it "redirects back to the parent with an alert on a disallowed content type" do
+    it "re-renders the lead with a 422 and the field error on a disallowed content type" do
       bad_file = Rack::Test::UploadedFile.new(
         StringIO.new("MZ\x90\x00 not a PDF"), "application/x-msdownload", original_filename: "bad.exe"
       )
       params = { document: { label: "Bad file", file: bad_file } }
       expect { post lead_documents_path(lead), params: params }.not_to change(Document, :count)
 
-      expect(response).to redirect_to(lead_path(lead))
-      expect(flash[:alert]).to eq("File must be a PDF, Excel file, JPEG, or PNG")
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("File must be a PDF, Excel file, JPEG, or PNG")
     end
   end
 

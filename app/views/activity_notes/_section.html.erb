@@ -1,11 +1,11 @@
-<%# locals: notable: %>
+<%# locals: notable:, activity_note: nil %>
 <%= render "shared/card", { title: "Activity", padded: false } do %>
   <div class="p-6 border-b border-base-300">
     <%# ActivityNote.new(notable: notable), not notable.activity_notes.build - the latter
         adds the unsaved record to the association's cached target, which makes the
         .any? check below (and any other later access to notable.activity_notes without
         an explicit .order) incorrectly report true for a record that was never saved. %>
-    <%= render "activity_notes/form", notable: notable, activity_note: ActivityNote.new(notable: notable) %>
+    <%= render "activity_notes/form", notable: notable, activity_note: activity_note || ActivityNote.new(notable: notable) %>
   </div>
   <div class="px-6 pb-2">
     <% if notable.activity_notes.any? %>
