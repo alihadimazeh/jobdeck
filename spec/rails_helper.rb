@@ -58,6 +58,14 @@ RSpec.configure do |config|
     driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ] do |options|
       options.binary = ENV["SE_CHROME_BINARY"] if ENV["SE_CHROME_BINARY"]
     end
+
+    # Every controller requires authentication (app/controllers/concerns/authentication.rb).
+    # This must run in the same hook, after driven_by - spec/support/**/*.rb is required
+    # above, before this RSpec.configure block runs, so a separate `before(:each, type:
+    # :system)` registered from a support file (even via append_before) would still run
+    # before this one and get its session wiped out the moment driven_by (re)initializes
+    # the driver. See spec/support/system_authentication.rb for the sign_in_as helper.
+    sign_in_as(create(:user)) unless self.class.metadata[:skip_authentication]
   end
 
   # RSpec Rails uses metadata to mix in different behaviours to your tests,
