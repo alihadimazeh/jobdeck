@@ -12,6 +12,7 @@
   <div class="sm:col-span-2">
     <span class="sm:hidden text-xs font-medium text-base-content/70">Type</span>
     <%= form.select :item_type, LineItem.item_types.keys.map { |k| [k.titleize, k] }, {},
+          "aria-label": "Type",
           class: "select select-sm w-full" %>
   </div>
   <div class="sm:col-span-4">
