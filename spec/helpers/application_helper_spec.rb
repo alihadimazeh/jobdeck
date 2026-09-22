@@ -107,7 +107,7 @@ RSpec.describe ApplicationHelper, type: :helper do
     it "marks the link active (and aria-current) when the section matches, even for a nested controller" do
       allow(helper).to receive(:controller_name).and_return("quotes")
       html = helper.nav_link("Leads", "/leads")
-      expect(html).to have_selector("a.bg-primary\\/15.text-white[aria-current='page']", text: "Leads")
+      expect(html).to have_selector("a.bg-primary\\/15.text-primary-content[aria-current='page']", text: "Leads")
     end
 
     it "leaves the link inactive when the section does not match" do
