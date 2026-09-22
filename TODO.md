@@ -709,7 +709,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       enforce (PDF, XLS/XLSX, JPEG, PNG, 50MB). Add both, plus `aria-busy` during submit.
 - [x] **U7** — **PR #65** (thumbnail uses original blob; switch to a variant once libvips is in every env) — Photo documents get no inline view — only PDFs get "View". Give JPEG/PNG
       documents an inline thumbnail/"View" link (`documents/_document.html.erb`).
-- [ ] **U8** — Focus handling in the estimation tool: `addRoom`/`addLineItem`
+- [x] **U8** — **PR #66** (system spec verified in headless Chrome: set SE_CHROME_BINARY/SE_CHROMEDRIVER to the v150 pair in ~/.cache/selenium) — Focus handling in the estimation tool: `addRoom`/`addLineItem`
       (`quote_form_controller.js`, `order_form_controller.js`) insert the new row *before* the
       "+ Add" button in DOM order but leave focus on the button, so Tab skips the new row; the
       remove handlers hide the row holding the focused button, dropping focus to `<body>`. Move
