@@ -633,8 +633,12 @@
       next time it's touched.
 
 #### Consistency
-- [ ] Job/Quote/Order indexes don't have the Ransack+Pagy pattern Customer/Lead just got
+- [x] Job/Quote/Order indexes don't have the Ransack+Pagy pattern Customer/Lead just got
       (tracked above under Phase 4 → Search/filtering and Pagination).
+      — Job's index done: same pattern (search by title/customer name + status filter using
+      the enum's integer values + Pagy), `Job.ransackable_attributes`/`ransackable_associations`
+      added, regression spec for the enum-casting bug included. Quote/Order indexes still open
+      (both are nested under a Lead/Job rather than top-level unscoped lists, so lower priority).
 - [ ] `layouts/mailer.html.erb:18,23` and `pwa/manifest.json.erb:20` still hardcode the
       pre-retint "industrial slate + safety orange" palette (`#1E293B`/`#EA580C`) — neither
       file goes through the Tailwind pipeline, so the navy+blue retint (PR #42) never

@@ -3,7 +3,8 @@ class JobsController < ApplicationController
 
   # GET /jobs or /jobs.json
   def index
-    @jobs = Job.includes(:customer)
+    @q = Job.ransack(params[:q])
+    @pagy, @jobs = pagy(@q.result(distinct: true).includes(:customer).order(:id))
   end
 
   # GET /jobs/1 or /jobs/1.json

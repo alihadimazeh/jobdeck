@@ -10,4 +10,12 @@ class Job < ApplicationRecord
   has_many :orders, dependent: :restrict_with_error
   has_many :activity_notes, as: :notable, dependent: :destroy
   has_many :documents, as: :documentable, dependent: :destroy
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[title status job_type start_date end_date]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    %w[customer]
+  end
 end

@@ -4,7 +4,7 @@ class LeadsController < ApplicationController
   # GET /leads or /leads.json
   def index
     @q = Lead.ransack(params[:q])
-    @pagy, @leads = pagy(@q.result(distinct: true))
+    @pagy, @leads = pagy(@q.result(distinct: true).order(:id))
   end
 
   # GET /leads/1 or /leads/1.json
