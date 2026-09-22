@@ -725,7 +725,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 - [x] **U12** — **PR #70** — `shared/_badge.html.erb`: add `whitespace-nowrap` so a longer label never wraps.
 - [x] **U13** — **PR #71** (also: archive! now skips validations so legacy bad emails can't block it) — Customer email format validation: `validates :email, format: { with:
       URI::MailTo::EMAIL_REGEXP }, allow_blank: true` (see "Known bugs / Nice-to-haves" above).
-- [ ] **U14** — Customer phone field client-side `pattern` + `inputmode: "tel"` via `_field`'s
+- [x] **U14** — **PR #72** (the pattern suggested under Nice-to-haves is silently ignored by browsers — unescaped `( )` under the regex `v` flag; PR uses an escaped one) — Customer phone field client-side `pattern` + `inputmode: "tel"` via `_field`'s
       `options:` (see "Known bugs / Nice-to-haves" above).
 
 **In flight elsewhere:** Job index search + pagination — PR #56 (another session).
