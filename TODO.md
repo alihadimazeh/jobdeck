@@ -689,7 +689,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       Fix: re-render the parent's show page (status 422) with the invalid record bound into the
       section's form so the error summary fires. Supersedes the Documents item under
       "UI/UX Audit findings → Consistency" above.
-- [ ] **U2** ⚠ — Delete the dead `content_for?(:breadcrumbs)` / `content_for?(:page_heading)`
+- [x] **U2** ⚠ — **PR #59** — Delete the dead `content_for?(:breadcrumbs)` / `content_for?(:page_heading)`
       block in `layouts/application.html.erb` (~lines 35-42). No view ever sets either (every page
       uses `shared/_page_header`), so an empty bordered `<header>` banner landmark renders on
       every page.
