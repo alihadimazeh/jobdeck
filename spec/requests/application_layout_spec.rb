@@ -28,12 +28,16 @@ RSpec.describe "Application layout", type: :request do
     expect(response.body).to include(%(href="#{jobs_path}"))
   end
 
-  it "keeps the breadcrumb/page_heading content_for mechanism working, with an accessible breadcrumb landmark" do
+  it "renders the page's breadcrumb landmark via shared/page_header, with no empty layout header" do
     customer = create(:customer)
     get customer_path(customer)
 
     expect(response.body).to include('<nav aria-label="Breadcrumb"')
     expect(response.body).to include(customer.full_name)
+    expect(response.body.scan('aria-label="Breadcrumb"').size).to eq(1)
+    # The old content_for(:breadcrumbs/:page_heading) block rendered an empty bordered
+    # <header> banner on every page - nothing ever set either content_for.
+    expect(response.body).not_to include("<header")
   end
 
   it "renders a dismissible, accessible flash after a redirect with a notice" do
