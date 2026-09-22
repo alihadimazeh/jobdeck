@@ -2,22 +2,25 @@
   locals: form:, attr:, label: (nil -> humanized attr), as: (:text/:email/:tel/:date/:number/:textarea/:select),
           hint: nil, collection: nil (options array for :select),
           select_options: {} (:select only - Rails' own select "options" arg, e.g. include_blank/prompt/selected -
-            distinct from the html attrs below), options: {} (extra html attrs on the control)
+            distinct from the html attrs below), options: {} (extra html attrs on the control),
+          required: (defaults to field_required? - derived from the model's presence validations)
 %>
 <% as = local_assigns.fetch(:as, :text) %>
 <% label_text = local_assigns[:label] || attr.to_s.humanize %>
 <% hint = local_assigns[:hint] %>
 <% field_options = local_assigns.fetch(:options, {}) %>
+<% required = local_assigns.fetch(:required) { field_required?(form.object, attr) } %>
 <% has_error = form.object.respond_to?(:errors) && form.object.errors[attr].any? %>
 <% field_id = "#{form.object_name}_#{attr}" %>
 <% describedby = [("#{field_id}_hint" if hint.present?), ("#{field_id}_error" if has_error)].compact %>
 
 <fieldset class="fieldset py-0">
-  <%= form.label attr, label_text, class: "label" %>
+  <%= form.label attr, class: "label" do %><%= label_text %><% if required %><span class="text-error" aria-hidden="true">*</span><% end %><% end %>
 
   <% control_class = as == :textarea ? "textarea" : (as == :select ? "select" : "input") %>
   <% shared_opts = {
        class: "w-full #{control_class}",
+       required: (required || nil),
        "aria-invalid": (has_error ? "true" : nil),
        "aria-describedby": describedby.presence&.join(" ")
      }.merge(field_options) %>

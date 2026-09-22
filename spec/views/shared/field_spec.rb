@@ -57,4 +57,23 @@ RSpec.describe "shared/_field", type: :view do
     expect(rendered).to have_selector("input[aria-describedby='customer_first_name_error']")
     expect(rendered).to have_selector("p#customer_first_name_error.form-error")
   end
+
+  describe "required fields" do
+    it "marks a field required when the model validates its presence" do
+      render partial: "shared/field", locals: { form: form, attr: :first_name }
+      expect(rendered).to have_selector("input#customer_first_name[required]")
+      expect(rendered).to have_selector("label[for='customer_first_name'] span.text-error[aria-hidden='true']", text: "*")
+    end
+
+    it "leaves an optional field unmarked" do
+      render partial: "shared/field", locals: { form: form, attr: :email, as: :email }
+      expect(rendered).not_to have_selector("input[required]")
+      expect(rendered).not_to have_selector("label span.text-error")
+    end
+
+    it "accepts an explicit required: override" do
+      render partial: "shared/field", locals: { form: form, attr: :email, as: :email, required: true }
+      expect(rendered).to have_selector("input#customer_email[required]")
+    end
+  end
 end
