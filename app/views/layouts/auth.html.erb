@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="jobdeck" class="h-full">
+  <head>
+    <title><%= content_for(:title) || "Jobdeck" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+
+    <%= preload_link_tag asset_path("inter/InterVariable.woff2"), as: "font", type: "font/woff2", crossorigin: "anonymous" %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="h-full bg-base-200 text-base-content antialiased">
+    <div class="min-h-full flex flex-col items-center justify-center p-4 sm:p-8">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="grid grid-cols-2 gap-0.5">
+          <div class="w-2.5 h-2.5 bg-primary rounded-sm"></div>
+          <div class="w-2.5 h-2.5 bg-primary/50 rounded-sm"></div>
+          <div class="w-2.5 h-2.5 bg-primary/50 rounded-sm"></div>
+          <div class="w-2.5 h-2.5 bg-primary rounded-sm"></div>
+        </div>
+        <span class="font-semibold tracking-wide text-base-content">Jobdeck</span>
+      </div>
+
+      <main class="w-full max-w-sm">
+        <%= render "shared/flash" %>
+        <%= yield %>
+      </main>
+    </div>
+  </body>
+</html>

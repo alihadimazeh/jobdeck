@@ -63,10 +63,34 @@ left in place as-is and still runs (`bin/rails test`), but it is not where new t
 - `ActivityNote`/`Document` also have model specs and a small system-spec pair
   (`spec/system/*_ui_spec.rb`) alongside their request specs, plus a `spec/factories/documents.rb`
   that attaches a real fixture file (`spec/fixtures/files/sample.pdf`).
-- **267 examples, 0 failures** (`bundle exec rspec`, excluding `spec/system/**`). System specs
+- `User` has a model spec (`spec/models/user_spec.rb` — validations, `#authenticate`,
+  `.authenticate_by`, password-reset token generation/expiry/invalidation-on-password-change).
+  `SessionsController`/`PasswordsController` each have a request spec
+  (`spec/requests/sessions_spec.rb`, `spec/requests/passwords_spec.rb`) covering sign-in/out,
+  the "redirect back to where you were headed" flow, and the full password-reset round trip.
+  These two request specs are tagged `skip_authentication: true` (see next bullet) since they
+  test the unauthenticated paths directly.
+- **Every controller now requires authentication** (`app/controllers/concerns/authentication.rb`,
+  Phase 5 milestone 1), so every other request spec needs a signed-in session.
+  `spec/support/authentication.rb` signs in a throwaway `create(:user)` via a global
+  `before(:each, type: :request)` hook; opt out per-spec with `skip_authentication: true`
+  metadata. The old `test/` Minitest suite got the equivalent treatment — a `users.yml` fixture
+  + an `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb` — rather than
+  left broken, even though it's not where new coverage goes.
+- **298 examples, 0 failures** (`bundle exec rspec`, excluding `spec/system/**`). System specs
   (Capybara/Selenium) don't run in this sandbox — no real browser is available here
   (`Selenium::WebDriver::Error::WebDriverError`), a pre-existing environment limitation, not a
   regression; they're written and expected to pass wherever a browser driver is available.
+- **Pre-existing flaky test found while verifying the above** (not caused by it, confirmed by
+  reproducing on `main` with `bundle exec rspec --seed 3`): `customers_spec.rb`/`leads_spec.rb`'s
+  "paginates when there are more records than one page" tests assume `@q.result(distinct:
+  true)` returns rows in id/insertion order, but Postgres doesn't guarantee any row order for
+  `SELECT DISTINCT` without an explicit `ORDER BY` — it can plan a hash-based dedup that
+  reorders rows depending on the actual id values involved, which is exactly what a random test
+  order does (whatever ids the leads/customers happen to land on, depending on how much else
+  ran first). Not fixed here — out of scope for this PR — but worth a real fix (an explicit
+  `.order(:id)` in `CustomersController#index`/`LeadsController#index`) before it's mistaken for
+  a regression from unrelated future work. See TODO.md → Phase 5.
 
 ## Domain Overview
 
@@ -414,6 +438,53 @@ see TODO.md → "UI/UX Audit findings (2026-09-21)".
 
 ---
 
+### User
+Phase 5's first milestone (see "Planned: Authentication, Users & Authorization" below) —
+`has_secure_password` + session-based login. Roles don't exist yet (Phase 5's second
+milestone), so every signed-in User currently has identical access to the whole app.
+
+```ruby
+# users table
+email             string, null: false, unique index
+password_digest   string, null: false
+```
+
+Relationships:
+```ruby
+has_many :sessions, dependent: :destroy
+```
+
+Key behavior:
+- `email` normalized (`strip`/`downcase`) via `normalizes`; validated present, unique
+  (case-insensitive), and email-shaped (`URI::MailTo::EMAIL_REGEXP`)
+- `password` validated `length: { minimum: 8 }, allow_nil: true` — `allow_nil` so `User#update`
+  without touching the password doesn't re-trigger the length check against `nil`
+- `generates_token_for :password_reset, expires_in: 15.minutes` (Rails 7.1+ built-in, no
+  separate token column/table) — salts the token with `password_salt.last(10)`, so it stops
+  validating the moment the password actually changes, not just after 15 minutes
+- `User.authenticate_by(email:, password:)` (not `User.find_by(email:).try(:authenticate,
+  ...)`) — constant-time even when the email doesn't exist, avoiding a timing side-channel
+
+### Session
+A server-side session row, not a token — the signed, `httponly`, `same_site: :lax` cookie
+(`Authentication` concern below) holds only the session's id. `Session.destroy` (sign-out, or
+cascaded from `User.destroy`) immediately invalidates it; there's no separate revocation list to
+consult, since the cookie is worthless without a matching row.
+
+```ruby
+# sessions table
+user_id           references, null: false, foreign_key: true
+ip_address        string
+user_agent        string
+```
+
+Relationships:
+```ruby
+belongs_to :user
+```
+
+---
+
 ## Migration Order
 
 Migrations must run in this order due to foreign key dependencies:
@@ -429,6 +500,8 @@ Migrations must run in this order due to foreign key dependencies:
 9. `create_activity_notes` — polymorphic, no FK constraints
 10. `create_documents` — polymorphic, no FK constraints
 11. `rails active_storage:install` — generates Active Storage tables separately
+12. `create_users` — no dependencies
+13. `create_sessions` — depends on users
 
 ## Foreign Key Nullability Rules
 
@@ -525,24 +598,63 @@ source:   walk_in | phone | referral | website | other
 
 ---
 
-## Planned: Authentication, Users & Authorization
+## Authentication (Phase 5, milestone 1 — shipped)
 
-These are upcoming goals, not yet built. The intent is to make Jobdeck a
-real, multi-user product other construction businesses could actually run —
-and a portfolio piece that demonstrates auth, RBAC, and SSO done properly.
+The **User**/**Session** models above (see "## Models") plus this controller-layer wiring
+make every controller require a signed-in user. Roles/Pundit (milestone 2) and SSO
+(milestone 3) are still planned — see "Planned: Authorization & SSO" below.
 
-### Users with login (session-based)
+- **Session-based** auth (not token/JWT) — a real `Session` row per sign-in, referenced by
+  a signed, `httponly`, `same_site: :lax` cookie holding only the session's id
+  (`app/controllers/concerns/authentication.rb`, the Rails 8 authentication-generator
+  pattern). Sign-out (or `User.destroy`, `dependent: :destroy`) deletes the row, which
+  immediately invalidates the cookie — no separate token to expire.
+- `Current` (`ActiveSupport::CurrentAttributes`) holds the resolved `session`/`user` for the
+  request, resolved once via `resume_session` and memoized on `Current.session`.
+- `Authentication` concern, included in `ApplicationController`: `before_action
+  :require_authentication` on every action by default; a controller opts out per-action with
+  `allow_unauthenticated_access only: [...]` (see `SessionsController#new`/`#create`,
+  `PasswordsController`, all of it). An unauthenticated request is redirected to
+  `new_session_path`, remembering the original URL in `session[:return_to_after_authenticating]`
+  so `after_authentication_url` can send the visitor back where they were headed.
+- `SessionsController` — `new`/`create`/`destroy`. `create` uses `User.authenticate_by(email:,
+  password:)` (constant-time even when the email doesn't exist — not
+  `User.find_by(email:)&.authenticate(...)`), and is `rate_limit`ed (10 attempts / 3 minutes,
+  Rails 8's built-in controller-level rate limiter — a no-op in the test env, which runs on
+  `:null_store`). "Remember me" is just cookie persistence: checked → `cookies.signed.permanent`
+  (survives browser close); unchecked → a plain session cookie.
+- `PasswordsController` — `new`/`create` (request a reset by email; always redirects with the
+  same flash regardless of whether the address exists, so the form can't be used to enumerate
+  accounts) and `edit`/`update` (consume the token, set a new password). Uses
+  `User#generates_token_for(:password_reset, expires_in: 15.minutes)` — Rails 7.1+'s built-in
+  signed/expiring token support, no separate reset-token column or table, and the token is
+  salted with the password hash so it also stops working the moment the password changes,
+  independent of the 15-minute expiry.
+- `PasswordsMailer#reset` — plain `ActionMailer`, delivered via `deliver_later`
+  (`config.active_job.queue_adapter = :test` in the test env so
+  `have_enqueued_mail`/`have_enqueued_job` specs can assert on it instead of it actually
+  running async).
+- Both auth flows render through a dedicated `layouts/auth.html.erb` (centered card, no
+  sidebar/nav) rather than the main app shell — showing an authenticated-only sidebar on the
+  sign-in page itself would be backwards.
+- Every request spec now signs in a throwaway `create(:user)` via a global `before(:each,
+  type: :request)` hook (`spec/support/authentication.rb`) unless tagged `skip_authentication:
+  true` (used by `sessions_spec.rb`/`passwords_spec.rb`, which test the unauthenticated paths
+  directly). The old `test/` Minitest suite gets the same treatment via a `test/fixtures/users.yml`
+  fixture and an `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb`.
+- **Deliberately not done in this milestone** (tracked in TODO.md → Phase 5): no sign-up/user-
+  management UI yet — `db/seeds.rb` creates one dev user (`admin@jobdeck.test`), anyone else is
+  made via `User.create!`/`rails console` until Pundit + an admin role exist. The free-text
+  `assigned_to`/`author`/`uploaded_by` fields on Lead/Job/ActivityNote/Document are **not** yet
+  backed by `user_id` — that touches several models' forms/views and is deferred to a
+  fast-follow rather than folded into this PR.
 
-- Add a **User** model with email + password (bcrypt via `has_secure_password`,
-  or Rails 8's built-in authentication generator).
-- **Session-based** auth (not token/JWT) — server-side sessions, `SessionsController`
-  with `new` / `create` / `destroy`, signed cookie holding the session id.
-- Sign-in / sign-out flow, password reset via emailed token, "remember me".
-- `current_user` helper + `require_authentication` before_action; unauthenticated
-  requests redirect to the login page.
-- Every write action attributes the actor — replace the free-text `assigned_to`,
-  `author`, `uploaded_by` string fields with (or back them with) a real
-  `user_id` reference over time.
+## Planned: Authorization & SSO
+
+Milestone 1 above (User/Session models, sign-in/out, password reset) is shipped. These two
+milestones are still upcoming — the intent, per the original plan, is to make Jobdeck a real,
+multi-user product other construction businesses could actually run, and a portfolio piece that
+demonstrates RBAC and SSO done properly on top of the auth milestone that's now live.
 
 ### Role-based views and permissions
 
@@ -572,7 +684,8 @@ and a portfolio piece that demonstrates auth, RBAC, and SSO done properly.
 
 ### Rollout order
 
-1. User model + session-based login/logout + password reset.
+1. ~~User model + session-based login/logout + password reset.~~ **Shipped** — see
+   "## Authentication (Phase 5, milestone 1 — shipped)" above.
 2. Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.
 3. Role-based view gating (nav + buttons + sections).
 4. OmniAuth scaffolding + Google SSO.

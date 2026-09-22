@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  resource  :session, only: %i[new create destroy]
+  resources :passwords, param: :token, only: %i[new create edit update]
+
   resources :customers
   resources :jobs do
     resources :orders, shallow: true do
