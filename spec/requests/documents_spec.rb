@@ -70,6 +70,16 @@ RSpec.describe "Documents", type: :request do
   end
 
   describe "inline rendering on the parent's show page" do
+    it "tells the user the accepted types and size limit up front, and filters the file picker" do
+      get lead_path(lead)
+      field = Nokogiri::HTML(response.body).at_css("input[type='file'][name='document[file]']")
+
+      expect(field["required"]).to be_present
+      expect(field["accept"].split(",")).to include("application/pdf", ".xlsx", "image/png")
+      expect(field["aria-describedby"]).to eq("document_file_hint")
+      expect(response.body).to match(%r{id="document_file_hint"[^>]*>\s*PDF, Excel \(XLS/XLSX\), JPEG, or PNG &middot; up to 50 MB})
+    end
+
     it "shows the empty state when there are no documents, and the document once one exists" do
       get lead_path(lead)
       expect(response.body).to include("No documents yet.")
