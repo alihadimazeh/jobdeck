@@ -693,7 +693,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       block in `layouts/application.html.erb` (~lines 35-42). No view ever sets either (every page
       uses `shared/_page_header`), so an empty bordered `<header>` banner landmark renders on
       every page.
-- [ ] **U3** — Colors outside the token system: `layouts/mailer.html.erb:18,23` and
+- [x] **U3** — **PR #60** (sidebar Sign out button's raw `hover:text-white` left for Phase 5) — Colors outside the token system: `layouts/mailer.html.erb:18,23` and
       `pwa/manifest.json.erb:20` still hardcode the pre-retint palette (`#1E293B`/`#EA580C`) —
       re-tint to navy/blue (neither goes through Tailwind). Also `application_helper.rb`'s
       `nav_link` raw `text-white` → semantic token. Supersedes the two matching items above.
