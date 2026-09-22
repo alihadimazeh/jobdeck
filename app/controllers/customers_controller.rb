@@ -2,7 +2,7 @@ class CustomersController < ApplicationController
   before_action :set_customer, only: [ :show, :edit, :update, :destroy ]
   def index
     @q = Customer.visible.ransack(params[:q])
-    @pagy, @customers = pagy(@q.result(distinct: true))
+    @pagy, @customers = pagy(@q.result(distinct: true).order(:id))
   end
 
   def show
