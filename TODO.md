@@ -701,7 +701,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       PR #56 lands) index have no label, visible or `sr-only` (PR #54 labeled only the text
       inputs); `item_type` selects in `quotes/_quote_line_item_fields.html.erb` and
       `orders/_line_item_fields.html.erb` lack the `aria-label` their sibling inputs have.
-- [ ] **U5** — Required-field indicators: nothing marks required fields anywhere. Add a
+- [x] **U5** — **PR #63** (Room rows left unmarked: the default blank room row would block quotes with no rooms) — Required-field indicators: nothing marks required fields anywhere. Add a
       `required:` option to `shared/_field.html.erb` (visual marker + `required` attribute) and
       use it for Customer first/last name + phone, Lead/Job title, Room name/length/width.
 - [ ] **U6** — Document upload guidance: `documents/_form.html.erb`'s `file_field` has no
