@@ -704,7 +704,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 - [x] **U5** — **PR #63** (Room rows left unmarked: the default blank room row would block quotes with no rooms) — Required-field indicators: nothing marks required fields anywhere. Add a
       `required:` option to `shared/_field.html.erb` (visual marker + `required` attribute) and
       use it for Customer first/last name + phone, Lead/Job title, Room name/length/width.
-- [ ] **U6** — Document upload guidance: `documents/_form.html.erb`'s `file_field` has no
+- [x] **U6** — **PR #64** (aria-busy already set by Turbo on submit, no change needed) — Document upload guidance: `documents/_form.html.erb`'s `file_field` has no
       `accept` attribute and no hint about the constraints `Document::ACCEPTED_TYPES`/`MAX_SIZE`
       enforce (PDF, XLS/XLSX, JPEG, PNG, 50MB). Add both, plus `aria-busy` during submit.
 - [ ] **U7** — Photo documents get no inline view — only PDFs get "View". Give JPEG/PNG
