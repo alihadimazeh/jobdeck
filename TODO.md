@@ -716,7 +716,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       focus into the new row's first input on add, and to a sensible neighbour on remove.
 - [x] **U9** ⚠ — **PR #67** (CLAUDE.md "Not done yet" line needs updating after merge) — Render the ActivityNote section on the Customer show page (the association
       already exists on `Customer`, no view renders it).
-- [ ] **U10** ⚠ — Customer Documents: add `has_many :documents, as: :documentable` to
+- [x] **U10** ⚠ — **PR #68** (stacked on #67 — merge #67 first) — Customer Documents: add `has_many :documents, as: :documentable` to
       `Customer`, the nested `create` route, and the section on the show page (after U9).
 - [ ] **U11** — Hand-rolled preview rows: `customers/show.html.erb` (Leads/Jobs tables),
       `leads/show.html.erb` (related Job), `jobs/show.html.erb` (related Lead) re-implement row
