@@ -718,7 +718,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       already exists on `Customer`, no view renders it).
 - [x] **U10** ⚠ — **PR #68** (stacked on #67 — merge #67 first) — Customer Documents: add `has_many :documents, as: :documentable` to
       `Customer`, the nested `create` route, and the section on the show page (after U9).
-- [ ] **U11** — Hand-rolled preview rows: `customers/show.html.erb` (Leads/Jobs tables),
+- [x] **U11** — **PR #69** (jobs/show "Originated From" intentionally left custom — shows Source) — Hand-rolled preview rows: `customers/show.html.erb` (Leads/Jobs tables),
       `leads/show.html.erb` (related Job), `jobs/show.html.erb` (related Lead) re-implement row
       markup instead of rendering the `_lead`/`_job` partials — drift risk. Reuse the partials
       (or one shared compact-row partial if the columns genuinely need to differ).
