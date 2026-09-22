@@ -413,8 +413,8 @@
       (daisyUI `drawer`, `shared/_page_header`, `shared/_flash`)
 - [x] Reusable partials/components — tables, forms, buttons, badges, cards, empty states
       (`app/views/shared/*`)
-- [ ] Shared Notes / Documents UI styling — **not built** (Note/Document models don't exist
-      yet; out of scope for this redesign, tracked under Phase 5/auth work)
+- [x] Shared Notes / Documents UI styling — built as `ActivityNote`/`Document` in Phase 4
+      (PRs #43–#51), well after this redesign shipped. Stale checkbox correction only.
 - [x] Polished dashboard layout (follow-up leads, active jobs, unpaid orders) — Step 14
 - [x] Responsive / mobile-friendly layouts — verified at 375/768/1024/1440px throughout
 - [ ] Wire role-based nav + action buttons into the revamped UI — **not started**, blocked on
@@ -580,24 +580,31 @@
 > is fix-up work on an otherwise solid design system, not a rescue job.
 
 #### Critical
-- [ ] **Search inputs have no accessible label** — `customers/index.html.erb:9-11` and
+- [x] **Search inputs have no accessible label** — `customers/index.html.erb:9-11` and
       `leads/index.html.erb:9-16` both use `f.search_field` with only a `placeholder:`, no
       `<label>`/`aria-label`. Placeholder text disappears once typed, leaving screen reader
       users with no accessible name for the field. Every other input in the app (via
       `shared/_field`) gets this right — isolated miss in the two hand-rolled search forms.
-- [ ] **`populateLineItems` silently destroys line items with no confirmation** —
+      — fixed (PR #54): added an `sr-only` `f.label` alongside each search field.
+- [x] **`populateLineItems` silently destroys line items with no confirmation** —
       `app/javascript/controllers/quote_form_controller.js:53-67` marks every existing line
       item `_destroy=1` and hides it *before* checking whether either rate field has a value.
       Leaving both Labor/Material Rate blank wipes every manually-entered line item with zero
       warning and no undo. Every record-level delete elsewhere in the app uses a specific
       `turbo_confirm` message — this JS action is the one silent exception.
-- [ ] **Error-variant badges/alerts fall just under WCAG AA contrast** — `--color-error:
+      — fixed (PR #54): added a guard (`if (laborRate <= 0 && materialRate <= 0) return`)
+      before any existing row gets marked for destruction.
+- [x] **Error-variant badges/alerts fall just under WCAG AA contrast** — `--color-error:
       #DC2626` on daisyUI's `badge-soft`/`alert-soft` background computes to **4.27:1**,
       under the 4.5:1 AA minimum for normal text (every other status color clears it:
       warning/success 4.51:1, info 5.92:1, neutral 15.17:1). Hits `shared/_badge.html.erb`
       (Quote "rejected", Lead "lost", Job/Order "cancelled", Customer "archived") and
       `shared/_form_errors.html.erb`/`_flash.html.erb`'s `alert-error alert-soft` — exactly
       when a user is reading a validation error.
+      — fixed (PR #54): darkened `--color-error` to `#B91C1C` (computed: 4.27:1 → 5.66:1 on
+      the badge-soft/alert-soft background; white-on-solid-error only improved, 6.47:1).
+      CLAUDE.md's Design System palette table still says `#DC2626` — needs a one-line update
+      next time it's touched.
 
 #### Consistency
 - [ ] Job/Quote/Order indexes don't have the Ransack+Pagy pattern Customer/Lead just got

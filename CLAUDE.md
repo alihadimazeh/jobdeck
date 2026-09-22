@@ -616,7 +616,7 @@ or the two small table polish items below, which happened after that plan finish
 | `secondary` | `#334155` | secondary buttons / quiet emphasis |
 | `accent` | `#075985` | hover/active state on primary |
 | `neutral` | `#0F172A` | sidebar (navy) |
-| `info` / `success` / `warning` / `error` | `#1D4ED8` / `#15803D` / `#B45309` / `#DC2626` | status badges — see `ApplicationHelper::STATUS_VARIANTS` for the status → variant map |
+| `info` / `success` / `warning` / `error` | `#1D4ED8` / `#15803D` / `#B45309` / `#B91C1C` | status badges — see `ApplicationHelper::STATUS_VARIANTS` for the status → variant map. `error` darkened from `#DC2626` (PR #54) — the lighter value failed WCAG AA on `badge-soft`/`alert-soft` (4.27:1) |
 
 ### Shared components (`app/views/shared/`)
 
