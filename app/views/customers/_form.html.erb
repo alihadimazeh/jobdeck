@@ -7,7 +7,12 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <%= render partial: "shared/field", locals: { form: form, attr: :first_name } %>
       <%= render partial: "shared/field", locals: { form: form, attr: :last_name } %>
-      <%= render partial: "shared/field", locals: { form: form, attr: :phone, as: :phone } %>
+      <%= render partial: "shared/field", locals: {
+            form: form, attr: :phone, as: :phone,
+            hint: "Digits, spaces, and + - ( ) . - at least 7 characters",
+            options: { pattern: Customer::PHONE_INPUT_PATTERN, inputmode: "tel", autocomplete: "tel",
+                       title: "Enter a valid phone number, e.g. (613) 555-0199" }
+          } %>
       <%= render partial: "shared/field", locals: { form: form, attr: :email, as: :email } %>
     </div>
   </fieldset>
