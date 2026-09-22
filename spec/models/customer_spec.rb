@@ -55,6 +55,23 @@ RSpec.describe Customer, type: :model do
   end
 
   describe "deletion semantics" do
+    it "destroys the customer's documents (and their files) with it" do
+      customer = create(:customer)
+      create(:document, documentable: customer)
+
+      expect { customer.destroy }.to change(Document, :count).by(-1)
+      expect(customer).to be_destroyed
+    end
+
+    it "keeps documents when a delete is blocked by history (the archive path)" do
+      customer = create(:customer)
+      create(:job, customer: customer)
+      create(:document, documentable: customer)
+
+      expect { customer.destroy }.not_to change(Document, :count)
+      expect(customer.reload).not_to be_destroyed
+    end
+
     it "blocks destroy when the customer has a job directly (restrict_with_error)" do
       customer = create(:customer)
       create(:job, customer: customer)

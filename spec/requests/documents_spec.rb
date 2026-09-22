@@ -59,6 +59,22 @@ RSpec.describe "Documents", type: :request do
     end
   end
 
+  describe "POST /customers/:customer_id/documents" do
+    it "creates a document on the customer and redirects to it" do
+      params = { document: { label: "Signed contract", document_type: "contract", file: pdf } }
+      expect { post customer_documents_path(customer), params: params }.to change(Document, :count).by(1)
+
+      expect(response).to redirect_to(customer_path(customer))
+      expect(Document.last.documentable).to eq(customer)
+    end
+
+    it "deletes a customer's document and redirects back to the customer" do
+      document = create(:document, documentable: customer)
+      expect { delete document_path(document) }.to change(Document, :count).by(-1)
+      expect(response).to redirect_to(customer_path(customer))
+    end
+  end
+
   describe "DELETE /documents/:id" do
     it "destroys the document and redirects to its parent" do
       document = create(:document, documentable: lead)

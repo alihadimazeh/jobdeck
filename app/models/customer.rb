@@ -9,6 +9,7 @@ class Customer < ApplicationRecord
   has_many :leads,  dependent: :destroy
   has_many :quotes, dependent: :destroy
   has_many :activity_notes, as: :notable, dependent: :destroy
+  has_many :documents,      as: :documentable, dependent: :destroy
 
   scope :visible, -> { where.not(status: :archived) }
 

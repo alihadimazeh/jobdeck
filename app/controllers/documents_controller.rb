@@ -5,6 +5,7 @@ class DocumentsController < ApplicationController
   # POST /leads/:lead_id/documents
   # POST /jobs/:job_id/documents
   # POST /jobs/:job_id/orders/:order_id/documents
+  # POST /customers/:customer_id/documents
   def create
     @document = @documentable.documents.build(document_params)
 
@@ -42,6 +43,8 @@ class DocumentsController < ApplicationController
                        Order.find(params[:order_id])
     elsif params[:job_id]
                        Job.find(params[:job_id])
+    elsif params[:customer_id]
+                       Customer.find(params[:customer_id])
     end
   end
 

@@ -4,6 +4,7 @@ Rails.application.routes.draw do
 
   resources :customers do
     resources :activity_notes, only: [ :create ]
+    resources :documents,      only: [ :create ]
   end
   resources :jobs do
     resources :orders, shallow: true do
