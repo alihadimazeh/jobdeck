@@ -13,3 +13,14 @@ module ActiveSupport
     # Add more helper methods to be used by all tests here...
   end
 end
+
+module ActionDispatch
+  # Every controller now requires authentication (app/controllers/concerns/authentication.rb).
+  # These pre-existing scaffold tests exercise the resource controllers directly, not the
+  # sign-in flow itself, so sign in as the fixture user before each one.
+  class IntegrationTest
+    setup do
+      post session_url, params: { email: users(:one).email, password: "password123" }
+    end
+  end
+end

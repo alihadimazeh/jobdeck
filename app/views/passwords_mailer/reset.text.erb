@@ -1,0 +1,7 @@
+Hi <%= @user.email %>,
+
+Someone requested a password reset for your Jobdeck account. If this was you, use the link below to choose a new password. This link expires in 15 minutes.
+
+<%= edit_password_url(@token) %>
+
+If you didn't request this, you can safely ignore this email.

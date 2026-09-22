@@ -2,6 +2,13 @@
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
+# Users — no role yet (Phase 5's "Role-based views and permissions" sub-phase hasn't landed),
+# just enough to sign in locally until real user management exists.
+User.find_or_create_by!(email: "admin@jobdeck.test") do |u|
+  u.password              = "password123"
+  u.password_confirmation = "password123"
+end
+
 # Customers
 sarah = Customer.find_or_create_by!(email: "sarah.mitchell@gmail.com") do |c|
   c.first_name    = "Sarah"

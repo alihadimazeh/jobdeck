@@ -1,0 +1,20 @@
+<% content_for :title, "Reset your password" %>
+
+<%= render "shared/card", { title: "Reset your password" } do %>
+  <p class="text-sm text-base-content/70 mb-4">
+    Enter your email and we'll send you a link to reset your password.
+  </p>
+
+  <%= form_with url: passwords_path, method: :post, class: "flex flex-col gap-4" do |f| %>
+    <fieldset class="fieldset py-0">
+      <%= f.label :email, class: "label" %>
+      <%= f.email_field :email, required: true, autofocus: true, autocomplete: "username", class: "w-full input" %>
+    </fieldset>
+
+    <%= f.submit "Send reset link", class: "btn btn-primary w-full" %>
+  <% end %>
+
+  <p class="text-sm text-base-content/70 mt-4">
+    <%= link_to "Back to sign in", new_session_path %>
+  </p>
+<% end %>

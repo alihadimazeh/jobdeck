@@ -372,13 +372,39 @@
 > See CLAUDE.md → "Planned: Authentication, Users & Authorization".
 
 ### Users + session-based login
-- [ ] `User` model — email + `has_secure_password` (or Rails 8 auth generator)
-- [ ] Session-based auth — `SessionsController` (`new` / `create` / `destroy`), signed cookie
-- [ ] Sign-in / sign-out UI
-- [ ] Password reset via emailed token
-- [ ] "Remember me"
-- [ ] `current_user` helper + `require_authentication` before_action (redirect to login)
+- [x] `User` model — email + `has_secure_password` (or Rails 8 auth generator)
+- [x] Session-based auth — `SessionsController` (`new` / `create` / `destroy`), signed cookie
+- [x] Sign-in / sign-out UI
+- [x] Password reset via emailed token
+- [x] "Remember me"
+- [x] `current_user` helper + `require_authentication` before_action (redirect to login)
+      — done as `app/controllers/concerns/authentication.rb`, included in
+      `ApplicationController` (branch `feature/user-auth-sessions`). Every controller now
+      requires a signed-in session by default; a controller opts out per-action with
+      `allow_unauthenticated_access only: [...]`. Full flow (sign in, wrong password, sign out,
+      request-a-reset, follow the token, set a new password, sign in with it) verified against a
+      real running server via curl, not just the test suite. See CLAUDE.md → "## Authentication
+      (Phase 5, milestone 1 — shipped)" for the full design writeup. 298 RSpec examples / 19
+      Minitest runs, 0 failures (both suites updated to sign in first — see CLAUDE.md →
+      "## Testing"). No sign-up/user-management UI yet: `db/seeds.rb` creates one dev user
+      (`admin@jobdeck.test` / `password123`), anyone else is made via `User.create!` until
+      Pundit + an admin role exist (next item below).
 - [ ] Migrate `assigned_to` / `author` / `uploaded_by` free-text fields to `user_id` references
+      — **deliberately deferred**, not part of the milestone-1 PR above: touches several
+      models' forms/views (Lead, Job, ActivityNote, Document) and is really milestone-2-shaped
+      work (attributing actions to a real user only means something once roles/Pundit exist to
+      say who's allowed to act as whom) — its own follow-up PR.
+
+#### Bug found while shipping the above (2026-09-21)
+- [ ] **`CustomersController`/`LeadsController#index` pagination relies on unspecified row
+      order.** `@q.result(distinct: true)` has no explicit `.order`, so which records land on
+      page 1 vs page 2 depends on whatever order Postgres's query planner happens to return for
+      `SELECT DISTINCT` — not guaranteed to match id/insertion order, and confirmed to actually
+      vary (reproduced on `main`, unrelated to this branch, via
+      `bundle exec rspec --seed 3`: `customers_spec.rb`/`leads_spec.rb`'s pagination tests fail
+      once enough other specs have run first that the records involved land on high ids). Not
+      fixed here (out of scope for the auth PR that found it) — fix is a one-line
+      `.order(:id)` (or a real sort column) added to both controllers' `index` actions.
 
 ### Role-based views and permissions
 - [ ] `role` enum on User — `admin | project_manager | sales | viewer` (integer-backed)

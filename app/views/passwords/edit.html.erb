@@ -1,0 +1,19 @@
+<% content_for :title, "Set a new password" %>
+
+<%= render "shared/card", { title: "Set a new password" } do %>
+  <%= render "shared/form_errors", model: @user %>
+
+  <%= form_with url: password_path(params[:token]), method: :patch, class: "flex flex-col gap-4" do |f| %>
+    <fieldset class="fieldset py-0">
+      <%= f.label :password, "New password", class: "label" %>
+      <%= f.password_field :password, required: true, autofocus: true, autocomplete: "new-password", class: "w-full input" %>
+    </fieldset>
+
+    <fieldset class="fieldset py-0">
+      <%= f.label :password_confirmation, "Confirm new password", class: "label" %>
+      <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password", class: "w-full input" %>
+    </fieldset>
+
+    <%= f.submit "Update password", class: "btn btn-primary w-full" %>
+  <% end %>
+<% end %>

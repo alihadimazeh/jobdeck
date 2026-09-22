@@ -1,0 +1,27 @@
+<% content_for :title, "Sign in" %>
+
+<%= render "shared/card", { title: "Sign in to Jobdeck" } do %>
+  <%= form_with url: session_path, method: :post, class: "flex flex-col gap-4" do |f| %>
+    <fieldset class="fieldset py-0">
+      <%= f.label :email, class: "label" %>
+      <%= f.email_field :email, value: params[:email], required: true, autofocus: true,
+            autocomplete: "username", class: "w-full input" %>
+    </fieldset>
+
+    <fieldset class="fieldset py-0">
+      <%= f.label :password, class: "label" %>
+      <%= f.password_field :password, required: true, autocomplete: "current-password", class: "w-full input" %>
+    </fieldset>
+
+    <label class="label cursor-pointer justify-start gap-2">
+      <%= f.check_box :remember_me, { checked_value: "1", unchecked_value: "0", class: "checkbox checkbox-sm" }, "1", "0" %>
+      Remember me
+    </label>
+
+    <%= f.submit "Sign in", class: "btn btn-primary w-full" %>
+  <% end %>
+
+  <p class="text-sm text-base-content/70 mt-4">
+    <%= link_to "Forgot your password?", new_password_path %>
+  </p>
+<% end %>
