@@ -43,15 +43,8 @@
   <%= render "shared/card", { title: "Leads", padded: false } do %>
     <%= render "shared/table", { columns: [ "Title", "Status", "Follow-up" ] } do %>
       <% if @customer.leads.any? %>
-        <% @customer.leads.each do |lead| %>
-          <tr class="hover">
-            <td class="font-medium text-base-content">
-              <%= link_to lead.title, lead, class: "hover:text-primary" %>
-            </td>
-            <td><%= status_badge(lead) %></td>
-            <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
-          </tr>
-        <% end %>
+        <%= render partial: "leads/lead", collection: @customer.leads,
+              locals: { show_customer: false, show_actions: false } %>
       <% else %>
         <%= render partial: "shared/empty_state", locals: { title: "No leads yet.", colspan: 3 } %>
       <% end %>
@@ -64,15 +57,8 @@
   <%= render "shared/card", { title: "Jobs", padded: false } do %>
     <%= render "shared/table", { columns: [ "Title", "Status", "Start Date" ] } do %>
       <% if @customer.jobs.any? %>
-        <% @customer.jobs.each do |job| %>
-          <tr class="hover">
-            <td class="font-medium text-base-content">
-              <%= link_to job.title, job, class: "hover:text-primary" %>
-            </td>
-            <td><%= status_badge(job) %></td>
-            <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
-          </tr>
-        <% end %>
+        <%= render partial: "jobs/job", collection: @customer.jobs,
+              locals: { show_customer: false, show_actions: false } %>
       <% else %>
         <%= render partial: "shared/empty_state", locals: { title: "No jobs yet.", colspan: 3 } %>
       <% end %>

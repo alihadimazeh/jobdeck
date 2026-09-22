@@ -36,13 +36,7 @@
   <div class="mb-6">
     <%= render "shared/card", { title: "Job", padded: false } do %>
       <%= render "shared/table", { columns: [ "Title", "Status", "Start Date" ] } do %>
-        <tr class="hover">
-          <td class="font-medium text-base-content">
-            <%= link_to @lead.job.title, @lead.job, class: "hover:text-primary" %>
-          </td>
-          <td><%= status_badge(@lead.job) %></td>
-          <td class="text-base-content/70"><%= format_date(@lead.job.start_date) %></td>
-        </tr>
+        <%= render "jobs/job", job: @lead.job, show_customer: false, show_actions: false %>
       <% end %>
     <% end %>
   </div>

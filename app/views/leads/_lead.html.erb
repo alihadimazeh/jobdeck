@@ -1,19 +1,24 @@
+<%# locals: (lead:, show_customer: true, show_actions: true) -%>
 <tr id="<%= dom_id(lead) %>" class="hover">
   <td class="font-medium text-base-content">
     <%= link_to lead.title, lead, class: "hover:text-primary" %>
   </td>
-  <td class="text-base-content/70">
-    <%= link_to lead.customer.full_name, lead.customer, class: "hover:text-primary" %>
-  </td>
+  <% if show_customer %>
+    <td class="text-base-content/70">
+      <%= link_to lead.customer.full_name, lead.customer, class: "hover:text-primary" %>
+    </td>
+  <% end %>
   <td><%= status_badge(lead) %></td>
   <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
-  <td>
-    <%= render partial: "shared/row_actions", locals: {
-          edit_path: edit_lead_path(lead),
-          delete_path: lead_path(lead),
-          delete_confirm: "Are you sure you want to delete this lead?",
-          label: lead.title,
-          id: dom_id(lead)
-        } %>
-  </td>
+  <% if show_actions %>
+    <td>
+      <%= render partial: "shared/row_actions", locals: {
+            edit_path: edit_lead_path(lead),
+            delete_path: lead_path(lead),
+            delete_confirm: "Are you sure you want to delete this lead?",
+            label: lead.title,
+            id: dom_id(lead)
+          } %>
+    </td>
+  <% end %>
 </tr>

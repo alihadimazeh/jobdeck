@@ -1,19 +1,24 @@
+<%# locals: (job:, show_customer: true, show_actions: true) -%>
 <tr id="<%= dom_id(job) %>" class="hover">
   <td class="font-medium text-base-content">
     <%= link_to job.title, job, class: "hover:text-primary" %>
   </td>
-  <td class="text-base-content/70">
-    <%= link_to job.customer.full_name, job.customer, class: "hover:text-primary" %>
-  </td>
+  <% if show_customer %>
+    <td class="text-base-content/70">
+      <%= link_to job.customer.full_name, job.customer, class: "hover:text-primary" %>
+    </td>
+  <% end %>
   <td><%= status_badge(job) %></td>
   <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
-  <td>
-    <%= render partial: "shared/row_actions", locals: {
-          edit_path: edit_job_path(job),
-          delete_path: job_path(job),
-          delete_confirm: "Are you sure you want to delete this job?",
-          label: job.title,
-          id: dom_id(job)
-        } %>
-  </td>
+  <% if show_actions %>
+    <td>
+      <%= render partial: "shared/row_actions", locals: {
+            edit_path: edit_job_path(job),
+            delete_path: job_path(job),
+            delete_confirm: "Are you sure you want to delete this job?",
+            label: job.title,
+            id: dom_id(job)
+          } %>
+    </td>
+  <% end %>
 </tr>
