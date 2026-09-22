@@ -697,7 +697,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       `pwa/manifest.json.erb:20` still hardcode the pre-retint palette (`#1E293B`/`#EA580C`) —
       re-tint to navy/blue (neither goes through Tailwind). Also `application_helper.rb`'s
       `nav_link` raw `text-white` → semantic token. Supersedes the two matching items above.
-- [ ] **U4** — Unlabeled controls: the `status_eq` filter selects on the Lead (and Job, once
+- [x] **U4** — **PR #61** (Job index filter in PR #56 still needs the same label) — Unlabeled controls: the `status_eq` filter selects on the Lead (and Job, once
       PR #56 lands) index have no label, visible or `sr-only` (PR #54 labeled only the text
       inputs); `item_type` selects in `quotes/_quote_line_item_fields.html.erb` and
       `orders/_line_item_fields.html.erb` lack the `aria-label` their sibling inputs have.
