@@ -714,7 +714,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       "+ Add" button in DOM order but leave focus on the button, so Tab skips the new row; the
       remove handlers hide the row holding the focused button, dropping focus to `<body>`. Move
       focus into the new row's first input on add, and to a sensible neighbour on remove.
-- [ ] **U9** ⚠ — Render the ActivityNote section on the Customer show page (the association
+- [x] **U9** ⚠ — **PR #67** (CLAUDE.md "Not done yet" line needs updating after merge) — Render the ActivityNote section on the Customer show page (the association
       already exists on `Customer`, no view renders it).
 - [ ] **U10** ⚠ — Customer Documents: add `has_many :documents, as: :documentable` to
       `Customer`, the nested `create` route, and the section on the show page (after U9).
