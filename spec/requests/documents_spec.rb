@@ -91,8 +91,8 @@ RSpec.describe "Documents", type: :request do
       expect(response.body).to match(%r{disposition=inline})
     end
 
-    it "gives a non-PDF a normal Download link instead" do
-      document = build(:document, documentable: lead)
+    it "gives a photo a lazy thumbnail and an inline View link" do
+      document = build(:document, documentable: lead, label: "Site photo")
       document.file.attach(
         io: StringIO.new("\x89PNG\r\n\x1a\n fake png data"),
         filename: "photo.png",
@@ -101,9 +101,30 @@ RSpec.describe "Documents", type: :request do
       document.save!
 
       get lead_path(lead)
+      row = Nokogiri::HTML(response.body).at_css("##{ActionView::RecordIdentifier.dom_id(document)}")
+
+      expect(row.at_css("img[loading='lazy'][alt='']")["src"]).to include("photo.png")
+      view = row.at_css("a[aria-label='View Site photo (opens in a new tab)']")
+      expect(view.text).to eq("View")
+      expect(view["target"]).to eq("_blank")
+      expect(view["href"]).to include("disposition=inline")
+      expect(row.text).not_to include("Download")
+    end
+
+    it "gives a non-viewable file (Excel) a normal Download link instead" do
+      document = build(:document, documentable: lead)
+      document.file.attach(
+        io: StringIO.new("PK\x03\x04 fake xlsx"),
+        filename: "takeoff.xlsx",
+        content_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+      document.save!
+
+      get lead_path(lead)
 
       expect(response.body).to include(">Download<")
       expect(response.body).not_to include(">View<")
+      expect(response.body).not_to include("<img")
       expect(response.body).to match(%r{disposition=attachment})
     end
   end
