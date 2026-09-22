@@ -707,7 +707,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 - [x] **U6** — **PR #64** (aria-busy already set by Turbo on submit, no change needed) — Document upload guidance: `documents/_form.html.erb`'s `file_field` has no
       `accept` attribute and no hint about the constraints `Document::ACCEPTED_TYPES`/`MAX_SIZE`
       enforce (PDF, XLS/XLSX, JPEG, PNG, 50MB). Add both, plus `aria-busy` during submit.
-- [ ] **U7** — Photo documents get no inline view — only PDFs get "View". Give JPEG/PNG
+- [x] **U7** — **PR #65** (thumbnail uses original blob; switch to a variant once libvips is in every env) — Photo documents get no inline view — only PDFs get "View". Give JPEG/PNG
       documents an inline thumbnail/"View" link (`documents/_document.html.erb`).
 - [ ] **U8** — Focus handling in the estimation tool: `addRoom`/`addLineItem`
       (`quote_form_controller.js`, `order_form_controller.js`) insert the new row *before* the
