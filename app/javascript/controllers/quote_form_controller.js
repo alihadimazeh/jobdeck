@@ -1,10 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
+import { focusFirstField, focusAfterRemoval, announce } from "controllers/row_focus"
 
 export default class extends Controller {
   static targets = [
     "roomsContainer", "roomTemplate", "roomRow",
     "lineItemsContainer", "lineItemTemplate", "lineItemRow",
-    "totalArea", "laborRate", "materialRate"
+    "totalArea", "laborRate", "materialRate",
+    "addRoomButton", "addLineItemButton", "status"
   ]
 
   // Rooms
@@ -12,13 +14,17 @@ export default class extends Controller {
   addRoom() {
     const content = this.roomTemplateTarget.innerHTML.replace(/NEW_RECORD/g, Date.now())
     this.roomsContainerTarget.insertAdjacentHTML("beforeend", content)
+    focusFirstField(this.roomsContainerTarget.lastElementChild)
+    announce(this.#statusRegion, "Room added")
   }
 
   removeRoom(event) {
     const row = event.target.closest("[data-quote-form-target~='roomRow']")
     row.querySelector("[data-room-destroy]").value = "1"
+    focusAfterRemoval(row, this.roomRowTargets, this.#addRoomButton)
     row.classList.add("hidden")
     this.#refreshTotalArea()
+    announce(this.#statusRegion, "Room removed")
   }
 
   updateRoomArea(event) {
@@ -35,12 +41,16 @@ export default class extends Controller {
   addLineItem() {
     const content = this.lineItemTemplateTarget.innerHTML.replace(/NEW_RECORD/g, Date.now())
     this.lineItemsContainerTarget.insertAdjacentHTML("beforeend", content)
+    focusFirstField(this.lineItemsContainerTarget.lastElementChild)
+    announce(this.#statusRegion, "Line item added")
   }
 
   removeLineItem(event) {
     const row = event.target.closest("[data-quote-form-target~='lineItemRow']")
     row.querySelector("[data-line-destroy]").value = "1"
+    focusAfterRemoval(row, this.lineItemRowTargets, this.#addLineItemButton)
     row.classList.add("hidden")
+    announce(this.#statusRegion, "Line item removed")
   }
 
   updateLineItemTotal(event) {
@@ -68,6 +78,10 @@ export default class extends Controller {
   }
 
   // Private
+
+  get #statusRegion()      { return this.hasStatusTarget ? this.statusTarget : null }
+  get #addRoomButton()     { return this.hasAddRoomButtonTarget ? this.addRoomButtonTarget : null }
+  get #addLineItemButton() { return this.hasAddLineItemButtonTarget ? this.addLineItemButtonTarget : null }
 
   #refreshTotalArea() {
     let total = 0

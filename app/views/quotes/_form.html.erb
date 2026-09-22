@@ -1,6 +1,7 @@
 <%= form_with model: quote,
       url: (quote.persisted? ? quote_path(quote) : lead_quotes_path(quote.lead)),
       html: { data: { controller: "quote-form" } } do |form| %>
+  <p class="sr-only" aria-live="polite" data-quote-form-target="status"></p>
 
   <%= render partial: "shared/form_errors", locals: { model: quote } %>
 
@@ -48,7 +49,7 @@
     </template>
 
     <div class="flex flex-wrap justify-between items-center gap-2 mt-3">
-      <button type="button" data-action="click->quote-form#addRoom"
+      <button type="button" data-action="click->quote-form#addRoom" data-quote-form-target="addRoomButton"
               class="btn btn-ghost btn-sm text-primary">
         + Add Room
       </button>
@@ -104,7 +105,7 @@
       <% end %>
     </template>
 
-    <button type="button" data-action="click->quote-form#addLineItem"
+    <button type="button" data-action="click->quote-form#addLineItem" data-quote-form-target="addLineItemButton"
             class="btn btn-ghost btn-sm text-primary mt-3">
       + Add Line Item
     </button>
