@@ -671,6 +671,75 @@ room/line-item editor rows genuinely stack on mobile, not just shrink; `status_b
 `STATUS_VARIANTS` centralizes every model's status→color mapping with zero hand-rolled badges
 anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 
+## UI Backlog — loop queue (2026-09-22)
+
+> Worked through by a self-paced `/loop`, one item per iteration, one branch + PR each
+> (branch `ui/U<n>-<slug>`, off `origin/main`). Consolidates the audit sections above plus a
+> second, deeper audit pass (2026-09-21 rerun) into one ordered queue. **Phase 5 (auth/RBAC/SSO)
+> is being built in parallel by another agent** — nothing here touches auth, users, sessions,
+> policies, or the `author`/`uploaded_by` → `user_id` migration. Items marked ⚠ touch files
+> Phase 5 may also touch; check its open PRs before starting them.
+
+- [ ] **U1** — ActivityNote/Document create failure loses the user's input.
+      `activity_notes_controller.rb#create` / `documents_controller.rb#create` do
+      `redirect_to parent, alert: errors.to_sentence` on failure, unlike every other controller
+      (`render :new, status: :unprocessable_content`). A blank note or a rejected upload (wrong
+      type / >50MB) bounces the user back with a toast and discards what they typed/selected; the
+      `shared/form_errors` render in both `_form` partials is dead code on the create path.
+      Fix: re-render the parent's show page (status 422) with the invalid record bound into the
+      section's form so the error summary fires. Supersedes the Documents item under
+      "UI/UX Audit findings → Consistency" above.
+- [ ] **U2** ⚠ — Delete the dead `content_for?(:breadcrumbs)` / `content_for?(:page_heading)`
+      block in `layouts/application.html.erb` (~lines 35-42). No view ever sets either (every page
+      uses `shared/_page_header`), so an empty bordered `<header>` banner landmark renders on
+      every page.
+- [ ] **U3** — Colors outside the token system: `layouts/mailer.html.erb:18,23` and
+      `pwa/manifest.json.erb:20` still hardcode the pre-retint palette (`#1E293B`/`#EA580C`) —
+      re-tint to navy/blue (neither goes through Tailwind). Also `application_helper.rb`'s
+      `nav_link` raw `text-white` → semantic token. Supersedes the two matching items above.
+- [ ] **U4** — Unlabeled controls: the `status_eq` filter selects on the Lead (and Job, once
+      PR #56 lands) index have no label, visible or `sr-only` (PR #54 labeled only the text
+      inputs); `item_type` selects in `quotes/_quote_line_item_fields.html.erb` and
+      `orders/_line_item_fields.html.erb` lack the `aria-label` their sibling inputs have.
+- [ ] **U5** — Required-field indicators: nothing marks required fields anywhere. Add a
+      `required:` option to `shared/_field.html.erb` (visual marker + `required` attribute) and
+      use it for Customer first/last name + phone, Lead/Job title, Room name/length/width.
+- [ ] **U6** — Document upload guidance: `documents/_form.html.erb`'s `file_field` has no
+      `accept` attribute and no hint about the constraints `Document::ACCEPTED_TYPES`/`MAX_SIZE`
+      enforce (PDF, XLS/XLSX, JPEG, PNG, 50MB). Add both, plus `aria-busy` during submit.
+- [ ] **U7** — Photo documents get no inline view — only PDFs get "View". Give JPEG/PNG
+      documents an inline thumbnail/"View" link (`documents/_document.html.erb`).
+- [ ] **U8** — Focus handling in the estimation tool: `addRoom`/`addLineItem`
+      (`quote_form_controller.js`, `order_form_controller.js`) insert the new row *before* the
+      "+ Add" button in DOM order but leave focus on the button, so Tab skips the new row; the
+      remove handlers hide the row holding the focused button, dropping focus to `<body>`. Move
+      focus into the new row's first input on add, and to a sensible neighbour on remove.
+- [ ] **U9** ⚠ — Render the ActivityNote section on the Customer show page (the association
+      already exists on `Customer`, no view renders it).
+- [ ] **U10** ⚠ — Customer Documents: add `has_many :documents, as: :documentable` to
+      `Customer`, the nested `create` route, and the section on the show page (after U9).
+- [ ] **U11** — Hand-rolled preview rows: `customers/show.html.erb` (Leads/Jobs tables),
+      `leads/show.html.erb` (related Job), `jobs/show.html.erb` (related Lead) re-implement row
+      markup instead of rendering the `_lead`/`_job` partials — drift risk. Reuse the partials
+      (or one shared compact-row partial if the columns genuinely need to differ).
+- [ ] **U12** — `shared/_badge.html.erb`: add `whitespace-nowrap` so a longer label never wraps.
+- [ ] **U13** — Customer email format validation: `validates :email, format: { with:
+      URI::MailTo::EMAIL_REGEXP }, allow_blank: true` (see "Known bugs / Nice-to-haves" above).
+- [ ] **U14** — Customer phone field client-side `pattern` + `inputmode: "tel"` via `_field`'s
+      `options:` (see "Known bugs / Nice-to-haves" above).
+
+**In flight elsewhere:** Job index search + pagination — PR #56 (another session).
+
+**Not in the loop — needs a product decision first:**
+- Quote/Order search + pagination — both are only listed nested under a Lead/Job
+  (`/leads/:id/quotes`, `/jobs/:id/orders`), so there's no top-level list to search yet. Want
+  top-level Quotes/Orders pages?
+- Lead + Customer creation on one form (documented in CLAUDE.md, never built) — build or drop?
+- Customer show "Lifetime Value" / "Outstanding" stat tiles always render "—" — compute (from
+  which orders/statuses?) or remove?
+- `tax_rate` "0.13 for 13%" input format; dark theme; Firefox popover fallback (needs a manual
+  browser look, can't be verified headless).
+
 ## Housekeeping
 - [x] Update CLAUDE.md to reflect schema decisions
 - [x] Fix customer fixtures
