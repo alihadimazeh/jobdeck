@@ -680,7 +680,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 > policies, or the `author`/`uploaded_by` → `user_id` migration. Items marked ⚠ touch files
 > Phase 5 may also touch; check its open PRs before starting them.
 
-- [ ] **U1** — ActivityNote/Document create failure loses the user's input.
+- [x] **U1** — ActivityNote/Document create failure loses the user's input. — **PR #58**
       `activity_notes_controller.rb#create` / `documents_controller.rb#create` do
       `redirect_to parent, alert: errors.to_sentence` on failure, unlike every other controller
       (`render :new, status: :unprocessable_content`). A blank note or a rejected upload (wrong
