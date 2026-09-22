@@ -5,6 +5,17 @@
       action: { label: "New Job", path: new_job_path }
     } %>
 
+<%= search_form_for @q, url: jobs_path, class: "mb-4 flex gap-2 max-w-lg" do |f| %>
+  <%= f.label :title_or_customer_first_name_or_customer_last_name_cont, "Search jobs", class: "sr-only" %>
+  <%= f.search_field :title_or_customer_first_name_or_customer_last_name_cont,
+        class: "input input-sm w-full", placeholder: "Search jobs…" %>
+  <%# Ransack's *_eq predicate needs the enum's integer value, not its label - see
+      leads/index.html.erb for the bug this guards against. %>
+  <%= f.select :status_eq, Job.statuses.map { |key, value| [ key.titleize, value ] },
+        { include_blank: "Any status" }, class: "select select-sm" %>
+  <%= f.submit "Search", class: "btn btn-sm" %>
+<% end %>
+
 <%= render "shared/table", { columns: [ "Title", "Customer", "Status", "Start Date", "" ] } do %>
   <% if @jobs.any? %>
     <%= render @jobs %>
@@ -15,3 +26,5 @@
         } %>
   <% end %>
 <% end %>
+
+<%== @pagy.series_nav if @pagy.pages > 1 %>

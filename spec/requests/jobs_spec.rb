@@ -9,6 +9,39 @@ RSpec.describe "Jobs", type: :request do
       get jobs_path
       expect(response).to have_http_status(:success)
     end
+
+    it "filters by the search query across title/customer name" do
+      match_customer = create(:customer, first_name: "Zebra", last_name: "Findme")
+      match    = create(:job, customer: match_customer, title: "Kitchen retile")
+      no_match = create(:job, customer: customer, title: "Bathroom job")
+
+      get jobs_path, params: { q: { title_or_customer_first_name_or_customer_last_name_cont: "Findme" } }
+
+      expect(response.body).to include(match.title)
+      expect(response.body).not_to include(no_match.title)
+    end
+
+    it "filters by status using the enum's integer value, not its label" do
+      active_job  = create(:job, customer: customer, status: :active)
+      on_hold_job = create(:job, customer: customer, status: :on_hold)
+
+      get jobs_path, params: { q: { status_eq: Job.statuses["on_hold"] } }
+
+      expect(response.body).to include(on_hold_job.title)
+      expect(response.body).not_to include(active_job.title)
+    end
+
+    it "paginates when there are more jobs than one page" do
+      jobs = create_list(:job, 21, customer: customer)
+      last_job = jobs.max_by(&:id)
+
+      get jobs_path
+      expect(response.body).to include("page=2")
+      expect(response.body).not_to include(last_job.title)
+
+      get jobs_path, params: { page: 2 }
+      expect(response.body).to include(last_job.title)
+    end
   end
 
   describe "GET /jobs/:id" do
