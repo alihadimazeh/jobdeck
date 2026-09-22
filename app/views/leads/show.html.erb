@@ -73,10 +73,10 @@
 
 <%# Activity notes %>
 <div class="mt-6">
-  <%= render "activity_notes/section", notable: @lead %>
+  <%= render "activity_notes/section", notable: @lead, activity_note: @activity_note %>
 </div>
 
 <%# Documents %>
 <div class="mt-6">
-  <%= render "documents/section", documentable: @lead %>
+  <%= render "documents/section", documentable: @lead, document: @document %>
 </div>
