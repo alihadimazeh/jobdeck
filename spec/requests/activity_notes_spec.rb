@@ -47,6 +47,37 @@ RSpec.describe "ActivityNotes", type: :request do
     end
   end
 
+  describe "POST /customers/:customer_id/activity_notes" do
+    it "creates a note on the customer and redirects to it" do
+      params = { activity_note: { body: "Prefers morning calls" } }
+      expect { post customer_activity_notes_path(customer), params: params }.to change(ActivityNote, :count).by(1)
+
+      expect(response).to redirect_to(customer_path(customer))
+      expect(ActivityNote.last.notable).to eq(customer)
+    end
+
+    it "does not create a note on invalid params" do
+      expect {
+        post customer_activity_notes_path(customer), params: { activity_note: { body: "" } }
+      }.not_to change(ActivityNote, :count)
+    end
+  end
+
+  describe "editing/deleting a customer's note" do
+    let!(:note) { create(:activity_note, notable: customer, body: "Old") }
+
+    it "updates it and redirects back to the customer" do
+      patch activity_note_path(note), params: { activity_note: { body: "New" } }
+      expect(response).to redirect_to(customer_path(customer))
+      expect(note.reload.body).to eq("New")
+    end
+
+    it "deletes it and redirects back to the customer" do
+      expect { delete activity_note_path(note) }.to change(ActivityNote, :count).by(-1)
+      expect(response).to redirect_to(customer_path(customer))
+    end
+  end
+
   describe "GET /activity_notes/:id/edit" do
     it "renders the edit form inside the matching turbo-frame" do
       note = lead.activity_notes.create!(body: "Original body")
