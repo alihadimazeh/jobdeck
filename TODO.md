@@ -723,7 +723,7 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
       markup instead of rendering the `_lead`/`_job` partials — drift risk. Reuse the partials
       (or one shared compact-row partial if the columns genuinely need to differ).
 - [x] **U12** — **PR #70** — `shared/_badge.html.erb`: add `whitespace-nowrap` so a longer label never wraps.
-- [ ] **U13** — Customer email format validation: `validates :email, format: { with:
+- [x] **U13** — **PR #71** (also: archive! now skips validations so legacy bad emails can't block it) — Customer email format validation: `validates :email, format: { with:
       URI::MailTo::EMAIL_REGEXP }, allow_blank: true` (see "Known bugs / Nice-to-haves" above).
 - [ ] **U14** — Customer phone field client-side `pattern` + `inputmode: "tel"` via `_field`'s
       `options:` (see "Known bugs / Nice-to-haves" above).
