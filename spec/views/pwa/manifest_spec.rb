@@ -7,7 +7,7 @@ RSpec.describe "pwa/manifest", type: :view do
     json = ActionController::Base.render(template: "pwa/manifest", formats: [ :json ])
     parsed = JSON.parse(json)
 
-    expect(parsed["theme_color"]).to eq("#1E293B")
+    expect(parsed["theme_color"]).to eq("#0F172A")
     expect(parsed["background_color"]).to eq("#F8FAFC")
     expect(parsed["theme_color"]).not_to eq("red")
   end

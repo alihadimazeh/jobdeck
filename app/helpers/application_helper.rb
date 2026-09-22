@@ -69,7 +69,7 @@ module ApplicationHelper
   def nav_link(label, path, section: label)
     active = nav_section_active?(section)
     base  = "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-    style = active ? "bg-primary/15 text-white" : "text-neutral-content/70 hover:text-white hover:bg-white/5"
+    style = active ? "bg-primary/15 text-primary-content" : "text-neutral-content/70 hover:text-primary-content hover:bg-neutral-content/5"
     link_to(label, path, class: "#{base} #{style}", "aria-current": (active ? "page" : nil))
   end
 end

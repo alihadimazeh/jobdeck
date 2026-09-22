@@ -13,7 +13,8 @@ RSpec.describe "layouts/mailer", type: :view do
 
     expect(html).to include("Your quote has been accepted.")
     expect(html).to include("Jobdeck")
-    expect(html).to include("#EA580C") # brand accent rule
+    expect(html).to include("#0369A1") # primary accent rule
+    expect(html).to include("#0F172A") # neutral header
   end
 
   it "uses an email-safe font stack, not the self-hosted Inter font" do
