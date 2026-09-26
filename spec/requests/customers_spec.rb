@@ -94,6 +94,13 @@ RSpec.describe "Customers", type: :request do
   end
 
   describe "POST /customers" do
+    it "re-renders with a field error for a malformed email" do
+      params = { customer: { first_name: "A", last_name: "B", phone: "555", email: "nope" } }
+      expect { post customers_path, params: params }.not_to change(Customer, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Email is invalid")
+    end
+
     let(:valid_params) { { customer: { first_name: "Ada", last_name: "Lovelace", phone: "555-0100" } } }
 
     it "creates a customer and redirects to it" do

@@ -3,6 +3,9 @@ class Customer < ApplicationRecord
 
   validates :status, presence: true
   validates :first_name, :last_name, :phone, presence: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
+
+  normalizes :email, with: ->(email) { email.strip }
 
   has_many :jobs,   dependent: :restrict_with_error
   has_many :orders, dependent: :restrict_with_error
@@ -17,8 +20,10 @@ class Customer < ApplicationRecord
     "#{first_name} #{last_name}"
   end
 
+  # System-driven (a blocked delete), not a user edit - skip validations so an unrelated
+  # legacy value (e.g. an email saved before format validation existed) can't block it.
   def archive!
-    update!(status: "archived")
+    update_attribute(:status, "archived")
   end
 
   def self.ransackable_attributes(auth_object = nil)

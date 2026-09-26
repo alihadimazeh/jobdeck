@@ -15,6 +15,13 @@ RSpec.describe Customer, type: :model do
   end
 
   describe "#archive!" do
+    it "archives even when an unrelated legacy value would fail validation" do
+      customer = create(:customer)
+      customer.update_column(:email, "legacy-bad-email")
+      customer.archive!
+      expect(customer.reload).to be_archived_status
+    end
+
     it "sets status to archived" do
       customer = create(:customer, status: :active)
       customer.archive!
@@ -34,6 +41,24 @@ RSpec.describe Customer, type: :model do
   end
 
   describe "validations" do
+    it "accepts a well-formed email and allows a blank one" do
+      expect(build(:customer, email: "pm@example.com")).to be_valid
+      expect(build(:customer, email: "")).to be_valid
+      expect(build(:customer, email: nil)).to be_valid
+    end
+
+    it "rejects a malformed email" do
+      customer = build(:customer, email: "not an email")
+      expect(customer).not_to be_valid
+      expect(customer.errors[:email]).to include("is invalid")
+    end
+
+    it "strips surrounding whitespace from the email before validating" do
+      customer = build(:customer, email: "  pm@example.com ")
+      expect(customer).to be_valid
+      expect(customer.email).to eq("pm@example.com")
+    end
+
     it "requires first_name, last_name, and phone" do
       customer = build(:customer, first_name: "", last_name: "", phone: "")
       expect(customer).not_to be_valid
