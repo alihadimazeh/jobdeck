@@ -1,6 +1,7 @@
 <%= form_with model: order,
       url: (order.persisted? ? order_path(order) : job_orders_path(order.job)),
       html: { data: { controller: "order-form" } } do |form| %>
+  <p class="sr-only" aria-live="polite" data-order-form-target="status"></p>
 
   <%= render partial: "shared/form_errors", locals: { model: order } %>
 
@@ -48,7 +49,7 @@
       <% end %>
     </template>
 
-    <button type="button" data-action="click->order-form#addLineItem"
+    <button type="button" data-action="click->order-form#addLineItem" data-order-form-target="addLineItemButton"
             class="btn btn-ghost btn-sm text-primary mt-3">
       + Add Line Item
     </button>
