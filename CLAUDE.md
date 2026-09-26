@@ -14,13 +14,13 @@ A simple project management web app for a small construction business (flooring/
 - **Inter** — self-hosted variable font (`app/assets/fonts/inter/`), no external font
   requests.
 - **Active Storage** for file uploads (PDFs, Excel sheets, images) — used by `Document`
-- **Pagy** for pagination — wired into the Customer and Lead index pages so far
-  (`Job`/`Quote`/`Order` indexes don't have it yet). See "Search & Pagination" under
-  "## Design System" below for the real (43.x) API, which is a full rewrite of Pagy's
-  classic `Backend`/`Frontend` docs.
-- **Ransack** for search/filtering — same two index pages, same caveat. Every searched
-  model needs explicit `ransackable_attributes`/`ransackable_associations` class methods
-  (a security allow-list) — see `Customer`/`Lead`.
+- **Pagy** for pagination — wired into the Customer, Lead, and Job index pages. Quotes and
+  Orders have no top-level index to paginate (they're only listed nested under a Lead/Job).
+  See "Search & Pagination" under "## Design System" below for the real (43.x) API, which is
+  a full rewrite of Pagy's classic `Backend`/`Frontend` docs.
+- **Ransack** for search/filtering — same three index pages. Every searched model needs
+  explicit `ransackable_attributes`/`ransackable_associations` class methods (a security
+  allow-list) — see `Customer`/`Lead`/`Job`.
 - Turbo + Stimulus (Rails defaults, no separate frontend framework)
 - **RSpec** (`rspec-rails`, `factory_bot_rails`) — the test framework for the model layer.
   See "## Testing" below.
@@ -77,20 +77,44 @@ left in place as-is and still runs (`bin/rails test`), but it is not where new t
   metadata. The old `test/` Minitest suite got the equivalent treatment — a `users.yml` fixture
   + an `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb` — rather than
   left broken, even though it's not where new coverage goes.
-- **298 examples, 0 failures** (`bundle exec rspec`, excluding `spec/system/**`). System specs
-  (Capybara/Selenium) don't run in this sandbox — no real browser is available here
-  (`Selenium::WebDriver::Error::WebDriverError`), a pre-existing environment limitation, not a
-  regression; they're written and expected to pass wherever a browser driver is available.
-- **Pre-existing flaky test found while verifying the above** (not caused by it, confirmed by
-  reproducing on `main` with `bundle exec rspec --seed 3`): `customers_spec.rb`/`leads_spec.rb`'s
-  "paginates when there are more records than one page" tests assume `@q.result(distinct:
-  true)` returns rows in id/insertion order, but Postgres doesn't guarantee any row order for
-  `SELECT DISTINCT` without an explicit `ORDER BY` — it can plan a hash-based dedup that
-  reorders rows depending on the actual id values involved, which is exactly what a random test
-  order does (whatever ids the leads/customers happen to land on, depending on how much else
-  ran first). Not fixed here — out of scope for this PR — but worth a real fix (an explicit
-  `.order(:id)` in `CustomersController#index`/`LeadsController#index`) before it's mistaken for
-  a regression from unrelated future work. See TODO.md → Phase 5.
+- **System specs sign in too** (PR #62). `spec/support/system_authentication.rb` defines
+  `sign_in_as(user)`, which drives the real sign-in form in the browser (a raw POST like the
+  request-spec helper can't put a cookie into the browser session). Two non-obvious
+  constraints, both found the hard way:
+  - The call lives **inside `spec/rails_helper.rb`'s `before(:each, type: :system)` hook,
+    right after `driven_by`** — not in a separate hook. `spec/support/**/*.rb` is required
+    before that hook is registered, so any support-file hook (even `append_before`) runs
+    *first*, and `driven_by` then resets the session and drops the cookie.
+  - After `click_button "Sign in"` the helper waits on `have_current_path(root_path)`. The
+    form submits via Turbo (a fetch, not a navigation), so `click_button` returns before the
+    redirect finishes; without the wait the spec's next `visit` can race the cookie.
+- **Running system specs locally.** This machine has no `google-chrome`/`chromium` on `PATH`,
+  so plain `bundle exec rspec` fails every system spec with "cannot find Chrome binary" — an
+  environment gap, not a code bug (CI has Chrome preinstalled). Point Selenium at a
+  Chromium-based binary via the existing `SE_CHROME_BINARY` hook in `rails_helper.rb`, **and pin
+  a ChromeDriver of the same major version** via `SE_CHROMEDRIVER` (read by selenium-webdriver
+  itself). Pinning is required: Selenium Manager downloads the driver for the *latest* stable
+  Chrome, not for the binary you point it at, so once Chrome's stable version moves ahead of
+  Brave's Chromium the session fails with "This version of ChromeDriver only supports Chrome
+  version N". That happened on 2026-09-24 (driver 154, Brave on 153). Working combination:
+  ```
+  SE_CHROME_BINARY=/usr/bin/brave-browser \
+  SE_CHROMEDRIVER=~/.cache/selenium/chromedriver/linux64/153.0.8010.52/chromedriver \
+  bundle exec rspec
+  ```
+  Check `brave-browser --version` and `ls ~/.cache/selenium/chromedriver/linux64/` after a
+  Brave update. A Chrome for Testing binary from `~/.cache/selenium/chrome/linux64/<ver>/chrome`
+  with its same-version driver works too. Run long suites with a `timeout`: with a mismatched
+  driver, one run kept going for over two hours without ever reaching the app, instead of
+  failing fast.
+- **Current counts (main, 2026-09-24):** 339 RSpec examples, 0 failures (307 non-system + 32
+  system); 19 Minitest runs, 0 failures.
+- **Pagination-order flake — fixed** (PR #56). The "paginates when there are more records
+  than one page" specs used to fail under some `--seed` values: `@q.result(distinct: true)`
+  had no `ORDER BY`, and Postgres plans a bare `SELECT DISTINCT` as a `HashAggregate`, whose
+  output order depends on hash buckets, not ids (confirmed with `EXPLAIN`). Every index now
+  appends `.order(:id)`, which switches the plan to `Sort` + `Unique`. Any new
+  `distinct: true` query that gets paginated needs an explicit order too.
 
 ## Domain Overview
 
@@ -143,9 +167,10 @@ has_many :quotes  # through leads, but direct FK for convenience — dependent: 
 has_many :activity_notes, as: :notable, dependent: :destroy
 ```
 
-`activity_notes` was added deliberately ahead of `Document`/views for it — Customer doesn't have
-a `documents` association yet, and the Customer show page doesn't render the ActivityNote section
-partial yet either. Wiring that up (association exists, UI doesn't) is open work, not a bug.
+`activity_notes` was added deliberately ahead of `Document`/views for it — on `main`, Customer
+doesn't have a `documents` association yet, and the Customer show page doesn't render the
+ActivityNote section partial yet either. Both are in open PRs: #67 (U9, Activity section) and
+#68 (U10, `has_many :documents` + section — stacked on #67, merge #67 first).
 
 ---
 
@@ -395,6 +420,15 @@ Built as a Turbo Frame per row (`turbo_frame_tag activity_note`) so inline edit/
 reload the page; the row's own delete link needs `data-turbo-frame="_top"` to escape its own
 frame on destroy (see `shared/_row_actions.html.erb`'s optional `turbo_frame:` local).
 
+**Failed create keeps the user's input** (PR #58). `ActivityNotesController#create` and
+`DocumentsController#create` both `include RendersParentShow`
+(`app/controllers/concerns/renders_parent_show.rb`): on a validation failure they re-render the
+parent's show page (`leads/show`, `jobs/show`, `orders/show`) with a 422, with the invalid record
+exposed as `@activity_note`/`@document`. The `_section` partials take that as an optional local
+(`activity_note:`/`document:`), so the inline form keeps what was typed and `shared/_form_errors`
+fires. Previously they redirected with a flash and threw the input away. Any new parent show page
+that renders these sections must pass the local through the same way.
+
 ---
 
 ### Document (polymorphic + Active Storage)
@@ -433,8 +467,7 @@ needs a file whose *bytes* are actually a non-accepted type (see `document_spec.
 
 PDF documents get an inline "View" link (`rails_blob_path(disposition: "inline")`, opens in a
 new tab); every other type gets "Download" (`disposition: "attachment"`). Photo-type (JPEG/PNG)
-documents don't get an inline preview yet even though the browser could render them — open item,
-see TODO.md → "UI/UX Audit findings (2026-09-21)".
+documents don't get an inline preview on `main` yet — PR #65 (U7) adds one and is still open.
 
 ---
 
@@ -563,7 +596,7 @@ in "Status Enums Reference" below.
 
 ## UX / Workflow Notes
 
-- **Lead + Customer creation should happen together** on one form, since requiring a separate customer-creation step first adds friction during a quick walk-in or phone inquiry.
+- **Lead + Customer creation on one form** was the original intent (a separate customer-creation step adds friction during a quick walk-in or phone inquiry) but was **never built** — `leads/_form.html.erb` only offers a `customer_id` select of existing customers. Parked in TODO.md's UI Backlog as "needs a product decision" (build it or drop it).
 - **Quotes live on the Lead show page** — there's a "Create Quote" button that opens the quote form, and the page lists all of the lead's quotes. A lead can have several (revisions, or split scopes), but only one can be `accepted`.
 - **Estimation tool on the Quote form** — a Stimulus-powered room calculator where you enter room name + dimensions. It sums sq footage across all rooms and auto-populates labor and material line items (based on rates you enter). Line items remain fully editable after the tool runs.
 - **Quote → Job conversion** is triggered from the Quote show page ("Accept Quote" button). This calls `convert_to_job!` on the Lead, which creates the Job, creates the first Order seeded from the Quote's line items, and sets the Lead status to `converted`.
@@ -640,8 +673,10 @@ make every controller require a signed-in user. Roles/Pundit (milestone 2) and S
 - Every request spec now signs in a throwaway `create(:user)` via a global `before(:each,
   type: :request)` hook (`spec/support/authentication.rb`) unless tagged `skip_authentication:
   true` (used by `sessions_spec.rb`/`passwords_spec.rb`, which test the unauthenticated paths
-  directly). The old `test/` Minitest suite gets the same treatment via a `test/fixtures/users.yml`
-  fixture and an `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb`.
+  directly). System specs sign in through the real browser form instead (PR #62 — see
+  "## Testing" for the hook-ordering and Turbo-timing details). The old `test/` Minitest suite
+  gets the same treatment via a `test/fixtures/users.yml` fixture and an
+  `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb`.
 - **Deliberately not done in this milestone** (tracked in TODO.md → Phase 5): no sign-up/user-
   management UI yet — `db/seeds.rb` creates one dev user (`admin@jobdeck.test`), anyone else is
   made via `User.create!`/`rails console` until Pundit + an admin role exist. The free-text
@@ -720,6 +755,11 @@ or the two small table polish items below, which happened after that plan finish
   precisely so the contrast/badge-variant work below didn't need re-checking per
   resource. The orange values still exist in git history (`cdc4e38` on
   `feature/ui-foundation-prep`) if ever needed again, but nothing on `main` uses them.
+- Files **outside the Tailwind pipeline** can't use tokens and hardcode hex: the mail layout
+  (`layouts/mailer.html.erb`) and the PWA manifest (`pwa/manifest.json.erb`). Both were
+  re-tinted to navy/blue in PR #60 (they'd missed the original retint). `spec/views/
+  stale_palette_spec.rb` fails if the old `#EA580C`/`#1E293B` values reappear anywhere under
+  `app/views` or `app/helpers`. If the palette changes again, update those two files by hand.
 
 | Role | Hex | Used for |
 |---|---|---|
@@ -761,7 +801,12 @@ resource, e.g. a Quote, still highlights its parent Leads/Jobs nav item).
 
 - `layouts/application.html.erb`: daisyUI `drawer` — a permanent sidebar rail `>=lg`,
   a toggleable overlay drawer below it, from one markup (`lg:drawer-open`). Skip link,
-  `<html lang="en">`, `aria-label` on both nav landmarks.
+  `<html lang="en">`, `aria-label` on both nav landmarks. Page titles/breadcrumbs come only
+  from `shared/_page_header` inside `<main>` — the old layout-level `<header>` driven by
+  `content_for(:page_heading)`/`(:breadcrumbs)` was never set by any view and was removed
+  (PR #59), so don't reintroduce those `content_for` keys.
+- The sidebar shows the signed-in user's email and a "Sign out" button (Phase 5). That button
+  still uses a raw `hover:text-white` — deliberately left for the Phase 5 view-gating work.
 - `app/javascript/controllers/drawer_controller.js` — a11y layer on top of the
   checkbox-driven drawer (focus management, Escape-to-close, `aria-expanded`); the
   drawer itself needs no JS to open/close.
@@ -779,16 +824,23 @@ outstanding orders (`Order.outstanding`), each a 5-row preview with a true total
 
 ### Search & Pagination (Ransack + Pagy)
 
-Wired into the **Customer and Lead index pages only** — `Job`/`Quote`/`Order` indexes are still
-plain unfiltered/unpaginated `render @collection` (see TODO.md for that gap).
+Wired into the **Customer, Lead, and Job index pages** (Job added in PR #56). Quotes and
+Orders have no top-level index — they're only listed nested under a Lead/Job — so whether to
+add top-level Quotes/Orders pages is an open product question (TODO.md → UI Backlog), not a gap
+in this pattern.
 
 - Controller pattern: `@q = Model.ransack(params[:q])` then `@pagy, @records =
-  pagy(@q.result(distinct: true))`. Every ransack-able model needs explicit
+  pagy(@q.result(distinct: true).order(:id))`. **The `.order(:id)` is required** — without it
+  Postgres may return `SELECT DISTINCT` rows in hash order, so records jump between pages (see
+  "## Testing" → pagination-order flake). Every ransack-able model needs explicit
   `ransackable_attributes`/`ransackable_associations` class methods — Ransack raises
   `Ransack::InvalidSearchError` without them (a deliberate security allow-list, not boilerplate
   you can skip).
 - View pattern: `search_form_for @q do |f| ... end`, then `@pagy.series_nav if @pagy.pages > 1`
-  below the results.
+  below the results. **Every filter control needs a label**, visible or `sr-only` —
+  placeholders don't count (PRs #54, #61). `spec/requests/form_control_labels_spec.rb` checks
+  the Lead index plus the Quote/Order forms (including their JS row templates). Known gap: the
+  Job index's `status_eq` select still has no label and isn't covered by that spec.
 - **Pagy 43.x is a full rewrite** of the classic docs most tutorials show — there's no
   `Pagy::Backend`/`Pagy::Frontend`/`pagy_nav` helper in this version. `Pagy::Method` is included
   in `ApplicationController`; `pagy(collection)` returns `[pagy_instance, collection]`; the nav
@@ -804,12 +856,32 @@ plain unfiltered/unpaginated `render @collection` (see TODO.md for that gap).
 ### Not done yet
 
 - **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
-- **ActivityNote/Document UI on Customer's show page** — the `activity_notes` association exists
-  on `Customer` but no view renders it there yet; `Customer` has no `documents` association at
-  all yet either.
-- **Ransack/Pagy on Job/Quote/Order indexes** — see "Search & Pagination" above.
-- **Role-based nav/action-button gating** — blocked on the auth work (Phase 5) below;
+- **ActivityNote/Document UI on Customer's show page** — in open PRs #67/#68 (see above).
+- **Quote/Order search + pagination** — needs a product decision first (no top-level lists).
+- **Job index status filter label** — see "Search & Pagination" above.
+- **Role-based nav/action-button gating** — blocked on Phase 5 milestones 2–3 (roles/Pundit);
   the shell is built to have `policy(record).action?` checks layered in later.
 - **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
   (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
   `before_validation` normalization and touches both Quote's and Order's show pages.
+
+### In flight (open PRs, not on `main`)
+
+TODO.md → "UI Backlog — loop queue" was worked by a `/loop` session, one `ui/U<n>-<slug>`
+branch + PR per item. U1–U4 are merged (#58–#61). **U5–U14 are ticked `[x]` in TODO.md but
+only mean "PR opened"** — PRs #63–#72 are still open, so none of this is live yet:
+
+| PR | Item | Change |
+|---|---|---|
+| #63 | U5 | `required:` option on `shared/_field` (marker + `required` attr) for required fields |
+| #64 | U6 | `accept` attribute + size/type hint on the Document upload field |
+| #65 | U7 | Inline preview for photo (JPEG/PNG) documents |
+| #66 | U8 | Focus management when adding/removing estimation-tool rows (`row_focus.js`) |
+| #67 | U9 | Activity section on the Customer show page |
+| #68 | U10 | Customer Documents (association, route, section) — **stacked on #67** |
+| #69 | U11 | Reuse `_lead`/`_job` row partials in show-page preview tables |
+| #70 | U12 | `whitespace-nowrap` on `shared/_badge` |
+| #71 | U13 | Server-side Customer email format validation (`archive!` now skips validations) |
+| #72 | U14 | Client-side `pattern` + `inputmode: "tel"` on the Customer phone field |
+
+When these merge, move each change into the relevant section above and drop its row here.
