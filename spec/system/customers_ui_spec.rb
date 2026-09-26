@@ -52,11 +52,18 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
       trigger.click
       sleep 1
       puts "[DBG] after 2nd click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
+      puts "[DBG] windows=#{page.driver.browser.window_handles.size} current=#{page.driver.browser.window_handle} hasFocus=#{page.evaluate_script('document.hasFocus()')} visibility=#{page.evaluate_script('document.visibilityState')}"
+      page.driver.browser.window_handles.each do |h|
+        page.driver.browser.switch_to.window(h)
+        puts "[DBG]   window #{h}: #{page.current_url} visibility=#{page.evaluate_script('document.visibilityState')}"
+      end
+      page.driver.browser.switch_to.window(page.driver.browser.window_handles.find { |h| page.driver.browser.switch_to.window(h); page.current_url.end_with?("/customers") })
       unless popover_open.call
-        page.driver.browser.action.release_actions
+        page.driver.browser.execute_cdp("Page.bringToFront")
+        trigger = find("button[aria-label='Actions for #{customer.full_name}']")
         trigger.click
         sleep 1
-        puts "[DBG] after release_actions + click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
+        puts "[DBG] after bringToFront + click: open=#{popover_open.call} hasFocus=#{page.evaluate_script('document.hasFocus()')} events=#{page.evaluate_script('window.__dbg').inspect}"
       end
     end
     dismiss_confirm do

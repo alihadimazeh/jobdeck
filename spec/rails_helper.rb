@@ -65,6 +65,9 @@ RSpec.configure do |config|
     # :system)` registered from a support file (even via append_before) would still run
     # before this one and get its session wiped out the moment driven_by (re)initializes
     # the driver. See spec/support/system_authentication.rb for the sign_in_as helper.
+    # TEMP DEBUG (draft PR #82)
+    handles = page.driver.browser.window_handles
+    puts "[DBG-WIN] #{RSpec.current_example.location}: #{handles.size} windows" if handles.size > 1
     sign_in_as(create(:user)) unless self.class.metadata[:skip_authentication]
   end
 
