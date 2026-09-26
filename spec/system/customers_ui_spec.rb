@@ -28,7 +28,25 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
     customer = create(:customer)
     visit customers_path
 
-    find("button[aria-label='Actions for #{customer.full_name}']").click
+    # TEMP DEBUG (draft PR #82): record what happens around the popover click on CI.
+    page.execute_script(<<~JS)
+      window.__dbg = [];
+      const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
+      log("readyState=" + document.readyState);
+      document.addEventListener("beforetoggle", e => log("beforetoggle " + e.target.id + " " + e.oldState + "->" + e.newState), true);
+      document.addEventListener("toggle", e => log("toggle " + e.target.id + " " + e.newState), true);
+      ["pointerdown", "click"].forEach(t => document.addEventListener(t, e => log(t + " on " + (e.target.closest("button,a,label,input")?.outerHTML || e.target.tagName).slice(0, 120)), true));
+      ["turbo:load", "turbo:visit", "turbo:before-render", "turbo:render", "turbo:before-cache"].forEach(t => document.addEventListener(t, () => log(t), true));
+    JS
+    trigger = find("button[aria-label='Actions for #{customer.full_name}']")
+    puts "[DBG] trigger rect=#{page.evaluate_script("JSON.stringify(arguments[0].getBoundingClientRect())", trigger)}"
+    trigger.click
+    sleep 1
+    puts "[DBG] events=#{page.evaluate_script('window.__dbg').inspect}"
+    puts "[DBG] popover open? #{page.evaluate_script("document.getElementById('row-actions-#{ActionView::RecordIdentifier.dom_id(customer)}').matches(':popover-open')")}"
+    puts "[DBG] active=#{page.evaluate_script('document.activeElement?.outerHTML?.slice(0,120)')}"
+    puts "[DBG] elementFromPoint at trigger=#{page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return document.elementFromPoint(r.x + r.width/2, r.y + r.height/2)?.outerHTML?.slice(0,120) })()", trigger)}"
+    puts "[DBG] url=#{page.current_url} window=#{page.driver.browser.manage.window.size.to_a.inspect} inner=#{page.evaluate_script('[innerWidth, innerHeight]').inspect}"
     dismiss_confirm do
       click_button "Delete"
     end
