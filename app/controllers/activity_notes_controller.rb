@@ -7,6 +7,7 @@ class ActivityNotesController < ApplicationController
   # POST /leads/:lead_id/activity_notes
   # POST /jobs/:job_id/activity_notes
   # POST /jobs/:job_id/orders/:order_id/activity_notes
+  # POST /customers/:customer_id/activity_notes
   def create
     @activity_note = ActivityNote.new(activity_note_params.merge(notable: @notable))
 
@@ -61,6 +62,8 @@ class ActivityNotesController < ApplicationController
                  Order.find(params[:order_id])
     elsif params[:job_id]
                  Job.find(params[:job_id])
+    elsif params[:customer_id]
+                 Customer.find(params[:customer_id])
     end
   end
 

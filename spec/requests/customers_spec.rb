@@ -43,6 +43,25 @@ RSpec.describe "Customers", type: :request do
   end
 
   describe "GET /customers/:id" do
+    it "renders the Documents section with the customer's documents and an upload form" do
+      customer = create(:customer)
+      create(:document, documentable: customer, label: "Signed contract")
+      get customer_path(customer)
+
+      expect(response.body).to include("Signed contract")
+      expect(response.body).to include(%(action="#{customer_documents_path(customer)}"))
+    end
+
+    it "renders the Activity section with the customer's notes and a form posting to it" do
+      customer = create(:customer)
+      create(:activity_note, notable: customer, body: "Gate code is 4412")
+      get customer_path(customer)
+
+      expect(response.body).to include("Activity")
+      expect(response.body).to include("Gate code is 4412")
+      expect(response.body).to include(%(action="#{customer_activity_notes_path(customer)}"))
+    end
+
     it "renders the customer" do
       customer = create(:customer)
       get customer_path(customer)
