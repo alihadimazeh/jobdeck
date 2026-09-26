@@ -4,7 +4,12 @@
 
   <fieldset class="fieldset py-0">
     <%= form.label :file, "File", class: "label" %>
-    <%= form.file_field :file, class: "file-input w-full" %>
+    <%= form.file_field :file, class: "file-input w-full", required: true,
+          accept: (Document::ACCEPTED_TYPES + Document::ACCEPTED_EXTENSIONS).join(","),
+          "aria-describedby": "document_file_hint" %>
+    <p id="document_file_hint" class="form-hint">
+      PDF, Excel (XLS/XLSX), JPEG, or PNG &middot; up to <%= number_to_human_size(Document::MAX_SIZE) %>
+    </p>
   </fieldset>
 
   <%= render partial: "shared/field", locals: { form: form, attr: :label } %>

@@ -7,6 +7,8 @@ class Document < ApplicationRecord
     image/png
   ].freeze
   MAX_SIZE = 50.megabytes
+  # For the upload field's `accept` - some OSes map XLS/XLSX MIME types unreliably.
+  ACCEPTED_EXTENSIONS = %w[.pdf .xls .xlsx .jpg .jpeg .png].freeze
 
   belongs_to :documentable, polymorphic: true
   has_one_attached :file
