@@ -103,6 +103,23 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#field_required?" do
+    it "is true for an unconditional presence validation" do
+      expect(helper.field_required?(Customer.new, :first_name)).to be true
+      expect(helper.field_required?(Room.new, :length)).to be true
+    end
+
+    it "is false for an attribute with no presence validation" do
+      expect(helper.field_required?(Customer.new, :email)).to be false
+      expect(helper.field_required?(ActivityNote.new, :author)).to be false
+    end
+
+    it "follows belongs_to for foreign keys: required unless optional" do
+      expect(helper.field_required?(Lead.new, :customer_id)).to be true
+      expect(helper.field_required?(Job.new, :lead_id)).to be false
+    end
+  end
+
   describe "#nav_link" do
     it "marks the link active (and aria-current) when the section matches, even for a nested controller" do
       allow(helper).to receive(:controller_name).and_return("quotes")

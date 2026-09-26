@@ -14,4 +14,11 @@ RSpec.describe "shared/_form_container", type: :view do
     end
     expect(rendered).to have_selector("div.max-w-3xl")
   end
+
+  it "explains the required-field marker" do
+    render "shared/form_container" do
+      "content".html_safe
+    end
+    expect(rendered).to have_text("Fields marked * are required.")
+  end
 end

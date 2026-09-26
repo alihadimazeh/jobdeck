@@ -66,6 +66,22 @@ module ApplicationHelper
     SECTION_CONTROLLERS.fetch(section, []).include?(controller_name)
   end
 
+  # True when the model has an unconditional presence validation on attr (or, for a
+  # foreign key like customer_id, on its required belongs_to) - so required markers
+  # stay in sync with the real validations instead of being annotated per form.
+  def field_required?(record, attr)
+    return false unless record.class.respond_to?(:validators_on)
+
+    # belongs_to's own presence validator carries an internal `if:` in Rails 8.1, so
+    # read the association's optional flag instead of filtering its validator.
+    association = record.class.reflect_on_association(attr.to_s.delete_suffix("_id")) if attr.to_s.end_with?("_id")
+    return !association.options[:optional] && record.class.belongs_to_required_by_default if association&.macro == :belongs_to
+
+    record.class.validators_on(attr).any? do |validator|
+      validator.kind == :presence && (validator.options.keys & %i[if unless on allow_nil allow_blank]).empty?
+    end
+  end
+
   def nav_link(label, path, section: label)
     active = nav_section_active?(section)
     base  = "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
