@@ -2,123 +2,23 @@
 
 A simple project management web app for a small construction business (flooring/tile installer). General project managers use this to track customers, sales leads, quotes, active jobs, and billing.
 
-## Tech Stack
+## Stack notes
 
-- **Ruby on Rails 8**
-- **PostgreSQL**
-- **Tailwind CSS v4** (via `tailwindcss-rails`, CSS-first config, standalone CLI — no
-  Node/npm anywhere in this stack)
-- **daisyUI** — Tailwind plugin, vendored as standalone `.mjs` files
-  (`app/assets/tailwind/daisyui.mjs`, `daisyui-theme.mjs`) rather than an npm package.
-  The component/theme layer for the whole UI. See "## Design System" below.
-- **Inter** — self-hosted variable font (`app/assets/fonts/inter/`), no external font
-  requests.
-- **Active Storage** for file uploads (PDFs, Excel sheets, images) — used by `Document`
-- **Pagy** for pagination — wired into the Customer, Lead, and Job index pages. Quotes and
-  Orders have no top-level index to paginate (they're only listed nested under a Lead/Job).
-  See "Search & Pagination" under "## Design System" below for the real (43.x) API, which is
-  a full rewrite of Pagy's classic `Backend`/`Frontend` docs.
-- **Ransack** for search/filtering — same three index pages. Every searched model needs
-  explicit `ransackable_attributes`/`ransackable_associations` class methods (a security
-  allow-list) — see `Customer`/`Lead`/`Job`.
-- Turbo + Stimulus (Rails defaults, no separate frontend framework)
-- **RSpec** (`rspec-rails`, `factory_bot_rails`) — the test framework for the model layer.
-  See "## Testing" below.
+Rails 8 + PostgreSQL + Turbo/Stimulus; the Gemfile has the rest. What the Gemfile doesn't show:
+
+- **No Node/npm anywhere.** Tailwind CSS v4 runs through `tailwindcss-rails`'s standalone CLI
+  (CSS-first config). **daisyUI is vendored** as standalone `.mjs` files
+  (`app/assets/tailwind/daisyui.mjs`, `daisyui-theme.mjs`), not an npm package.
+- Design-system rules live in `app/views/CLAUDE.md`; testing details in `spec/CLAUDE.md`.
 
 ## Testing
 
-**RSpec** is the test framework going forward, set up alongside the old Minitest suite
-(`test/` is left as-is — mostly unedited scaffold stubs plus generated controller CRUD
-tests — rather than migrated; new coverage goes in `spec/`, not `test/`).
-
-**Policy: all new test files go in `spec/` (RSpec), never `test/` (Minitest), unless
-explicitly stated otherwise.** Any functionality that needs coverage — models, controllers,
-requests, or otherwise — gets an RSpec spec. The existing Minitest suite under `test/` is
-left in place as-is and still runs (`bin/rails test`), but it is not where new tests go.
-
-- `bundle exec rspec` runs the RSpec suite; `bin/rails test` still runs the old Minitest one.
-- `spec/factories/` (FactoryBot) — one factory per model (`customer`, `lead`, `job`, `quote`,
-  `order`, `room`, `quote_line_item`, `line_item`). `FactoryBot::Syntax::Methods` is included
-  globally (`spec/rails_helper.rb`), so specs use `create`/`build` directly.
-  `spec/support/concerns/billable_line_item.rb` holds one shared example group
-  ("a billable line item") exercised against both `LineItem` and `QuoteLineItem`, so the
-  `BillableLineItem` concern's contract is tested once and both models are checked against
-  the same expectations rather than duplicating the spec.
-- Every model has its own spec (`spec/models/`): `Customer`, `Lead`, `Job`, `Quote`, `Room`,
-  `Order`, `LineItem`, `QuoteLineItem`. Covers what the Model Review cleanup above touched —
-  `Lead#convert_to_job!` (happy path + the idempotency guard), `Quote#only_one_accepted_quote_per_lead`,
-  the `after_save` → `convert_to_job!` trigger (including the reject-then-accept-a-different-quote
-  regression case), the `dependent: :restrict_with_error` deletion-semantics chain on
-  `Customer`/`Job`/`Lead` (including a regression test for the nested-cascade bug), the
-  `assign_customer_from_lead`/`assign_customer_from_job` auto-set callbacks, `order_number`/
-  `quote_number` generation, `recalculate_totals`, `total_area`, and enum value/ordering
-  regression checks on `Lead`/`Job`/`Quote`/`Order` (guards against another integer-backed enum
-  reorder mistake like the `Lead.source` one).
-- Every controller has a request spec (`spec/requests/`): `Customers`, `Leads`, `Jobs`, `Orders`,
-  `Quotes`, `ActivityNotes`, `Documents` — full CRUD per controller plus `QuotesController#accept`
-  (happy path, the `only_one_accepted_quote_per_lead` alert, and the re-conversion-guard alert).
-  Writing these turned up a real gap, since fixed — `Customer` had no model-level validations at
-  all, so blank required fields were silently accepted instead of hitting the controller's 422
-  path; see TODO.md → Bugs for the fix.
-- `ActivityNote`/`Document` also have model specs and a small system-spec pair
-  (`spec/system/*_ui_spec.rb`) alongside their request specs, plus a `spec/factories/documents.rb`
-  that attaches a real fixture file (`spec/fixtures/files/sample.pdf`).
-- `User` has a model spec (`spec/models/user_spec.rb` — validations, `#authenticate`,
-  `.authenticate_by`, password-reset token generation/expiry/invalidation-on-password-change).
-  `SessionsController`/`PasswordsController` each have a request spec
-  (`spec/requests/sessions_spec.rb`, `spec/requests/passwords_spec.rb`) covering sign-in/out,
-  the "redirect back to where you were headed" flow, and the full password-reset round trip.
-  These two request specs are tagged `skip_authentication: true` (see next bullet) since they
-  test the unauthenticated paths directly.
-- **Every controller now requires authentication** (`app/controllers/concerns/authentication.rb`,
-  Phase 5 milestone 1), so every other request spec needs a signed-in session.
-  `spec/support/authentication.rb` signs in a throwaway `create(:user)` via a global
-  `before(:each, type: :request)` hook; opt out per-spec with `skip_authentication: true`
-  metadata. The old `test/` Minitest suite got the equivalent treatment — a `users.yml` fixture
-  + an `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb` — rather than
-  left broken, even though it's not where new coverage goes.
-- **System specs sign in too** (PR #62). `spec/support/system_authentication.rb` defines
-  `sign_in_as(user)`, which drives the real sign-in form in the browser (a raw POST like the
-  request-spec helper can't put a cookie into the browser session). Two non-obvious
-  constraints, both found the hard way:
-  - The call lives **inside `spec/rails_helper.rb`'s `before(:each, type: :system)` hook,
-    right after `driven_by`** — not in a separate hook. `spec/support/**/*.rb` is required
-    before that hook is registered, so any support-file hook (even `append_before`) runs
-    *first*, and `driven_by` then resets the session and drops the cookie.
-  - After `click_button "Sign in"` the helper waits on `have_current_path(root_path)`. The
-    form submits via Turbo (a fetch, not a navigation), so `click_button` returns before the
-    redirect finishes; without the wait the spec's next `visit` can race the cookie.
-- **Running system specs locally.** This machine has no `google-chrome`/`chromium` on `PATH`,
-  so plain `bundle exec rspec` fails every system spec with "cannot find Chrome binary" — an
-  environment gap, not a code bug (CI has Chrome preinstalled). Point Selenium at a
-  Chromium-based binary via the existing `SE_CHROME_BINARY` hook in `rails_helper.rb`, **and pin
-  a ChromeDriver of the same major version** via `SE_CHROMEDRIVER` (read by selenium-webdriver
-  itself). Pinning is required: Selenium Manager downloads the driver for the *latest* stable
-  Chrome, not for the binary you point it at, so once Chrome's stable version moves ahead of
-  Brave's Chromium the session fails with "This version of ChromeDriver only supports Chrome
-  version N". That happened on 2026-09-24 (driver 154, Brave on 153). Working combination:
-  ```
-  SE_CHROME_BINARY=/usr/bin/brave-browser \
-  SE_CHROMEDRIVER=~/.cache/selenium/chromedriver/linux64/153.0.8010.52/chromedriver \
-  bundle exec rspec
-  ```
-  Check `brave-browser --version` and `ls ~/.cache/selenium/chromedriver/linux64/` after a
-  Brave update. A Chrome for Testing binary from `~/.cache/selenium/chrome/linux64/<ver>/chrome`
-  with its same-version driver works too. Run long suites with a `timeout`: with a mismatched
-  driver, one run kept going for over two hours without ever reaching the app, instead of
-  failing fast.
-- **Current counts (main, 2026-09-24):** 339 RSpec examples, 0 failures (307 non-system + 32
-  system); 19 Minitest runs, 0 failures.
-- **Pagination-order flake — fixed** (PR #56). The "paginates when there are more records
-  than one page" specs used to fail under some `--seed` values: `@q.result(distinct: true)`
-  had no `ORDER BY`, and Postgres plans a bare `SELECT DISTINCT` as a `HashAggregate`, whose
-  output order depends on hash buckets, not ids (confirmed with `EXPLAIN`). Every index now
-  appends `.order(:id)`, which switches the plan to `Sort` + `Unique`. Any new
-  `distinct: true` query that gets paginated needs an explicit order too.
+**All new test files go in `spec/` (RSpec), never `test/` (Minitest), unless explicitly stated
+otherwise.** `bundle exec rspec` runs RSpec; `bin/rails test` still runs the old Minitest suite,
+which is kept passing but gets no new coverage. See `spec/CLAUDE.md` for the auth helpers,
+system-spec setup, and how to run system specs on this machine.
 
 ## Domain Overview
-
-The business workflow is:
 
 ```
 Customer → Lead → Quote (with Room measurements) → Job → Order(s) → LineItems
@@ -127,424 +27,55 @@ Customer → Lead → Quote (with Room measurements) → Job → Order(s) → Li
 A **Customer** walks in or calls. A **Lead** is logged for them describing what they're interested in. One or more **Quotes** are created for the lead — each includes room measurements (the estimation tool calculates sq footage and multiplies by labor/material rates to produce line items). If the customer accepts the quote, it converts into a **Job** and the quote's line items are seeded into the first **Order**. A Job can have additional Orders (e.g. change orders, materials orders), and each Order is made up of **LineItems**.
 
 At any point, **ActivityNotes** (a running log/timeline entry) and **Documents** (PDFs, Excel
-sheets, photos) can be attached to a Lead, Job, or Order via polymorphic associations. These are
-deliberately separate from the free-text `notes` column that already exists on `Quote`/`Order` —
-see "### ActivityNote (polymorphic)" below for why it isn't just called `Note`.
+sheets, photos) can be attached to a Customer, Lead, Job, or Order via polymorphic associations.
+These are deliberately separate from the free-text `notes` column on `Quote`/`Order`.
 
 ### Naming notes
 - "Job" is used instead of "Project" — it matches how contractors actually talk ("I've got 3 jobs this week").
 - "Order" is kept as-is rather than renamed to "Invoice."
 - "Quote" lives on the Lead (pre-commitment). Orders live on the Job (post-commitment). They are intentionally separate models with different lifecycles.
+- **`ActivityNote`, not `Note`** — named to avoid colliding with the existing free-text `notes`
+  column on `Quote`/`Order`, which stays a single field on the record; ActivityNote is a separate
+  one-to-many log.
 
 ---
 
-## Models
-
-### Customer
-The root entity. Every Lead, Job, Quote, and Order belongs to a Customer — this reference is **never nullable**.
-
-```ruby
-# customers table
-first_name        string, null: false
-last_name         string, null: false
-email             string
-phone             string, null: false
-address_line_1    string
-address_line_2    string
-city              string
-province          string
-postal_code       string
-status            string, null: false, default: "active"
-notes             text
-```
-
-Relationships:
-```ruby
-has_many :jobs,   dependent: :restrict_with_error
-has_many :orders, dependent: :restrict_with_error
-has_many :leads,  dependent: :destroy
-has_many :quotes  # through leads, but direct FK for convenience — dependent: :destroy
-has_many :activity_notes, as: :notable, dependent: :destroy
-```
-
-`activity_notes` was added deliberately ahead of `Document`/views for it — on `main`, Customer
-doesn't have a `documents` association yet, and the Customer show page doesn't render the
-ActivityNote section partial yet either. Both are in open PRs: #67 (U9, Activity section) and
-#68 (U10, `has_many :documents` + section — stacked on #67, merge #67 first).
-
----
-
-### Lead
-Represents a sales inquiry — interest that hasn't been committed to yet. Tracks pipeline status and converts into a Job when the quote is accepted (the Lead is NOT deleted on conversion — it remains historical record).
-
-```ruby
-# leads table
-customer_id       references, null: false, foreign_key: true
-title             string, null: false
-status            string, null: false, default: "new"
-                  # new | contacted | quoted | converted | lost
-job_type          string
-                  # tile | flooring | materials | mixed
-source            string
-                  # walk_in | phone | referral | website | other
-estimated_value   decimal(10,2)
-assigned_to       string
-follow_up_date    date
-description       text
-```
-
-Relationships:
-```ruby
-belongs_to :customer
-has_many :orders, dependent: :restrict_with_error
-has_one  :job,    dependent: :nullify
-has_many :quotes, dependent: :destroy
-has_many :activity_notes, as: :notable, dependent: :destroy
-has_many :documents,      as: :documentable, dependent: :destroy
-```
-
-A Lead can have multiple Quotes (e.g. a revised estimate, or separate quotes for tile vs. flooring). At most one of them should be in the `accepted` state.
-
-Key behavior: `convert_to_job!` — takes the accepted Quote, creates a Job from this Lead's data, links `lead_id` on the new Job, creates a first Order seeded from that Quote's line items, and flips this Lead's status to `"converted"`.
-
----
-
-### Quote
-A formal price estimate presented to the customer before they commit. Belongs to a Lead (and denormalized Customer for convenience). Contains room measurements that drive the estimation tool, and line items that are the output of that tool. Quotes are pre-commitment — they do not require a Job.
-
-```ruby
-# quotes table
-lead_id           references, null: false, foreign_key: true
-customer_id       references, null: false, foreign_key: true
-status            string, null: false, default: "draft"
-                  # draft | sent | accepted | rejected | expired
-quote_number      string, unique
-                  # auto-generated, e.g. QUO-2024-0001
-subtotal          decimal(10,2), default: 0
-tax_rate          decimal(5,4),  default: 0
-total             decimal(10,2), default: 0
-issued_date       date
-valid_until       date
-notes             text
-```
-
-Relationships:
-```ruby
-belongs_to :lead
-belongs_to :customer
-has_many   :rooms
-has_many   :quote_line_items
-```
-
-Key behavior:
-- `quote_number` auto-generated on create (format: `QUO-<year>-<sequential>`)
-- `status` is an integer-backed enum (`draft: 0, sent: 1, accepted: 2, rejected: 3, expired: 4`), consistent with how `Job.status` and `Lead.status` are stored
-- `subtotal`/`total` recalculated from `quote_line_items` before save
-- Accepts nested attributes for `rooms` and `quote_line_items` (`allow_destroy: true, reject_if: :all_blank`) — the Quote form creates/updates the quote plus its rooms and line items in a single submit
-- `total_area` sums `rooms.area`, treating any unsaved/blank room (`area` is `nil` until its own `before_save` runs) as `0`
-- When status flips to `accepted`, `convert_to_job!` is triggered on the Lead
-
----
-
-### Room
-A room with dimensions, nested under a Quote. Powers the estimation tool — the sq footage from all rooms is summed and used to calculate labor and material line items.
-
-```ruby
-# rooms table
-quote_id          references, null: false, foreign_key: true
-name              string, null: false   # Kitchen, Master Bath, Hallway, etc.
-length            decimal(8,2), null: false
-width             decimal(8,2), null: false
-area              decimal(10,2)         # calculated: length × width
-notes             string                # optional per-room note (e.g. "irregular shape")
-```
-
-Relationships:
-```ruby
-belongs_to :quote
-```
-
-Key behavior: `area = length * width`, calculated before save.
-
----
-
-### QuoteLineItem
-Individual line items on a Quote. Separate from Order's LineItem — Quotes are pre-commitment and have a different lifecycle. Populated by the estimation tool (labor and material rows from room sq footage) but fully editable before sending.
-
-```ruby
-# quote_line_items table
-quote_id          references, null: false, foreign_key: true
-item_type         integer, null: false
-                  # material | labor | other
-description       string, null: false
-quantity          decimal(10,2), default: 1
-unit              string
-                  # sqft | ea | hr | etc.
-unit_price        decimal(10,2), default: 0
-total             decimal(10,2), default: 0
-```
-
-Relationships:
-```ruby
-belongs_to :quote
-```
-
-Key behavior: `total = quantity * unit_price`, calculated before save.
-
----
-
-### Job
-The actual work being performed. Belongs to a Customer. `lead_id` is **nullable** — some jobs are created directly without a tracked lead (e.g. repeat customers who don't go through the quote flow).
-
-```ruby
-# jobs table
-customer_id       references, null: false, foreign_key: true
-lead_id           references, null: true,  foreign_key: true
-title             string, null: false
-status            integer, null: false, default: "active"
-                  # active | on_hold | completed | cancelled
-job_type          integer
-                  # tile | flooring | materials | kitchen | mixed
-estimated_value   decimal(10,2)
-assigned_to       string
-start_date        date
-end_date          date
-description       text
-address_line_1    string
-address_line_2    string
-city              string
-province          string
-postal_code       string
-```
-
-Relationships:
-```ruby
-belongs_to :customer
-belongs_to :lead, optional: true
-has_many   :orders, dependent: :restrict_with_error
-has_many   :activity_notes, as: :notable, dependent: :destroy
-has_many   :documents,      as: :documentable, dependent: :destroy
-```
-
-Note: job-site address fields are separate from the customer's address since the work location may differ from the customer's home/billing address.
-
----
-
-### Order
-The financial/transactional side of a Job (invoice / work order). Always tied to a Job (**not nullable**) and a Customer (**not nullable**, for billing). `lead_id` is nullable and kept purely for reporting/traceability convenience. The first Order on a Job is seeded from the accepted Quote's line items.
-
-```ruby
-# orders table
-job_id            references, null: false, foreign_key: true
-customer_id       references, null: false, foreign_key: true
-lead_id           references, null: true,  foreign_key: true
-status            integer, null: false, default: "draft"
-                  # draft | confirmed | invoiced | paid | cancelled
-order_number      string, unique
-                  # auto-generated, e.g. ORD-2024-0001
-subtotal          decimal(10,2), default: 0
-tax_rate          decimal(5,4),  default: 0
-total             decimal(10,2), default: 0
-issued_date       date
-due_date          date
-notes             text
-```
-
-Relationships:
-```ruby
-belongs_to :job
-belongs_to :customer
-belongs_to :lead, optional: true
-has_many   :line_items, dependent: :destroy, inverse_of: :order
-has_many   :activity_notes, as: :notable, dependent: :destroy
-has_many   :documents,      as: :documentable, dependent: :destroy
-```
-
-Key behavior:
-- `order_number` auto-generated on create (format: `ORD-<year>-<sequential>`)
-- `subtotal`/`total` calculated from sum of `line_items` before save
-- Order status is independent from Job status (a Job can be "completed" while its Order is still "invoiced")
-
----
-
-### LineItem
-Individual billable rows on an Order (materials, labor, other charges). Managed via nested attributes on the Order form (add/remove rows dynamically). Separate from QuoteLineItem — kept distinct to allow independent editing after commitment.
-
-```ruby
-# line_items table
-order_id          references, null: false, foreign_key: true
-item_type         integer, null: false
-                  # material | labor | other
-description       string, null: false
-quantity          decimal(10,2), default: 1
-unit              string
-                  # sqft | ea | hr | etc.
-unit_price        decimal(10,2), default: 0
-total             decimal(10,2), default: 0
-```
-
-Relationships:
-```ruby
-belongs_to :order
-```
-
-Key behavior: `total = quantity * unit_price`, calculated before save.
-
----
-
-### ActivityNote (polymorphic)
-A running log/timeline entry attachable to a Lead, Job, or Order. One model/controller/view
-reused across all three via `notable_type` / `notable_id`. **Named `ActivityNote`, not `Note`**,
-specifically to avoid colliding with the pre-existing free-text `notes` column on `Quote` and
-`Order` — those stay as-is (a single free-text field on the record itself), this is a separate
-one-to-many log. Rendered via `activity_notes/_section.html.erb`, included on `leads/show`,
-`jobs/show`, `orders/show` (not yet on `customers/show` — see the Customer model section above).
-
-```ruby
-# activity_notes table
-notable_type      string, null: false   # "Lead" | "Job" | "Order" (also "Customer" at the model
-notable_id        integer, null: false  # level, but no view renders it there yet)
-body              text, null: false
-author            string
-pinned            boolean, null: false, default: false
-```
-
-Relationships:
-```ruby
-belongs_to :notable, polymorphic: true
-```
-
-Validations: `body` presence.
-
-Built as a Turbo Frame per row (`turbo_frame_tag activity_note`) so inline edit/delete don't
-reload the page; the row's own delete link needs `data-turbo-frame="_top"` to escape its own
-frame on destroy (see `shared/_row_actions.html.erb`'s optional `turbo_frame:` local).
-
-**Failed create keeps the user's input** (PR #58). `ActivityNotesController#create` and
-`DocumentsController#create` both `include RendersParentShow`
-(`app/controllers/concerns/renders_parent_show.rb`): on a validation failure they re-render the
-parent's show page (`leads/show`, `jobs/show`, `orders/show`) with a 422, with the invalid record
-exposed as `@activity_note`/`@document`. The `_section` partials take that as an optional local
-(`activity_note:`/`document:`), so the inline form keeps what was typed and `shared/_form_errors`
-fires. Previously they redirected with a flash and threw the input away. Any new parent show page
-that renders these sections must pass the local through the same way.
-
----
-
-### Document (polymorphic + Active Storage)
-File uploads (PDFs, Excel sheets, images) attachable to a Lead, Job, or Order. Same polymorphic
-pattern as ActivityNote — rendered via `documents/_section.html.erb` on the same three show
-pages (also not yet on Customer's).
-
-```ruby
-# documents table
-documentable_type  string, null: false  # "Lead" | "Job" | "Order"
-documentable_id    integer, null: false
-label              string
-document_type      string
-                   # estimate | invoice | plan | contract | photo | other
-uploaded_by        string
-description        text
-```
-
-Relationships:
-```ruby
-belongs_to :documentable, polymorphic: true
-has_one_attached :file
-enum :document_type, { estimate: "estimate", invoice: "invoice", plan: "plan",
-                        contract: "contract", photo: "photo", other: "other" }, suffix: true
-```
-
-Validations (`acceptable_file`, a single custom validation): `file` must be attached; its
-`content_type` must be one of `Document::ACCEPTED_TYPES` (PDF, XLS/XLSX, JPEG, PNG); its
-`blob.byte_size` must be ≤ `Document::MAX_SIZE` (50MB).
-
-**Gotcha found while testing this**: Active Storage doesn't trust the `content_type:` a form (or
-a test) declares on upload — it re-sniffs the actual file bytes via Marcel and overwrites it. A
-test that reuses a real PDF fixture but *claims* a different content type still gets correctly
-re-identified as `application/pdf`, so exercising the "rejected content type" validation path
-needs a file whose *bytes* are actually a non-accepted type (see `document_spec.rb`).
-
-PDF documents get an inline "View" link (`rails_blob_path(disposition: "inline")`, opens in a
-new tab); every other type gets "Download" (`disposition: "attachment"`). Photo-type (JPEG/PNG)
-documents don't get an inline preview on `main` yet — PR #65 (U7) adds one and is still open.
-
----
-
-### User
-Phase 5's first milestone (see "Planned: Authentication, Users & Authorization" below) —
-`has_secure_password` + session-based login. Roles don't exist yet (Phase 5's second
-milestone), so every signed-in User currently has identical access to the whole app.
-
-```ruby
-# users table
-email             string, null: false, unique index
-password_digest   string, null: false
-```
-
-Relationships:
-```ruby
-has_many :sessions, dependent: :destroy
-```
-
-Key behavior:
-- `email` normalized (`strip`/`downcase`) via `normalizes`; validated present, unique
-  (case-insensitive), and email-shaped (`URI::MailTo::EMAIL_REGEXP`)
-- `password` validated `length: { minimum: 8 }, allow_nil: true` — `allow_nil` so `User#update`
-  without touching the password doesn't re-trigger the length check against `nil`
-- `generates_token_for :password_reset, expires_in: 15.minutes` (Rails 7.1+ built-in, no
-  separate token column/table) — salts the token with `password_salt.last(10)`, so it stops
-  validating the moment the password actually changes, not just after 15 minutes
-- `User.authenticate_by(email:, password:)` (not `User.find_by(email:).try(:authenticate,
-  ...)`) — constant-time even when the email doesn't exist, avoiding a timing side-channel
-
-### Session
-A server-side session row, not a token — the signed, `httponly`, `same_site: :lax` cookie
-(`Authentication` concern below) holds only the session's id. `Session.destroy` (sign-out, or
-cascaded from `User.destroy`) immediately invalidates it; there's no separate revocation list to
-consult, since the cookie is worthless without a matching row.
-
-```ruby
-# sessions table
-user_id           references, null: false, foreign_key: true
-ip_address        string
-user_agent        string
-```
-
-Relationships:
-```ruby
-belongs_to :user
-```
-
----
-
-## Migration Order
-
-Migrations must run in this order due to foreign key dependencies:
-
-1. `create_customers` — no dependencies
-2. `create_leads` — depends on customers
-3. `create_quotes` — depends on leads, customers
-4. `create_rooms` — depends on quotes
-5. `create_quote_line_items` — depends on quotes
-6. `create_jobs` — depends on customers, leads
-7. `create_orders` — depends on customers, leads, jobs
-8. `create_line_items` — depends on orders
-9. `create_activity_notes` — polymorphic, no FK constraints
-10. `create_documents` — polymorphic, no FK constraints
-11. `rails active_storage:install` — generates Active Storage tables separately
-12. `create_users` — no dependencies
-13. `create_sessions` — depends on users
-
-## Foreign Key Nullability Rules
-
-| Reference | Nullable? | Reasoning |
-|---|---|---|
-| `customer_id` (Lead, Quote, Job, Order) | No | Everything traces back to a customer |
-| `lead_id` (Quote) | No | A Quote always belongs to a Lead |
-| `lead_id` (Job, Order) | Yes | Jobs/Orders can be created without a tracked Lead |
-| `job_id` (Order) | No | An Order always needs Job context |
-| `quote_id` (Room, QuoteLineItem) | No | Rooms and quote line items always need a Quote |
+## Model behavior and gotchas
+
+Columns and associations are in `db/schema.rb` and the model files. This section covers what
+they don't say.
+
+- **Customer** is the root: every Lead, Job, Quote, and Order has a non-nullable `customer_id`.
+- **Lead** is never deleted on conversion; it stays as the historical record. A Lead can have
+  several Quotes (revisions, split scopes) but at most one `accepted`
+  (`Quote#only_one_accepted_quote_per_lead`). `Lead#convert_to_job!(quote)` creates the Job from
+  the Lead's data (plus the customer's address), creates the first Order seeded from the Quote's
+  line items, and flips the Lead to `converted`. It raises if the Lead already has a Job.
+- **Quote** accepting (status → `accepted`) triggers `convert_to_job!` via `after_save`. Rooms and
+  line items are nested attributes (`allow_destroy: true, reject_if: :all_blank`), so the form
+  saves everything in one submit. `total_area` treats unsaved rooms (`area` is `nil` until their
+  own `before_save`) as `0`.
+- **Job** has a nullable `lead_id` (repeat customers can skip the quote flow). Its job-site address
+  is separate from the customer's address because the work location can differ from billing.
+- **Order** status is independent of Job status (a Job can be "completed" while its Order is still
+  "invoiced"). `lead_id` is nullable, kept for reporting only.
+- `quote_number` / `order_number` auto-generate on create as `QUO-<year>-<seq>` / `ORD-<year>-<seq>`.
+  Subtotal/total and line-item totals are recalculated before save.
+- **ActivityNote** rows are Turbo Frames (`turbo_frame_tag activity_note`) so inline edit/delete
+  don't reload the page; the row's delete needs `data-turbo-frame="_top"` to escape its own frame.
+- **Failed ActivityNote/Document create keeps the user's input** (PR #58). Both controllers
+  `include RendersParentShow`: on validation failure they re-render the parent's show page with a
+  422 and the invalid record as `@activity_note`/`@document`. The `_section` partials take that as
+  an optional `activity_note:`/`document:` local, so the form keeps what was typed and
+  `shared/_form_errors` fires. **Any parent show page that renders these sections must pass the
+  local through.**
+- **Document**: `acceptable_file` requires an attached file of an `ACCEPTED_TYPES` type (PDF,
+  XLS/XLSX, JPEG, PNG) under `MAX_SIZE` (50MB). **Active Storage ignores the declared
+  `content_type:` and re-sniffs the bytes with Marcel.** PDFs and images get an inline "View"
+  link (new tab); images also get a thumbnail, which uses the original blob rather than a variant
+  because libvips isn't installed in every dev environment. Other types get "Download".
+- **Customer email** has a format validation (blank allowed). `Customer#archive!` uses
+  `update_attribute` so a legacy invalid value can't block the automatic archive.
 
 ## Deletion Semantics (`dependent:` conventions)
 
@@ -553,7 +84,8 @@ child record actually represents — not chosen ad hoc per association:
 
 - **`dependent: :destroy`** — the child has no independent value outside its parent;
   deleting the parent should clean it up. Used for `Customer → leads`, `Customer →
-  quotes`, `Lead → quotes`, `Quote → rooms`/`quote_line_items`, `Order → line_items`.
+  quotes`, `Lead → quotes`, `Quote → rooms`/`quote_line_items`, `Order → line_items`, and every
+  `activity_notes`/`documents` association.
 - **`dependent: :restrict_with_error`** — the child is financial/billing data with
   real-world consequences (work performed, money owed) and a `NOT NULL` FK back to the
   parent, so it must never be silently destroyed or orphaned. Deleting the parent is
@@ -591,105 +123,62 @@ that returns `false` (blocked by the `restrict_with_error` chain above), it call
 `Customer#archive!` instead and shows a different flash message. This works without
 re-deriving "does this customer have history" in the view, because the `restrict_with_error`
 chain is already the single source of truth for that question. Archived customers are
-excluded from default views via `Customer.visible`, but never deleted — see `Customer.status`
-in "Status Enums Reference" below.
+excluded from default views via `Customer.visible`, but never deleted.
+
+`Customer.status` is string-backed (the other status enums are integer-backed) and mixes two
+concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral effect;
+`archived` is system-driven, set only via `Customer#archive!`, and never selectable in the form.
 
 ## UX / Workflow Notes
 
 - **Lead + Customer creation on one form** was the original intent (a separate customer-creation step adds friction during a quick walk-in or phone inquiry) but was **never built** — `leads/_form.html.erb` only offers a `customer_id` select of existing customers. Parked in TODO.md's UI Backlog as "needs a product decision" (build it or drop it).
 - **Quotes live on the Lead show page** — there's a "Create Quote" button that opens the quote form, and the page lists all of the lead's quotes. A lead can have several (revisions, or split scopes), but only one can be `accepted`.
 - **Estimation tool on the Quote form** — a Stimulus-powered room calculator where you enter room name + dimensions. It sums sq footage across all rooms and auto-populates labor and material line items (based on rates you enter). Line items remain fully editable after the tool runs.
-- **Quote → Job conversion** is triggered from the Quote show page ("Accept Quote" button). This calls `convert_to_job!` on the Lead, which creates the Job, creates the first Order seeded from the Quote's line items, and sets the Lead status to `converted`.
+- **Quote → Job conversion** is triggered from the Quote show page ("Accept Quote" button).
 - **ActivityNotes and Documents** use shared partials (`activity_notes/_section.html.erb`,
-  `documents/_section.html.erb`) since the UI is identical across Lead, Job, and Order — only
-  the polymorphic association target (`notable:`/`documentable:`) changes. Built and live on
-  those three show pages; not yet on Customer's (see Customer/ActivityNote model sections above).
+  `documents/_section.html.erb`) on the Customer, Lead, Job, and Order show pages; only the
+  polymorphic target (`notable:`/`documentable:`) changes.
 - Dashboard should surface: leads needing follow-up, active jobs, and unpaid/outstanding orders.
-
-## Status Enums Reference
-
-```ruby
-Customer.status:    active | inactive | archived
-Lead.status:        new | contacted | quoted | converted | lost
-Quote.status:       draft | sent | accepted | rejected | expired
-Job.status:         active | on_hold | completed | cancelled
-Order.status:       draft | confirmed | invoiced | paid | cancelled
-```
-
-`Customer.status` is string-backed (not integer, unlike the others) and mixes two different
-concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral effect;
-`archived` is a system-driven state set only via `Customer#archive!` (never manually selectable
-in the form) when a delete is blocked by history. `Customer.visible` (`where.not(status:
-:archived)`) is the default scope for customer-facing views — see "Deletion Semantics" above.
-
-## Job Types / Source Reference
-
-```ruby
-job_type: tile | flooring | materials | kitchen | mixed
-source:   walk_in | phone | referral | website | other
-```
 
 ---
 
 ## Authentication (Phase 5, milestone 1 — shipped)
 
-The **User**/**Session** models above (see "## Models") plus this controller-layer wiring
-make every controller require a signed-in user. Roles/Pundit (milestone 2) and SSO
-(milestone 3) are still planned — see "Planned: Authorization & SSO" below.
+Every controller requires a signed-in user. Roles/Pundit (milestone 2) and SSO (milestone 3) are
+still planned — see "Planned: Authorization & SSO" below.
 
-- **Session-based** auth (not token/JWT) — a real `Session` row per sign-in, referenced by
-  a signed, `httponly`, `same_site: :lax` cookie holding only the session's id
-  (`app/controllers/concerns/authentication.rb`, the Rails 8 authentication-generator
-  pattern). Sign-out (or `User.destroy`, `dependent: :destroy`) deletes the row, which
-  immediately invalidates the cookie — no separate token to expire.
-- `Current` (`ActiveSupport::CurrentAttributes`) holds the resolved `session`/`user` for the
-  request, resolved once via `resume_session` and memoized on `Current.session`.
-- `Authentication` concern, included in `ApplicationController`: `before_action
-  :require_authentication` on every action by default; a controller opts out per-action with
-  `allow_unauthenticated_access only: [...]` (see `SessionsController#new`/`#create`,
-  `PasswordsController`, all of it). An unauthenticated request is redirected to
-  `new_session_path`, remembering the original URL in `session[:return_to_after_authenticating]`
-  so `after_authentication_url` can send the visitor back where they were headed.
-- `SessionsController` — `new`/`create`/`destroy`. `create` uses `User.authenticate_by(email:,
-  password:)` (constant-time even when the email doesn't exist — not
-  `User.find_by(email:)&.authenticate(...)`), and is `rate_limit`ed (10 attempts / 3 minutes,
-  Rails 8's built-in controller-level rate limiter — a no-op in the test env, which runs on
-  `:null_store`). "Remember me" is just cookie persistence: checked → `cookies.signed.permanent`
-  (survives browser close); unchecked → a plain session cookie.
-- `PasswordsController` — `new`/`create` (request a reset by email; always redirects with the
-  same flash regardless of whether the address exists, so the form can't be used to enumerate
-  accounts) and `edit`/`update` (consume the token, set a new password). Uses
-  `User#generates_token_for(:password_reset, expires_in: 15.minutes)` — Rails 7.1+'s built-in
-  signed/expiring token support, no separate reset-token column or table, and the token is
-  salted with the password hash so it also stops working the moment the password changes,
-  independent of the 15-minute expiry.
-- `PasswordsMailer#reset` — plain `ActionMailer`, delivered via `deliver_later`
-  (`config.active_job.queue_adapter = :test` in the test env so
-  `have_enqueued_mail`/`have_enqueued_job` specs can assert on it instead of it actually
-  running async).
-- Both auth flows render through a dedicated `layouts/auth.html.erb` (centered card, no
-  sidebar/nav) rather than the main app shell — showing an authenticated-only sidebar on the
-  sign-in page itself would be backwards.
-- Every request spec now signs in a throwaway `create(:user)` via a global `before(:each,
-  type: :request)` hook (`spec/support/authentication.rb`) unless tagged `skip_authentication:
-  true` (used by `sessions_spec.rb`/`passwords_spec.rb`, which test the unauthenticated paths
-  directly). System specs sign in through the real browser form instead (PR #62 — see
-  "## Testing" for the hook-ordering and Turbo-timing details). The old `test/` Minitest suite
-  gets the same treatment via a `test/fixtures/users.yml` fixture and an
-  `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb`.
-- **Deliberately not done in this milestone** (tracked in TODO.md → Phase 5): no sign-up/user-
-  management UI yet — `db/seeds.rb` creates one dev user (`admin@jobdeck.test`), anyone else is
-  made via `User.create!`/`rails console` until Pundit + an admin role exist. The free-text
-  `assigned_to`/`author`/`uploaded_by` fields on Lead/Job/ActivityNote/Document are **not** yet
-  backed by `user_id` — that touches several models' forms/views and is deferred to a
-  fast-follow rather than folded into this PR.
+- **Session-based**, not token/JWT: a real `Session` row per sign-in, referenced by a signed,
+  `httponly`, `same_site: :lax` cookie holding only the session's id
+  (`app/controllers/concerns/authentication.rb`, the Rails 8 generator pattern). Sign-out (or
+  `User.destroy`) deletes the row, which immediately invalidates the cookie — no revocation list.
+- `Current` (`ActiveSupport::CurrentAttributes`) holds the resolved `session`/`user`, resolved once
+  per request via `resume_session`.
+- `before_action :require_authentication` runs everywhere by default; opt out per action with
+  `allow_unauthenticated_access only: [...]`. Unauthenticated requests redirect to
+  `new_session_path`, and `after_authentication_url` sends the user back where they were headed.
+- `SessionsController#create` uses `User.authenticate_by(email:, password:)` — constant-time even
+  when the email doesn't exist, unlike `find_by(...)&.authenticate` — and is `rate_limit`ed
+  (10 attempts / 3 minutes; a no-op in test, which runs on `:null_store`). "Remember me" is just
+  cookie persistence: `cookies.signed.permanent` vs a session cookie.
+- `PasswordsController` always shows the same flash whether or not the email exists, so it can't
+  enumerate accounts. Reset tokens come from `generates_token_for :password_reset, expires_in:
+  15.minutes` — no token column, and salted with the password hash so a token also dies the
+  moment the password changes.
+- `PasswordsMailer#reset` uses `deliver_later`; test env sets `queue_adapter = :test` so specs
+  assert with `have_enqueued_mail`.
+- Auth pages render through `layouts/auth.html.erb` (centered card, no sidebar) — an
+  authenticated-only sidebar on the sign-in page would be backwards.
+- `password` validates `length: { minimum: 8 }, allow_nil: true` — `allow_nil` so updating a
+  User without touching the password doesn't fail the length check.
+- **Deliberately not done yet** (TODO.md → Phase 5): no sign-up/user-management UI —
+  `db/seeds.rb` creates one dev user (`admin@jobdeck.test`), others via `rails console` until
+  Pundit + an admin role exist. The free-text `assigned_to`/`author`/`uploaded_by` fields are
+  **not** yet backed by `user_id`.
 
 ## Planned: Authorization & SSO
 
-Milestone 1 above (User/Session models, sign-in/out, password reset) is shipped. These two
-milestones are still upcoming — the intent, per the original plan, is to make Jobdeck a real,
-multi-user product other construction businesses could actually run, and a portfolio piece that
-demonstrates RBAC and SSO done properly on top of the auth milestone that's now live.
+The intent is to make Jobdeck a real, multi-user product other construction businesses could run,
+and a portfolio piece that demonstrates RBAC and SSO done properly.
 
 ### Role-based views and permissions
 
@@ -719,8 +208,7 @@ demonstrates RBAC and SSO done properly on top of the auth milestone that's now 
 
 ### Rollout order
 
-1. ~~User model + session-based login/logout + password reset.~~ **Shipped** — see
-   "## Authentication (Phase 5, milestone 1 — shipped)" above.
+1. ~~User model + session-based login/logout + password reset.~~ **Shipped** (see above).
 2. Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.
 3. Role-based view gating (nav + buttons + sections).
 4. OmniAuth scaffolding + Google SSO.
@@ -728,160 +216,30 @@ demonstrates RBAC and SSO done properly on top of the auth milestone that's now 
 
 ---
 
-## Design System
+## Search & Pagination (Ransack + Pagy)
 
-The UI has been fully rebuilt on **daisyUI**. Built on `feature/ui-foundation-prep`
-(16 chunked steps), then retinted on `feature/navy-blue-theme`; both merged to `main`
-via PR #42 (2026-09-18) — the navy + blue palette below is what's actually live, not a
-trial. This section is the durable reference; the design intent and full build history
-live in `~/.claude/plans/using-the-design-skill-immutable-hippo.md` (original design
-plan) and `~/.claude/plans/let-s-tackle-the-ui-ux-fancy-pnueli.md` (chunked execution
-plan + what actually shipped at each step) — neither covers the post-merge palette swap
-or the two small table polish items below, which happened after that plan finished.
+On the Customer, Lead, and Job index pages. Quotes and Orders have no top-level index (they're
+listed nested under a Lead/Job); whether to add one is an open product question.
 
-### Theme & rule
+- Controller pattern: `@q = Model.ransack(params[:q])` then
+  `@pagy, @records = pagy(@q.result(distinct: true).order(:id))`. **The `.order(:id)` is
+  required** — without it Postgres can return `SELECT DISTINCT` rows in hash order and records
+  jump between pages.
+- Every ransack-able model needs explicit `ransackable_attributes`/`ransackable_associations`.
+  Ransack raises `Ransack::InvalidSearchError` without them — it's a security allow-list.
+- **Pagy 43.x is a full rewrite** of the classic docs: there's no `Pagy::Backend`/`Pagy::Frontend`/
+  `pagy_nav`. `Pagy::Method` is included in `ApplicationController`, `pagy(collection)` returns
+  `[pagy, records]`, and the view calls `@pagy.series_nav if @pagy.pages > 1`.
+- **Ransack's `_eq` on an integer-backed enum doesn't know about Rails enums.** It casts a string
+  label with `to_i` (`"contacted".to_i == 0`), silently matching the wrong rows with no error.
+  Build enum filter `<select>`s from `Model.statuses` **values** (the integers), not the keys —
+  see `leads/index.html.erb` and its regression spec.
 
-- One custom daisyUI theme, `jobdeck` — "navy + blue CTA" — defined entirely in
-  `app/assets/tailwind/application.css` via `@plugin "./daisyui-theme.mjs"`. Light only
-  for now; every color reference in view code is a semantic token (`bg-base-200`,
-  `text-base-content`, `badge-success`, …), never raw hex or Tailwind's default scales,
-  so a `jobdeck-dark` theme is a later drop-in with zero view changes.
-- **Rule: always use daisyUI's semantic classes, never `amber-*`/`gray-*`/raw hex in a
-  view.** (`amber-*` was the pre-redesign accent — if you see it, it's a regression.)
-- Font is self-hosted **Inter** (`app/assets/fonts/inter/`, variable weight) — no
-  external font requests, works offline on a job site.
-- The original redesign shipped an "industrial slate + safety orange" palette first
-  (primary `#EA580C`); it was retinted to navy + blue right after, on its own branch,
-  precisely so the contrast/badge-variant work below didn't need re-checking per
-  resource. The orange values still exist in git history (`cdc4e38` on
-  `feature/ui-foundation-prep`) if ever needed again, but nothing on `main` uses them.
-- Files **outside the Tailwind pipeline** can't use tokens and hardcode hex: the mail layout
-  (`layouts/mailer.html.erb`) and the PWA manifest (`pwa/manifest.json.erb`). Both were
-  re-tinted to navy/blue in PR #60 (they'd missed the original retint). `spec/views/
-  stale_palette_spec.rb` fails if the old `#EA580C`/`#1E293B` values reappear anywhere under
-  `app/views` or `app/helpers`. If the palette changes again, update those two files by hand.
+## Not done yet
 
-| Role | Hex | Used for |
-|---|---|---|
-| `base-100` / `base-200` / `base-300` | `#FFFFFF` / `#F8FAFC` / `#E2E8F0` | cards & tables / app canvas / hairline borders |
-| `base-content` | `#0F172A` | body text (muted text is `text-base-content/70`) |
-| `primary` | `#0369A1` | primary actions / CTA — white button text measures 5.93:1 |
-| `secondary` | `#334155` | secondary buttons / quiet emphasis |
-| `accent` | `#075985` | hover/active state on primary |
-| `neutral` | `#0F172A` | sidebar (navy) |
-| `info` / `success` / `warning` / `error` | `#1D4ED8` / `#15803D` / `#B45309` / `#B91C1C` | status badges — see `ApplicationHelper::STATUS_VARIANTS` for the status → variant map. `error` darkened from `#DC2626` (PR #54) — the lighter value failed WCAG AA on `badge-soft`/`alert-soft` (4.27:1) |
-
-### Shared components (`app/views/shared/`)
-
-`_page_header` (breadcrumb + H1 + action slot — suppresses the breadcrumb entirely when
-its last segment duplicates the title), `_form_container`, `_form_errors`
-(`role="alert"`, autofocused, links each error to its field), `_field` (label/input/
-select/textarea + hint/error — not used by the 12-column line-item/room editor rows,
-those stay hand-written because they're the JS-templated ones), `_card`, `_table`
-(optional `footer:` for a real `<tfoot>` totals row; every table renders through this one
-partial, so its rows are zebra-striped app-wide via a single CSS rule —
-`.table tbody tr:nth-child(even)` in `application.css`, `color-mix()` off `base-content`
-rather than daisyUI's own `table-zebra` class so the stripe doesn't reuse `base-200`,
-which is already the page canvas color), `_detail_list`, `_stats`, `_badge`,
-`_row_actions` (the kebab menu — daisyUI's Popover API, not JS; the trigger button is
-centered in its column, not right-aligned), `_empty_state`, `_flash`. Plus
-`layouts/_sidebar` and `layouts/_navbar` for the app shell.
-
-Note the two block-rendering partials' calling convention: `render "shared/card", { title:
-"X" } do ... end` (bare string + plain hash), **not** `render partial:, locals:` — the
-latter doesn't support a block the same way. See `shared/_card.html.erb`'s own comment.
-
-### Helpers (`app/helpers/application_helper.rb`)
-
-`status_badge(record)`, `format_date`, `format_currency`, `format_address`, `btn` (daisyUI
-button wrapper), `nav_link`/`nav_section_active?`/`SECTION_CONTROLLERS` (a nested
-resource, e.g. a Quote, still highlights its parent Leads/Jobs nav item).
-
-### App shell & JS
-
-- `layouts/application.html.erb`: daisyUI `drawer` — a permanent sidebar rail `>=lg`,
-  a toggleable overlay drawer below it, from one markup (`lg:drawer-open`). Skip link,
-  `<html lang="en">`, `aria-label` on both nav landmarks. Page titles/breadcrumbs come only
-  from `shared/_page_header` inside `<main>` — the old layout-level `<header>` driven by
-  `content_for(:page_heading)`/`(:breadcrumbs)` was never set by any view and was removed
-  (PR #59), so don't reintroduce those `content_for` keys.
-- The sidebar shows the signed-in user's email and a "Sign out" button (Phase 5). That button
-  still uses a raw `hover:text-white` — deliberately left for the Phase 5 view-gating work.
-- `app/javascript/controllers/drawer_controller.js` — a11y layer on top of the
-  checkbox-driven drawer (focus management, Escape-to-close, `aria-expanded`); the
-  drawer itself needs no JS to open/close.
-- `quote_form_controller.js` / `order_form_controller.js` (the estimation tool, dynamic
-  room/line-item rows) are unchanged by the redesign — only the row markup's classes
-  were reworked to stack on mobile, every `data-*` hook they depend on was preserved.
-- `dropdown_controller.js` and `hello_controller.js` were deleted (fully replaced by
-  `shared/_row_actions` and dead scaffold, respectively).
-
-### Root / dashboard
-
-`root "dashboard#show"` (was `customers#index`) — `DashboardController` shows leads
-needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and
-outstanding orders (`Order.outstanding`), each a 5-row preview with a true total count.
-
-### Search & Pagination (Ransack + Pagy)
-
-Wired into the **Customer, Lead, and Job index pages** (Job added in PR #56). Quotes and
-Orders have no top-level index — they're only listed nested under a Lead/Job — so whether to
-add top-level Quotes/Orders pages is an open product question (TODO.md → UI Backlog), not a gap
-in this pattern.
-
-- Controller pattern: `@q = Model.ransack(params[:q])` then `@pagy, @records =
-  pagy(@q.result(distinct: true).order(:id))`. **The `.order(:id)` is required** — without it
-  Postgres may return `SELECT DISTINCT` rows in hash order, so records jump between pages (see
-  "## Testing" → pagination-order flake). Every ransack-able model needs explicit
-  `ransackable_attributes`/`ransackable_associations` class methods — Ransack raises
-  `Ransack::InvalidSearchError` without them (a deliberate security allow-list, not boilerplate
-  you can skip).
-- View pattern: `search_form_for @q do |f| ... end`, then `@pagy.series_nav if @pagy.pages > 1`
-  below the results. **Every filter control needs a label**, visible or `sr-only` —
-  placeholders don't count (PRs #54, #61). `spec/requests/form_control_labels_spec.rb` checks
-  the Lead index plus the Quote/Order forms (including their JS row templates). Known gap: the
-  Job index's `status_eq` select still has no label and isn't covered by that spec.
-- **Pagy 43.x is a full rewrite** of the classic docs most tutorials show — there's no
-  `Pagy::Backend`/`Pagy::Frontend`/`pagy_nav` helper in this version. `Pagy::Method` is included
-  in `ApplicationController`; `pagy(collection)` returns `[pagy_instance, collection]`; the nav
-  method (`series_nav`) is called directly on that instance in the view.
-- **Real bug found and fixed**: Ransack's `_eq` predicate on an integer-backed `enum` column
-  (e.g. `Lead.status`) doesn't know about Rails enums — it naively casts a non-numeric string
-  label via `String#to_i` (`"contacted".to_i == 0`), so a `<select>` built from
-  `Lead.statuses.keys` silently matched "new" leads regardless of what was picked, with no error.
-  Fix: build the `<select>` from `Lead.statuses` **values** (the integers), not the keys — see
-  `leads/index.html.erb` and its regression spec in `leads_spec.rb`. Worth checking for the same
-  trap on any future enum-column filter.
-
-### Not done yet
-
-- **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
-- **ActivityNote/Document UI on Customer's show page** — in open PRs #67/#68 (see above).
+- **Dark theme** — the token structure supports it; no `jobdeck-dark` theme exists yet.
 - **Quote/Order search + pagination** — needs a product decision first (no top-level lists).
-- **Job index status filter label** — see "Search & Pagination" above.
-- **Role-based nav/action-button gating** — blocked on Phase 5 milestones 2–3 (roles/Pundit);
-  the shell is built to have `policy(record).action?` checks layered in later.
-- **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
-  (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
-  `before_validation` normalization and touches both Quote's and Order's show pages.
-
-### In flight (open PRs, not on `main`)
-
-TODO.md → "UI Backlog — loop queue" was worked by a `/loop` session, one `ui/U<n>-<slug>`
-branch + PR per item. U1–U4 are merged (#58–#61). **U5–U14 are ticked `[x]` in TODO.md but
-only mean "PR opened"** — PRs #63–#72 are still open, so none of this is live yet:
-
-| PR | Item | Change |
-|---|---|---|
-| #63 | U5 | `required:` option on `shared/_field` (marker + `required` attr) for required fields |
-| #64 | U6 | `accept` attribute + size/type hint on the Document upload field |
-| #65 | U7 | Inline preview for photo (JPEG/PNG) documents |
-| #66 | U8 | Focus management when adding/removing estimation-tool rows (`row_focus.js`) |
-| #67 | U9 | Activity section on the Customer show page |
-| #68 | U10 | Customer Documents (association, route, section) — **stacked on #67** |
-| #69 | U11 | Reuse `_lead`/`_job` row partials in show-page preview tables |
-| #70 | U12 | `whitespace-nowrap` on `shared/_badge` |
-| #71 | U13 | Server-side Customer email format validation (`archive!` now skips validations) |
-| #72 | U14 | Client-side `pattern` + `inputmode: "tel"` on the Customer phone field |
-
-When these merge, move each change into the relevant section above and drop its row here.
+- **Job index status filter label** — the `status_eq` select has no label.
+- **Role-based nav/action-button gating** — blocked on Phase 5 milestones 2–3.
+- **`tax_rate`'s "0.13 for 13%" input format** — confusing (got a clarifying hint only);
+  accepting "13" needs a `before_validation` normalization on Quote and Order.
