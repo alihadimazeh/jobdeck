@@ -47,6 +47,18 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
     puts "[DBG] active=#{page.evaluate_script('document.activeElement?.outerHTML?.slice(0,120)')}"
     puts "[DBG] elementFromPoint at trigger=#{page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return document.elementFromPoint(r.x + r.width/2, r.y + r.height/2)?.outerHTML?.slice(0,120) })()", trigger)}"
     puts "[DBG] url=#{page.current_url} window=#{page.driver.browser.manage.window.size.to_a.inspect} inner=#{page.evaluate_script('[innerWidth, innerHeight]').inspect}"
+    popover_open = -> { page.evaluate_script("document.getElementById('row-actions-#{ActionView::RecordIdentifier.dom_id(customer)}').matches(':popover-open')") }
+    unless popover_open.call
+      trigger.click
+      sleep 1
+      puts "[DBG] after 2nd click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
+      unless popover_open.call
+        page.driver.browser.action.release_actions
+        trigger.click
+        sleep 1
+        puts "[DBG] after release_actions + click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
+      end
+    end
     dismiss_confirm do
       click_button "Delete"
     end
