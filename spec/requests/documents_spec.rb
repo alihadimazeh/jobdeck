@@ -93,7 +93,8 @@ RSpec.describe "Documents", type: :request do
       get lead_path(lead)
       field = Nokogiri::HTML(response.body).at_css("input[type='file'][name='document[file]']")
 
-      expect(field["required"]).to be_present
+      expect(field["aria-required"]).to eq("true")
+      expect(field["required"]).to be_nil
       expect(field["accept"].split(",")).to include("application/pdf", ".xlsx", "image/png")
       expect(field["aria-describedby"]).to eq("document_file_hint")
       expect(response.body).to match(%r{id="document_file_hint"[^>]*>\s*PDF, Excel \(XLS/XLSX\), JPEG, or PNG &middot; up to 50 MB})
