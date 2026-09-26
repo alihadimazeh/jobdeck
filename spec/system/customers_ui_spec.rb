@@ -28,7 +28,44 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
     customer = create(:customer)
     visit customers_path
 
-    find("button[aria-label='Actions for #{customer.full_name}']").click
+    # TEMP DEBUG (draft PR #82): record what happens around the popover click on CI.
+    page.execute_script(<<~JS)
+      window.__dbg = [];
+      const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
+      log("readyState=" + document.readyState);
+      document.addEventListener("beforetoggle", e => log("beforetoggle " + e.target.id + " " + e.oldState + "->" + e.newState), true);
+      document.addEventListener("toggle", e => log("toggle " + e.target.id + " " + e.newState), true);
+      ["pointerdown", "click"].forEach(t => document.addEventListener(t, e => log(t + " on " + (e.target.closest("button,a,label,input")?.outerHTML || e.target.tagName).slice(0, 120)), true));
+      ["turbo:load", "turbo:visit", "turbo:before-render", "turbo:render", "turbo:before-cache"].forEach(t => document.addEventListener(t, () => log(t), true));
+    JS
+    trigger = find("button[aria-label='Actions for #{customer.full_name}']")
+    puts "[DBG] trigger rect=#{page.evaluate_script("JSON.stringify(arguments[0].getBoundingClientRect())", trigger)}"
+    trigger.click
+    sleep 1
+    puts "[DBG] events=#{page.evaluate_script('window.__dbg').inspect}"
+    puts "[DBG] popover open? #{page.evaluate_script("document.getElementById('row-actions-#{ActionView::RecordIdentifier.dom_id(customer)}').matches(':popover-open')")}"
+    puts "[DBG] active=#{page.evaluate_script('document.activeElement?.outerHTML?.slice(0,120)')}"
+    puts "[DBG] elementFromPoint at trigger=#{page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return document.elementFromPoint(r.x + r.width/2, r.y + r.height/2)?.outerHTML?.slice(0,120) })()", trigger)}"
+    puts "[DBG] url=#{page.current_url} window=#{page.driver.browser.manage.window.size.to_a.inspect} inner=#{page.evaluate_script('[innerWidth, innerHeight]').inspect}"
+    popover_open = -> { page.evaluate_script("document.getElementById('row-actions-#{ActionView::RecordIdentifier.dom_id(customer)}').matches(':popover-open')") }
+    unless popover_open.call
+      trigger.click
+      sleep 1
+      puts "[DBG] after 2nd click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
+      puts "[DBG] windows=#{page.driver.browser.window_handles.size} current=#{page.driver.browser.window_handle} hasFocus=#{page.evaluate_script('document.hasFocus()')} visibility=#{page.evaluate_script('document.visibilityState')}"
+      page.driver.browser.window_handles.each do |h|
+        page.driver.browser.switch_to.window(h)
+        puts "[DBG]   window #{h}: #{page.current_url} visibility=#{page.evaluate_script('document.visibilityState')}"
+      end
+      page.driver.browser.switch_to.window(page.driver.browser.window_handles.find { |h| page.driver.browser.switch_to.window(h); page.current_url.end_with?("/customers") })
+      unless popover_open.call
+        page.driver.browser.execute_cdp("Page.bringToFront")
+        trigger = find("button[aria-label='Actions for #{customer.full_name}']")
+        trigger.click
+        sleep 1
+        puts "[DBG] after bringToFront + click: open=#{popover_open.call} hasFocus=#{page.evaluate_script('document.hasFocus()')} events=#{page.evaluate_script('window.__dbg').inspect}"
+      end
+    end
     dismiss_confirm do
       click_button "Delete"
     end
