@@ -79,6 +79,16 @@ RSpec.describe "Customers", type: :request do
   end
 
   describe "GET /customers/new" do
+    it "gives the phone field a tel keypad, a format pattern, and a hint" do
+      get new_customer_path
+      field = Nokogiri::HTML(response.body).at_css("input#customer_phone")
+
+      expect(field["type"]).to eq("tel")
+      expect(field["inputmode"]).to eq("tel")
+      expect(field["pattern"]).to eq(Customer::PHONE_INPUT_PATTERN)
+      expect(field["aria-describedby"]).to include("customer_phone_hint")
+    end
+
     it "renders the form" do
       get new_customer_path
       expect(response).to have_http_status(:success)

@@ -1,4 +1,9 @@
 class Customer < ApplicationRecord
+  # Client-side hint for the phone <input pattern> - browsers compile `pattern` with the
+  # regex `v` flag, where ( ) - must be escaped inside a class or the whole pattern is
+  # silently ignored (verified in Chrome). Deliberately loose; not enforced server-side.
+  PHONE_INPUT_PATTERN = '[0-9+\\-\\s\\(\\)\\.]{7,}'.freeze
+
   enum :status, { active: "active", inactive: "inactive", archived: "archived" }, suffix: true
 
   validates :status, presence: true
