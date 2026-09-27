@@ -28,62 +28,7 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
     customer = create(:customer)
     visit customers_path
 
-    # TEMP DEBUG (draft PR #82): record what happens around the popover click on CI.
-    page.execute_script(<<~JS)
-      window.__dbg = [];
-      const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
-      log("readyState=" + document.readyState);
-      document.addEventListener("beforetoggle", e => log("beforetoggle " + e.target.id + " " + e.oldState + "->" + e.newState), true);
-      document.addEventListener("toggle", e => log("toggle " + e.target.id + " " + e.newState), true);
-      ["pointerdown", "click"].forEach(t => document.addEventListener(t, e => log(t + " on " + (e.target.closest("button,a,label,input")?.outerHTML || e.target.tagName).slice(0, 120)), true));
-      ["turbo:load", "turbo:visit", "turbo:before-render", "turbo:render", "turbo:before-cache"].forEach(t => document.addEventListener(t, () => log(t), true));
-    JS
-    trigger = find("button[aria-label='Actions for #{customer.full_name}']")
-    puts "[DBG] trigger rect=#{page.evaluate_script("JSON.stringify(arguments[0].getBoundingClientRect())", trigger)}"
-    trigger.click
-    sleep 1
-    puts "[DBG] events=#{page.evaluate_script('window.__dbg').inspect}"
-    puts "[DBG] popover open? #{page.evaluate_script("document.getElementById('row-actions-#{ActionView::RecordIdentifier.dom_id(customer)}').matches(':popover-open')")}"
-    puts "[DBG] active=#{page.evaluate_script('document.activeElement?.outerHTML?.slice(0,120)')}"
-    puts "[DBG] elementFromPoint at trigger=#{page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return document.elementFromPoint(r.x + r.width/2, r.y + r.height/2)?.outerHTML?.slice(0,120) })()", trigger)}"
-    puts "[DBG] url=#{page.current_url} window=#{page.driver.browser.manage.window.size.to_a.inspect} inner=#{page.evaluate_script('[innerWidth, innerHeight]').inspect}"
-    popover_open = -> { page.evaluate_script("document.getElementById('row-actions-#{ActionView::RecordIdentifier.dom_id(customer)}').matches(':popover-open')") }
-    unless popover_open.call
-      trigger.click
-      sleep 1
-      puts "[DBG] after 2nd click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
-      puts "[DBG] windows=#{page.driver.browser.window_handles.size} current=#{page.driver.browser.window_handle} hasFocus=#{page.evaluate_script('document.hasFocus()')} visibility=#{page.evaluate_script('document.visibilityState')}"
-      page.driver.browser.window_handles.each do |h|
-        page.driver.browser.switch_to.window(h)
-        puts "[DBG]   window #{h}: #{page.current_url} visibility=#{page.evaluate_script('document.visibilityState')}"
-      end
-      page.driver.browser.switch_to.window(page.driver.browser.window_handles.find { |h| page.driver.browser.switch_to.window(h); page.current_url.end_with?("/customers") })
-      page.execute_script(<<~JS)
-        const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
-        ["mousedown", "mouseup", "pointerup", "mousemove"].forEach(t => document.addEventListener(t, e => log(t + " buttons=" + e.buttons), true));
-      JS
-      x, y = page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return [r.x + r.width/2, r.y + r.height/2] })()", trigger)
-      cdp = ->(type, **extra) { page.driver.browser.execute_cdp("Input.dispatchMouseEvent", type: type, x: x, y: y, button: "left", clickCount: 1, **extra) }
-      cdp.call("mouseReleased")
-      sleep 0.5
-      puts "[DBG] after raw CDP mouseReleased: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
-      trigger.click
-      sleep 1
-      puts "[DBG] after raw release + selenium click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
-      page.execute_script(<<~JS)
-        const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
-        ["keydown", "dragstart", "dragend", "drop"].forEach(t => document.addEventListener(t, e => log(t + " " + (e.key || "")), true));
-      JS
-      page.driver.browser.execute_cdp("Input.dispatchKeyEvent", type: "keyDown", key: "Shift", code: "ShiftLeft", windowsVirtualKeyCode: 16)
-      page.driver.browser.execute_cdp("Input.dispatchKeyEvent", type: "keyUp", key: "Shift", code: "ShiftLeft", windowsVirtualKeyCode: 16)
-      sleep 0.5
-      puts "[DBG] after CDP Shift key: events=#{page.evaluate_script('window.__dbg').inspect}"
-      page.driver.browser.execute_cdp("Input.cancelDragging")
-      sleep 0.5
-      trigger.click
-      sleep 1
-      puts "[DBG] after Input.cancelDragging + click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
-    end
+    find("button[aria-label='Actions for #{customer.full_name}']").click
     dismiss_confirm do
       click_button "Delete"
     end

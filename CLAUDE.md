@@ -91,6 +91,22 @@ left in place as-is and still runs (`bin/rails test`), but it is not where new t
   ran first). Not fixed here — out of scope for this PR — but worth a real fix (an explicit
   `.order(:id)` in `CustomersController#index`/`LeadsController#index`) before it's mistaken for
   a regression from unrelated future work. See TODO.md → Phase 5.
+- **Chrome password-leak dialog — fixed.** One system spec per CI run used to fail with a
+  "lost" click (`customers_ui_spec.rb:27`, earlier `leads_ui_spec.rb:16`). Every spec signs in
+  with the factory password `password123`, which is known-breached, so Google Chrome's leak
+  detection opened a browser-level "Change your password" dialog. While it was up, Chrome
+  dropped all input to the page, but JS, `find` and screenshots kept working, so nothing looked
+  wrong. `rails_helper.rb` now sets `profile.password_manager_leak_detection: false`.
+  - **To reproduce CI exactly, use Chrome for Testing, not Brave.** Brave doesn't ship Google's
+    leak detection, so this never reproduced there. Use
+    `SE_CHROME_BINARY=~/.cache/selenium/chrome/linux64/<ver>/chrome` with the matching
+    `SE_CHROMEDRIVER`.
+  - **Build the CSS in a fresh checkout/worktree first.** `app/assets/builds/` is gitignored
+    and `bundle exec rspec` doesn't build it, so without it system specs run with no CSS (drawer
+    and row-hiding specs fail). Run `bin/rails tailwindcss:build` first; `bin/rails test` also
+    builds it as a side effect.
+  - **RSpec failure screenshots are uploaded as the `rspec-screenshots` CI artifact**, with the
+    page HTML saved alongside each PNG.
 
 ## Domain Overview
 
