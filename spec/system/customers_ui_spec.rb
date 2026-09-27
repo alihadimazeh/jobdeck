@@ -58,12 +58,24 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
         puts "[DBG]   window #{h}: #{page.current_url} visibility=#{page.evaluate_script('document.visibilityState')}"
       end
       page.driver.browser.switch_to.window(page.driver.browser.window_handles.find { |h| page.driver.browser.switch_to.window(h); page.current_url.end_with?("/customers") })
+      page.execute_script(<<~JS)
+        const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
+        ["mousedown", "mouseup", "pointerup", "mousemove"].forEach(t => document.addEventListener(t, e => log(t + " buttons=" + e.buttons), true));
+      JS
+      x, y = page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return [r.x + r.width/2, r.y + r.height/2] })()", trigger)
+      cdp = ->(type, **extra) { page.driver.browser.execute_cdp("Input.dispatchMouseEvent", type: type, x: x, y: y, button: "left", clickCount: 1, **extra) }
+      cdp.call("mouseReleased")
+      sleep 0.5
+      puts "[DBG] after raw CDP mouseReleased: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
+      trigger.click
+      sleep 1
+      puts "[DBG] after raw release + selenium click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
       unless popover_open.call
-        page.driver.browser.execute_cdp("Page.bringToFront")
-        trigger = find("button[aria-label='Actions for #{customer.full_name}']")
-        trigger.click
+        cdp.call("mouseMoved", button: "none")
+        cdp.call("mousePressed", buttons: 1)
+        cdp.call("mouseReleased", buttons: 0)
         sleep 1
-        puts "[DBG] after bringToFront + click: open=#{popover_open.call} hasFocus=#{page.evaluate_script('document.hasFocus()')} events=#{page.evaluate_script('window.__dbg').inspect}"
+        puts "[DBG] after raw CDP move+press+release: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
       end
     end
     dismiss_confirm do
