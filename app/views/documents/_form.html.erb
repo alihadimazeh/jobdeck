@@ -4,7 +4,7 @@
 
   <fieldset class="fieldset py-0">
     <%= form.label :file, "File", class: "label" %>
-    <%= form.file_field :file, class: "file-input w-full", required: true,
+    <%= form.file_field :file, class: "file-input w-full", "aria-required": "true",
           accept: (Document::ACCEPTED_TYPES + Document::ACCEPTED_EXTENSIONS).join(","),
           "aria-describedby": "document_file_hint" %>
     <p id="document_file_hint" class="form-hint">

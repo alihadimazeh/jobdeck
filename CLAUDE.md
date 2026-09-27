@@ -216,30 +216,147 @@ and a portfolio piece that demonstrates RBAC and SSO done properly.
 
 ---
 
-## Search & Pagination (Ransack + Pagy)
+## Design System
 
-On the Customer, Lead, and Job index pages. Quotes and Orders have no top-level index (they're
-listed nested under a Lead/Job); whether to add one is an open product question.
+The UI has been fully rebuilt on **daisyUI**. Built on `feature/ui-foundation-prep`
+(16 chunked steps), then retinted on `feature/navy-blue-theme`; both merged to `main`
+via PR #42 (2026-09-18) — the navy + blue palette below is what's actually live, not a
+trial. This section is the durable reference; the design intent and full build history
+live in `~/.claude/plans/using-the-design-skill-immutable-hippo.md` (original design
+plan) and `~/.claude/plans/let-s-tackle-the-ui-ux-fancy-pnueli.md` (chunked execution
+plan + what actually shipped at each step) — neither covers the post-merge palette swap
+or the two small table polish items below, which happened after that plan finished.
 
-- Controller pattern: `@q = Model.ransack(params[:q])` then
-  `@pagy, @records = pagy(@q.result(distinct: true).order(:id))`. **The `.order(:id)` is
-  required** — without it Postgres can return `SELECT DISTINCT` rows in hash order and records
-  jump between pages.
-- Every ransack-able model needs explicit `ransackable_attributes`/`ransackable_associations`.
-  Ransack raises `Ransack::InvalidSearchError` without them — it's a security allow-list.
-- **Pagy 43.x is a full rewrite** of the classic docs: there's no `Pagy::Backend`/`Pagy::Frontend`/
-  `pagy_nav`. `Pagy::Method` is included in `ApplicationController`, `pagy(collection)` returns
-  `[pagy, records]`, and the view calls `@pagy.series_nav if @pagy.pages > 1`.
-- **Ransack's `_eq` on an integer-backed enum doesn't know about Rails enums.** It casts a string
-  label with `to_i` (`"contacted".to_i == 0`), silently matching the wrong rows with no error.
-  Build enum filter `<select>`s from `Model.statuses` **values** (the integers), not the keys —
-  see `leads/index.html.erb` and its regression spec.
+### Theme & rule
 
-## Not done yet
+- One custom daisyUI theme, `jobdeck` — "navy + blue CTA" — defined entirely in
+  `app/assets/tailwind/application.css` via `@plugin "./daisyui-theme.mjs"`. Light only
+  for now; every color reference in view code is a semantic token (`bg-base-200`,
+  `text-base-content`, `badge-success`, …), never raw hex or Tailwind's default scales,
+  so a `jobdeck-dark` theme is a later drop-in with zero view changes.
+- **Rule: always use daisyUI's semantic classes, never `amber-*`/`gray-*`/raw hex in a
+  view.** (`amber-*` was the pre-redesign accent — if you see it, it's a regression.)
+- Font is self-hosted **Inter** (`app/assets/fonts/inter/`, variable weight) — no
+  external font requests, works offline on a job site.
+- The original redesign shipped an "industrial slate + safety orange" palette first
+  (primary `#EA580C`); it was retinted to navy + blue right after, on its own branch,
+  precisely so the contrast/badge-variant work below didn't need re-checking per
+  resource. The orange values still exist in git history (`cdc4e38` on
+  `feature/ui-foundation-prep`) if ever needed again, but nothing on `main` uses them.
 
-- **Dark theme** — the token structure supports it; no `jobdeck-dark` theme exists yet.
-- **Quote/Order search + pagination** — needs a product decision first (no top-level lists).
-- **Job index status filter label** — the `status_eq` select has no label.
-- **Role-based nav/action-button gating** — blocked on Phase 5 milestones 2–3.
-- **`tax_rate`'s "0.13 for 13%" input format** — confusing (got a clarifying hint only);
-  accepting "13" needs a `before_validation` normalization on Quote and Order.
+| Role | Hex | Used for |
+|---|---|---|
+| `base-100` / `base-200` / `base-300` | `#FFFFFF` / `#F8FAFC` / `#E2E8F0` | cards & tables / app canvas / hairline borders |
+| `base-content` | `#0F172A` | body text (muted text is `text-base-content/70`) |
+| `primary` | `#0369A1` | primary actions / CTA — white button text measures 5.93:1 |
+| `secondary` | `#334155` | secondary buttons / quiet emphasis |
+| `accent` | `#075985` | hover/active state on primary |
+| `neutral` | `#0F172A` | sidebar (navy) |
+| `info` / `success` / `warning` / `error` | `#1D4ED8` / `#15803D` / `#B45309` / `#B91C1C` | status badges — see `ApplicationHelper::STATUS_VARIANTS` for the status → variant map. `error` darkened from `#DC2626` (PR #54) — the lighter value failed WCAG AA on `badge-soft`/`alert-soft` (4.27:1) |
+
+### Shared components (`app/views/shared/`)
+
+`_page_header` (breadcrumb + H1 + action slot — suppresses the breadcrumb entirely when
+its last segment duplicates the title), `_form_container`, `_form_errors`
+(`role="alert"`, autofocused, links each error to its field), `_field` (label/input/
+select/textarea + hint/error — not used by the 12-column line-item/room editor rows,
+those stay hand-written because they're the JS-templated ones), `_card`, `_table`
+(optional `footer:` for a real `<tfoot>` totals row; every table renders through this one
+partial, so its rows are zebra-striped app-wide via a single CSS rule —
+`.table tbody tr:nth-child(even)` in `application.css`, `color-mix()` off `base-content`
+rather than daisyUI's own `table-zebra` class so the stripe doesn't reuse `base-200`,
+which is already the page canvas color), `_detail_list`, `_stats`, `_badge`,
+`_row_actions` (the kebab menu — daisyUI's Popover API, not JS; the trigger button is
+centered in its column, not right-aligned), `_empty_state`, `_flash`. Plus
+`layouts/_sidebar` and `layouts/_navbar` for the app shell.
+
+Note the two block-rendering partials' calling convention: `render "shared/card", { title:
+"X" } do ... end` (bare string + plain hash), **not** `render partial:, locals:` — the
+latter doesn't support a block the same way. See `shared/_card.html.erb`'s own comment.
+
+### Helpers (`app/helpers/application_helper.rb`)
+
+`status_badge(record)`, `format_date`, `format_currency`, `format_address`, `btn` (daisyUI
+button wrapper), `nav_link`/`nav_section_active?`/`SECTION_CONTROLLERS` (a nested
+resource, e.g. a Quote, still highlights its parent Leads/Jobs nav item).
+
+### Required fields (`field_required?` + `aria-required`)
+
+Every `shared/_field` works out on its own whether it's required. It then shows a red `*` in
+the label (`aria-hidden`, explained by `_form_container`'s "Fields marked * are required") and
+sets `aria-required="true"` on the control.
+
+- **Why a custom helper (`field_required?`), not a per-form flag:** the marker is derived
+  from the model's own validations, so it can't drift from what the server actually enforces.
+  It returns true for an unconditional `presence` validation, and false for one carrying
+  `if`/`unless`/`on`/`allow_nil`/`allow_blank`, since those aren't always required.
+  - For a `*_id` foreign key it reads the `belongs_to` reflection's `optional` flag instead,
+    because in Rails 8.1 `belongs_to`'s own presence validator carries an internal `if:`.
+    So `Lead#customer_id` is required and `Job#lead_id` isn't.
+  - A form can still override the result with the partial's `required:` local
+    (`required: true` / `false`) when the derivation is wrong for that one form.
+- **Why `aria-required`, never the native `required` attribute:** native `required` makes
+  the browser block a blank submit and show its own tooltip. The request never reaches the
+  server, so `shared/_form_errors` (the focused, linked error summary, PRs #54/#61) never
+  renders. PRs #63/#64 shipped native `required` and broke three system specs on `main` that
+  way. `aria-required` still tells screen readers the field is required, without triggering
+  browser validation.
+  - The hand-written Document file input (`documents/_form`) follows the same rule.
+  - `spec/views/shared/field_spec.rb` fails if native `required` comes back.
+
+### App shell & JS
+
+- `layouts/application.html.erb`: daisyUI `drawer` — a permanent sidebar rail `>=lg`,
+  a toggleable overlay drawer below it, from one markup (`lg:drawer-open`). Skip link,
+  `<html lang="en">`, `aria-label` on both nav landmarks.
+- `app/javascript/controllers/drawer_controller.js` — a11y layer on top of the
+  checkbox-driven drawer (focus management, Escape-to-close, `aria-expanded`); the
+  drawer itself needs no JS to open/close.
+- `quote_form_controller.js` / `order_form_controller.js` (the estimation tool, dynamic
+  room/line-item rows) are unchanged by the redesign — only the row markup's classes
+  were reworked to stack on mobile, every `data-*` hook they depend on was preserved.
+- `dropdown_controller.js` and `hello_controller.js` were deleted (fully replaced by
+  `shared/_row_actions` and dead scaffold, respectively).
+
+### Root / dashboard
+
+`root "dashboard#show"` (was `customers#index`) — `DashboardController` shows leads
+needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and
+outstanding orders (`Order.outstanding`), each a 5-row preview with a true total count.
+
+### Search & Pagination (Ransack + Pagy)
+
+Wired into the **Customer and Lead index pages only** — `Job`/`Quote`/`Order` indexes are still
+plain unfiltered/unpaginated `render @collection` (see TODO.md for that gap).
+
+- Controller pattern: `@q = Model.ransack(params[:q])` then `@pagy, @records =
+  pagy(@q.result(distinct: true))`. Every ransack-able model needs explicit
+  `ransackable_attributes`/`ransackable_associations` class methods — Ransack raises
+  `Ransack::InvalidSearchError` without them (a deliberate security allow-list, not boilerplate
+  you can skip).
+- View pattern: `search_form_for @q do |f| ... end`, then `@pagy.series_nav if @pagy.pages > 1`
+  below the results.
+- **Pagy 43.x is a full rewrite** of the classic docs most tutorials show — there's no
+  `Pagy::Backend`/`Pagy::Frontend`/`pagy_nav` helper in this version. `Pagy::Method` is included
+  in `ApplicationController`; `pagy(collection)` returns `[pagy_instance, collection]`; the nav
+  method (`series_nav`) is called directly on that instance in the view.
+- **Real bug found and fixed**: Ransack's `_eq` predicate on an integer-backed `enum` column
+  (e.g. `Lead.status`) doesn't know about Rails enums — it naively casts a non-numeric string
+  label via `String#to_i` (`"contacted".to_i == 0`), so a `<select>` built from
+  `Lead.statuses.keys` silently matched "new" leads regardless of what was picked, with no error.
+  Fix: build the `<select>` from `Lead.statuses` **values** (the integers), not the keys — see
+  `leads/index.html.erb` and its regression spec in `leads_spec.rb`. Worth checking for the same
+  trap on any future enum-column filter.
+
+### Not done yet
+
+- **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
+- **ActivityNote/Document UI on Customer's show page** — the `activity_notes` association exists
+  on `Customer` but no view renders it there yet; `Customer` has no `documents` association at
+  all yet either.
+- **Ransack/Pagy on Job/Quote/Order indexes** — see "Search & Pagination" above.
+- **Role-based nav/action-button gating** — blocked on the auth work (Phase 5) below;
+  the shell is built to have `policy(record).action?` checks layered in later.
+- **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
+  (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
+  `before_validation` normalization and touches both Quote's and Order's show pages.

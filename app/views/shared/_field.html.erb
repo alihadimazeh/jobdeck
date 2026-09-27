@@ -18,9 +18,11 @@
   <%= form.label attr, class: "label" do %><%= label_text %><% if required %><span class="text-error" aria-hidden="true">*</span><% end %><% end %>
 
   <% control_class = as == :textarea ? "textarea" : (as == :select ? "select" : "input") %>
+  <%# aria-required, not `required`: native validation would block a blank submit in the
+      browser, so shared/_form_errors (focused, linked error summary) would never render. %>
   <% shared_opts = {
        class: "w-full #{control_class}",
-       required: (required || nil),
+       "aria-required": (required ? "true" : nil),
        "aria-invalid": (has_error ? "true" : nil),
        "aria-describedby": describedby.presence&.join(" ")
      }.merge(field_options) %>
