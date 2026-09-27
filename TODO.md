@@ -396,15 +396,16 @@
       say who's allowed to act as whom) — its own follow-up PR.
 
 #### Bug found while shipping the above (2026-09-21)
-- [ ] **`CustomersController`/`LeadsController#index` pagination relies on unspecified row
+- [x] **`CustomersController`/`LeadsController#index` pagination relies on unspecified row
       order.** `@q.result(distinct: true)` has no explicit `.order`, so which records land on
       page 1 vs page 2 depends on whatever order Postgres's query planner happens to return for
       `SELECT DISTINCT` — not guaranteed to match id/insertion order, and confirmed to actually
       vary (reproduced on `main`, unrelated to this branch, via
       `bundle exec rspec --seed 3`: `customers_spec.rb`/`leads_spec.rb`'s pagination tests fail
-      once enough other specs have run first that the records involved land on high ids). Not
-      fixed here (out of scope for the auth PR that found it) — fix is a one-line
-      `.order(:id)` (or a real sort column) added to both controllers' `index` actions.
+      once enough other specs have run first that the records involved land on high ids).
+      — fixed (PR #56): `.order(:id)` added to `Customer`/`Lead`/`Job`'s `index` actions.
+      See CLAUDE.md/`spec/CLAUDE.md` → "Pagination-order flake" — any future paginated
+      `distinct: true` query needs the same explicit order.
 
 ### Role-based views and permissions
 - [ ] `role` enum on User — `admin | project_manager | sales | viewer` (integer-backed)
@@ -500,8 +501,9 @@
 
 #### Medium — UX / IA
 - [x] U1 — dashboard built (`DashboardController#show`, `root "dashboard#show"`) — Step 14
-- [ ] U2 — pagination/search (Pagy/Ransack) — **not part of this redesign**, still not in the
-      Gemfile, remains open under Phase 4
+- [x] U2 — pagination/search (Pagy/Ransack) — done for Customer/Lead/Job (Phase 4 + PR #56);
+      Quote/Order still have no top-level index, see the UI Backlog's "needs a product
+      decision" list below
 - [x] U3 — primary action now lives in the `page_header` row beside the `<h1>`
       (`action:`/`actions:` locals)
 - [x] U4 — `page_header` suppresses the breadcrumb's last crumb when it duplicates the title
@@ -566,34 +568,15 @@
       intended), and `/leads`, with no regression to the mobile overlay drawer's show/hide
       behavior. `bin/rails test` (19 runs) and `bundle exec rspec` (299 examples) both green.
 
-- [ ] **Nice to have:** front-end phone number format validation on the Customer form
-      (`app/views/customers/_form.html.erb:10`, `shared/_field`).
-      - **Current state:** the field already renders as `as: :phone` → `type="tel"`
-        (`form.phone_field`), but `type="tel"` has no built-in format checking in any browser
-        — right now literally any string passes client-side.
-      - **How to do it:** pass an HTML5 `pattern` (+ `inputmode: "tel"`) through `_field`'s
-        existing `options: {}` local, e.g. `options: { pattern: "[0-9+\\-\\s()]{7,}",
-        inputmode: "tel", title: "Enter a valid phone number" }` — native browser validation,
-        blocks submit and shows the browser's own inline error, no JS needed. If something
-        stricter is wanted (reject letters, enforce a specific format) a small Stimulus
-        controller (e.g. `phone_field_controller.js`, following the existing
-        `autofocus_controller.js` pattern used by `shared/_form_errors`) validating on
-        `input`/`blur` would be the next step up. Either way this should stay a soft
-        client-side convenience — the real guard stays server-side (see below).
+- [x] **Nice to have:** front-end phone number format validation on the Customer form.
+      — fixed (U14, PR #72): client-side `pattern` + `inputmode: "tel"` via `_field`'s
+      `options:`. The straightforward regex is silently ignored by browsers (unescaped `( )`
+      under the regex `v` flag) — PR uses an escaped one.
 
-- [ ] **Nice to have:** proper email format validation, both ends, on the Customer form.
-      - **Current state:** the field already renders as `as: :email` → `type="email"`
-        (`app/views/customers/_form.html.erb:11`), so it already gets *some* free browser
-        format checking on submit — but HTML5's built-in email pattern is very permissive
-        (e.g. `a@b` passes), and there's no matching check server-side at all — `customer.rb`
-        only has `validates :phone, presence: true` etc., nothing on `email`'s format.
-      - **How to do it:** add `validates :email, format: { with: URI::MailTo::EMAIL_REGEXP },
-        allow_blank: true` to `customer.rb` (`email` isn't a required field, so
-        `allow_blank:` keeps it optional while still rejecting a malformed value if one is
-        entered) — `URI::MailTo::EMAIL_REGEXP` ships with Ruby's stdlib, no gem needed. This
-        is the higher-value half of the two, since the client-side HTML5 check is trivially
-        bypassed (devtools, curl, disabled JS) and only the server-side validation is a real
-        guarantee.
+- [x] **Nice to have:** proper email format validation, both ends, on the Customer form.
+      — fixed (U13, PR #71): `validates :email, format: { with: URI::MailTo::EMAIL_REGEXP },
+      allow_blank: true` on `customer.rb`. Also: `Customer#archive!` now uses
+      `update_attribute` so a legacy invalid email can't block the automatic archive path.
 
 ## UI/UX Audit findings (2026-09-21)
 
@@ -639,23 +622,35 @@
       the enum's integer values + Pagy), `Job.ransackable_attributes`/`ransackable_associations`
       added, regression spec for the enum-casting bug included. Quote/Order indexes still open
       (both are nested under a Lead/Job rather than top-level unscoped lists, so lower priority).
-- [ ] `layouts/mailer.html.erb:18,23` and `pwa/manifest.json.erb:20` still hardcode the
+- [x] `layouts/mailer.html.erb:18,23` and `pwa/manifest.json.erb:20` still hardcode the
       pre-retint "industrial slate + safety orange" palette (`#1E293B`/`#EA580C`) — neither
       file goes through the Tailwind pipeline, so the navy+blue retint (PR #42) never
       touched them.
-- [ ] `documents_controller.rb#create`'s failure path does a flat
+      — fixed (U3, PR #60): both re-tinted to navy/blue by hand. `spec/views/
+      stale_palette_spec.rb` now fails if `#EA580C`/`#1E293B` reappear under `app/views` or
+      `app/helpers`.
+- [x] `documents_controller.rb#create`'s failure path does a flat
       `redirect_to ..., alert: errors.to_sentence` instead of re-rendering
       `documents/_form` through `shared/_form_errors` like every other model — file-upload
       validation errors don't get the field-level, focus-managed treatment everything else
       gets.
+      — fixed (U1, PR #58): both `ActivityNotesController`/`DocumentsController#create` now
+      `include RendersParentShow` and re-render the parent's show page (422) with the
+      invalid record bound in, so `shared/_form_errors` fires and the user's input survives.
 - [ ] CLAUDE.md's UX section states "Lead + Customer creation should happen together on one
       form" as current fact — `leads/_form.html.erb` only offers a `customer_id` select of
       existing customers, no inline-create path exists. Either build it or correct the doc.
-- [ ] `application_helper.rb:72`'s `nav_link` uses raw `text-white` instead of a semantic
+      **Still open** — see the UI Backlog's "needs a product decision" list below.
+- [x] `application_helper.rb:72`'s `nav_link` uses raw `text-white` instead of a semantic
       token — contrast is fine (15.83:1), pure discipline nit against the app's own "no raw
       Tailwind colors in views" rule.
-- [ ] Photo-type Documents (JPEG/PNG) never get an inline preview — only PDFs get "View";
+      — fixed (U3, PR #60): now `text-primary-content`/`text-neutral-content/70`. The
+      sidebar's separate "Sign out" button still has a raw `hover:text-white`, deliberately
+      left for the Phase 5 role-gating work.
+- [x] Photo-type Documents (JPEG/PNG) never get an inline preview — only PDFs get "View";
       `photo` is a named `document_type` for a real use case (job-site photos).
+      — fixed (U7, PR #65): inline thumbnail/"View" link. Uses the original blob rather than
+      an Active Storage variant, since libvips isn't installed in every dev environment.
 
 #### Polish / verify only
 - [ ] Firefox lacks CSS anchor positioning, so `shared/_row_actions`' popover falls back to
@@ -732,7 +727,10 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 - [x] **U14** — **PR #72** (the pattern suggested under Nice-to-haves is silently ignored by browsers — unescaped `( )` under the regex `v` flag; PR uses an escaped one) — Customer phone field client-side `pattern` + `inputmode: "tel"` via `_field`'s
       `options:` (see "Known bugs / Nice-to-haves" above).
 
-**In flight elsewhere:** Job index search + pagination — PR #56 (another session).
+**Merged since, not from the loop:** Job index search + pagination — PR #56 (another
+session, see Phase 4 above). Its `status_eq` filter `<select>` still has no label (visible
+or `sr-only`) — U4 (PR #61) labeled Lead's and said Job's would need the same once #56
+landed, but it slipped through. Small, standalone fix.
 
 **Not in the loop — needs a product decision first:**
 - Quote/Order search + pagination — both are only listed nested under a Lead/Job
@@ -744,7 +742,42 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 - `tax_rate` "0.13 for 13%" input format; dark theme; Firefox popover fallback (needs a manual
   browser look, can't be verified headless).
 
+## Bugs found after the UI Backlog loop (2026-09-26/27)
+
+- [x] **U5/U6 shipped the native HTML `required` attribute, which silently broke the
+      error-summary UX.** Native `required` makes the browser block a blank submit and show
+      its own tooltip — the request never reaches the server, so `shared/_form_errors` (the
+      focused, linked error summary from PRs #54/#61) never renders. Broke three system
+      specs on `main`.
+      — fixed (PR #80): switched to `aria-required` (tells screen readers the field is
+      required without triggering browser-native validation) plus a `field_required?` helper
+      that derives the marker from the model's own unconditional `presence` validations (a
+      `belongs_to`'s `optional:` flag for FKs, since Rails 8.1's own presence validator on
+      `belongs_to` carries an internal `if:`). `spec/views/shared/field_spec.rb` fails if
+      native `required` comes back.
+- [x] **CI-only system-spec flake, invisible locally.** `customers_ui_spec.rb:27` (and
+      before it `leads_ui_spec.rb:16`) failed on every CI run but never on this machine.
+      — root cause (PR #82): every system spec signs in with the factory password
+      `password123`, which is on breached-password lists. Google Chrome's password-leak
+      detection then pops a browser-level "Change your password" dialog that silently drops
+      all mouse/keyboard input to the page — JS, `find`, `evaluate_script`, and screenshots
+      all still work, so the page looks completely normal while broken. Brave (the local
+      `SE_CHROME_BINARY`) doesn't ship that feature, hence never reproducing locally. Fixed
+      by disabling Chrome's password-leak detection in the system-spec browser options; CI
+      now also uploads screenshots + page HTML on system-spec failure
+      (`rspec-screenshots` artifact) so this class of bug is easier to catch next time.
+
 ## Housekeeping
+
+- [x] Trim CLAUDE.md and split design-system/testing notes into `app/views/CLAUDE.md` and
+      `spec/CLAUDE.md` (PR #81) — those two only load when working under their directories.
+- [x] Clean up three merged branches' leftover git worktrees (`ci/rspec-failure-screenshots`,
+      `deps/gem-updates`, `fix/main-required-and-flakes`) plus their local/remote branch refs
+      — all three PRs (#82, #79, #80) were confirmed merged with no uncommitted changes
+      before removal.
+- [ ] **PR #76** (Dependabot: `image_processing` 1.14.0 → 2.1.0) is open and **failing CI**
+      (`test` and `system-test` both red) — needs investigation before merging, not a
+      rubber-stamp bump.
 - [x] Update CLAUDE.md to reflect schema decisions
 - [x] Fix customer fixtures
 - [x] Fix seeds.rb
