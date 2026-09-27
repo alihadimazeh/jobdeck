@@ -757,6 +757,30 @@ latter doesn't support a block the same way. See `shared/_card.html.erb`'s own c
 button wrapper), `nav_link`/`nav_section_active?`/`SECTION_CONTROLLERS` (a nested
 resource, e.g. a Quote, still highlights its parent Leads/Jobs nav item).
 
+### Required fields (`field_required?` + `aria-required`)
+
+Every `shared/_field` works out on its own whether it's required. It then shows a red `*` in
+the label (`aria-hidden`, explained by `_form_container`'s "Fields marked * are required") and
+sets `aria-required="true"` on the control.
+
+- **Why a custom helper (`field_required?`), not a per-form flag:** the marker is derived
+  from the model's own validations, so it can't drift from what the server actually enforces.
+  It returns true for an unconditional `presence` validation, and false for one carrying
+  `if`/`unless`/`on`/`allow_nil`/`allow_blank`, since those aren't always required.
+  - For a `*_id` foreign key it reads the `belongs_to` reflection's `optional` flag instead,
+    because in Rails 8.1 `belongs_to`'s own presence validator carries an internal `if:`.
+    So `Lead#customer_id` is required and `Job#lead_id` isn't.
+  - A form can still override the result with the partial's `required:` local
+    (`required: true` / `false`) when the derivation is wrong for that one form.
+- **Why `aria-required`, never the native `required` attribute:** native `required` makes
+  the browser block a blank submit and show its own tooltip. The request never reaches the
+  server, so `shared/_form_errors` (the focused, linked error summary, PRs #54/#61) never
+  renders. PRs #63/#64 shipped native `required` and broke three system specs on `main` that
+  way. `aria-required` still tells screen readers the field is required, without triggering
+  browser validation.
+  - The hand-written Document file input (`documents/_form`) follows the same rule.
+  - `spec/views/shared/field_spec.rb` fails if native `required` comes back.
+
 ### App shell & JS
 
 - `layouts/application.html.erb`: daisyUI `drawer` — a permanent sidebar rail `>=lg`,
