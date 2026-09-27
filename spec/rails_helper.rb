@@ -57,6 +57,13 @@ RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ] do |options|
       options.binary = ENV["SE_CHROME_BINARY"] if ENV["SE_CHROME_BINARY"]
+      # Every spec signs in with the factory password "password123", a known-breached
+      # password. Google Chrome's leak detection then opens a browser-level "Change your
+      # password" dialog, and while it's up Chrome silently drops all mouse and keyboard
+      # input to the page (JS, find and screenshots still work). It hit one example per
+      # run - customers_ui_spec.rb:27, earlier leads_ui_spec.rb:16. Brave doesn't ship
+      # leak detection, so this never reproduces with the local SE_CHROME_BINARY.
+      options.add_preference("profile.password_manager_leak_detection", false)
     end
 
     # Every controller requires authentication (app/controllers/concerns/authentication.rb).

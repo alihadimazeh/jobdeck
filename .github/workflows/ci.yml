@@ -108,9 +108,23 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          # Save the page HTML next to each failure screenshot, not just the PNG.
+          RAILS_SYSTEM_TESTING_SCREENSHOT_HTML: "1"
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
-        run: bundle exec rspec
+        run: |
+          google-chrome --version
+          bundle exec rspec
+
+      # RSpec's system specs run in this job (not system-test, which is Minitest-only), so
+      # their failure screenshots need their own upload step.
+      - name: Keep screenshots from failed RSpec system specs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rspec-screenshots
+          path: ${{ github.workspace }}/tmp/capybara
+          if-no-files-found: ignore
 
   system-test:
     runs-on: ubuntu-latest
