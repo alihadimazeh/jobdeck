@@ -70,13 +70,19 @@ RSpec.describe "Customers UI (Step 8 restyle)", type: :system do
       trigger.click
       sleep 1
       puts "[DBG] after raw release + selenium click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
-      unless popover_open.call
-        cdp.call("mouseMoved", button: "none")
-        cdp.call("mousePressed", buttons: 1)
-        cdp.call("mouseReleased", buttons: 0)
-        sleep 1
-        puts "[DBG] after raw CDP move+press+release: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
-      end
+      page.execute_script(<<~JS)
+        const log = (m) => window.__dbg.push(Math.round(performance.now()) + "ms " + m);
+        ["keydown", "dragstart", "dragend", "drop"].forEach(t => document.addEventListener(t, e => log(t + " " + (e.key || "")), true));
+      JS
+      page.driver.browser.execute_cdp("Input.dispatchKeyEvent", type: "keyDown", key: "Shift", code: "ShiftLeft", windowsVirtualKeyCode: 16)
+      page.driver.browser.execute_cdp("Input.dispatchKeyEvent", type: "keyUp", key: "Shift", code: "ShiftLeft", windowsVirtualKeyCode: 16)
+      sleep 0.5
+      puts "[DBG] after CDP Shift key: events=#{page.evaluate_script('window.__dbg').inspect}"
+      page.driver.browser.execute_cdp("Input.cancelDragging")
+      sleep 0.5
+      trigger.click
+      sleep 1
+      puts "[DBG] after Input.cancelDragging + click: open=#{popover_open.call} events=#{page.evaluate_script('window.__dbg').inspect}"
     end
     dismiss_confirm do
       click_button "Delete"
