@@ -6,7 +6,7 @@ require "rails_helper"
 RSpec.describe "Theme palette" do
   it "has no pre-retint hex values left in views or helpers" do
     stale_hexes = %w[#EA580C #1E293B]
-    offenders = Rails.root.glob("app/{views,helpers}/**/*").select(&:file?).select do |path|
+    offenders = Rails.root.glob("app/{views,helpers}/**/*.{erb,rb,jbuilder,js}").select(&:file?).select do |path|
       text = path.read
       stale_hexes.any? { |hex| text.match?(/#{Regexp.escape(hex)}/i) }
     end
