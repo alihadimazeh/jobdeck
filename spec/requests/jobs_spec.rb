@@ -31,6 +31,11 @@ RSpec.describe "Jobs", type: :request do
       expect(response.body).not_to include(active_job.title)
     end
 
+    it "labels the status filter for screen readers" do
+      get jobs_path
+      expect(response.body).to include('<label class="sr-only" for="q_status_eq">Filter by status</label>')
+    end
+
     it "paginates when there are more jobs than one page" do
       jobs = create_list(:job, 21, customer: customer)
       last_job = jobs.max_by(&:id)

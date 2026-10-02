@@ -731,6 +731,8 @@ anywhere; zebra striping as one shared, theme-agnostic CSS rule.
 session, see Phase 4 above). Its `status_eq` filter `<select>` still has no label (visible
 or `sr-only`) — U4 (PR #61) labeled Lead's and said Job's would need the same once #56
 landed, but it slipped through. Small, standalone fix.
+— fixed: `sr-only` "Filter by status" label added to `jobs/index.html.erb`, matching Lead's,
+plus a request spec in `jobs_spec.rb`.
 
 **Not in the loop — needs a product decision first:**
 - Quote/Order search + pagination — both are only listed nested under a Lead/Job
@@ -775,9 +777,10 @@ landed, but it slipped through. Small, standalone fix.
       `deps/gem-updates`, `fix/main-required-and-flakes`) plus their local/remote branch refs
       — all three PRs (#82, #79, #80) were confirmed merged with no uncommitted changes
       before removal.
-- [ ] **PR #76** (Dependabot: `image_processing` 1.14.0 → 2.1.0) is open and **failing CI**
-      (`test` and `system-test` both red) — needs investigation before merging, not a
-      rubber-stamp bump.
+- [x] **PR #76** (Dependabot: `image_processing` 1.14.0 → 2.1.0) was open and **failing CI**
+      (`test` and `system-test` both red).
+      — resolved: #76 closed; the 2.x bump landed via PR #83, which fixed the boot crash from
+      image_processing 2.x's soft dependencies.
 - [x] Update CLAUDE.md to reflect schema decisions
 - [x] Fix customer fixtures
 - [x] Fix seeds.rb
