@@ -8,10 +8,6 @@ A project management app for a small construction business — customers, sales 
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-![Jobdeck dashboard](docs/screenshot-dashboard.svg)
-<!-- Placeholder graphic above — replace docs/screenshot-dashboard.svg with a real
-     screenshot or short GIF of the dashboard (same filename works, or update the
-     path/extension above if you use a .png/.gif instead). -->
 
 ## Table of Contents
 
