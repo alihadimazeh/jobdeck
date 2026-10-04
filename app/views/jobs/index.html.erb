@@ -11,6 +11,7 @@
         class: "input input-sm w-full", placeholder: "Search jobs…" %>
   <%# Ransack's *_eq predicate needs the enum's integer value, not its label - see
       leads/index.html.erb for the bug this guards against. %>
+  <%= f.label :status_eq, "Filter by status", class: "sr-only" %>
   <%= f.select :status_eq, Job.statuses.map { |key, value| [ key.titleize, value ] },
         { include_blank: "Any status" }, class: "select select-sm" %>
   <%= f.submit "Search", class: "btn btn-sm" %>
