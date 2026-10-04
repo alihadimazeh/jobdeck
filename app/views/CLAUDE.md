@@ -21,8 +21,8 @@ Palette values live in that file.
   on `badge-soft`/`alert-soft` (4.27:1). Re-check contrast if you touch status colors.
 - **Every form/filter control needs an accessible name** (a label, visible or `sr-only`, or an
   `aria-label`). Placeholders don't count. `spec/requests/form_control_labels_spec.rb` checks the
-  Lead index and the Quote/Order forms, including their JS row `<template>`s. Known gap: the Job
-  index's `status_eq` select still has no label.
+  Lead index and the Quote/Order forms, including their JS row `<template>`s; the Job index's
+  status filter label is covered by `spec/requests/jobs_spec.rb`.
 - Inter is self-hosted (`app/assets/fonts/inter/`) so the app works offline on a job site; don't
   add external font requests.
 
@@ -31,9 +31,9 @@ Palette values live in that file.
 - `render "shared/card", { title: "X" } do ... end` (bare string + plain hash), **not**
   `render partial:, locals:` — the latter doesn't pass a block the same way. Same for
   `shared/form_container`.
-- `shared/_field` marks required fields automatically (asterisk + native `required`) from the
-  model's unconditional presence validations, via `field_required?` in `ApplicationHelper`; pass
-  `required:` to override. It is not used by the 12-column room/line-item editor rows, which stay
+- `shared/_field` marks required fields automatically (asterisk + `aria-required`, never native
+  `required` — see root CLAUDE.md → "Required fields") from the model's unconditional presence
+  validations, via `field_required?` in `ApplicationHelper`; pass `required:` to override. It is not used by the 12-column room/line-item editor rows, which stay
   hand-written because they're the JS-templated ones.
 - Tables are zebra-striped by one CSS rule (`.table tbody tr:nth-child(even)` in
   `application.css`, a `color-mix()` off `base-content`) rather than daisyUI's `table-zebra`,
