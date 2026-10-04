@@ -326,8 +326,9 @@ outstanding orders (`Order.outstanding`), each a 5-row preview with a true total
 
 ### Search & Pagination (Ransack + Pagy)
 
-Wired into the **Customer and Lead index pages only** — `Job`/`Quote`/`Order` indexes are still
-plain unfiltered/unpaginated `render @collection` (see TODO.md for that gap).
+Wired into the **Customer, Lead, and Job index pages** (Job via PR #56) — `Quote`/`Order` indexes
+are still plain unfiltered/unpaginated `render @collection`, and are only listed nested under a
+Lead/Job (see TODO.md's "needs a product decision" list for that gap).
 
 - Controller pattern: `@q = Model.ransack(params[:q])` then `@pagy, @records =
   pagy(@q.result(distinct: true))`. Every ransack-able model needs explicit
@@ -351,10 +352,7 @@ plain unfiltered/unpaginated `render @collection` (see TODO.md for that gap).
 ### Not done yet
 
 - **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
-- **ActivityNote/Document UI on Customer's show page** — the `activity_notes` association exists
-  on `Customer` but no view renders it there yet; `Customer` has no `documents` association at
-  all yet either.
-- **Ransack/Pagy on Job/Quote/Order indexes** — see "Search & Pagination" above.
+- **Ransack/Pagy on Quote/Order indexes** — see "Search & Pagination" above.
 - **Role-based nav/action-button gating** — blocked on the auth work (Phase 5) below;
   the shell is built to have `policy(record).action?` checks layered in later.
 - **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
