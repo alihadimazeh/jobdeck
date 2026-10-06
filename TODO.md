@@ -542,6 +542,49 @@
       is still why every `-content` pairing was re-verified after the palette swap instead of
       assumed fine.
 
+## Phase 7 — Design Quality Pass (Impeccable)
+
+> **Goal:** a scored, evidence-based design review and polish of the surfaces a portfolio
+> reviewer sees first, measured against the documented design system rather than taste.
+> **Starts after Phase 5's milestones 2–3** (roles + role-based view gating), since gating
+> changes the nav and action buttons these reviews would judge. P7.2 doesn't touch gated UI
+> and can be pulled forward.
+>
+> - Visual authority: [`DESIGN.md`](DESIGN.md) (tokens, components, named rules) and its
+>   `.impeccable/design.json` sidecar. Product context: [`PRODUCT.md`](PRODUCT.md).
+> - Run each item with the named `/impeccable <command> <target>`; one branch + PR per item,
+>   off `origin/main`.
+> - If an item changes a token or component, re-run `/impeccable document` in the same PR so
+>   DESIGN.md doesn't drift from `application.css`.
+> - Items come from `/impeccable` signals + the bundled detector run on 2026-10-05 (PR #88).
+
+- [ ] **P7.1** — `/impeccable critique app/views/dashboard/show.html.erb`. No surface has ever
+      been critiqued. The dashboard is the first screen after sign-in and the one PRODUCT.md
+      centers (follow-ups, active jobs, unpaid orders). The scored snapshot becomes the backlog
+      for a follow-up `/impeccable polish` on the same file.
+- [ ] **P7.2** — `/impeccable polish public`. The Rails error pages (`400`, `404`,
+      `406-unsupported-browser`, `422`, `500.html`) are still the stock pages, with their own
+      fonts, colors and sizes (the detector flagged all five). Bring them onto the `jobdeck`
+      look. They're static files outside the Tailwind pipeline, so like
+      `layouts/mailer.html.erb` they must hardcode hex; add them to the hand-update list in
+      `app/views/CLAUDE.md` and consider extending `spec/views/stale_palette_spec.rb` to `public/`.
+- [ ] **P7.3** — `/impeccable audit app/views/quotes`. The room/line-item estimation editor is the
+      signature feature and the most complex layout (12-col grid ≥sm, stacked rows on phones,
+      JS-managed focus). Technical check for a11y, responsive behavior and performance; preserve
+      every `data-*` hook `quote_form_controller.js` depends on.
+- [ ] **P7.4** — Decide the unused `accent` token (`#075985`, "Deep Harbor"). `application.css`
+      and CLAUDE.md describe it as primary's hover color, but no view uses it; daisyUI darkens the
+      button's own color 7% instead. Either wire it in deliberately or remove it, then update the
+      `application.css` comment, CLAUDE.md's palette table, and DESIGN.md (which currently marks
+      it "reserved").
+- [ ] **P7.5** — After P7.1 lands: critique the next surfaces in reviewer order (Lead show with
+      its quotes, Quote show / Accept, Job show with orders, Customer index). One critique +
+      polish PR per surface.
+- [ ] **P7.6** — Quiet the detector's known false positives before enabling its hook
+      (`/impeccable hooks on`): `overused-font` on Inter is a deliberate, documented choice
+      (self-hosted for offline use), and every hit in `app/assets/builds/tailwind.css` is
+      compiled daisyUI output. Use `/impeccable hooks ignore-rule` / `ignore-file`.
+
 ## Known bugs / Nice-to-haves (found 2026-09-21)
 
 - [x] **Bug:** sidebar doesn't extend to the bottom of the page — scrolling down a long page,
