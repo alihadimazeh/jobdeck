@@ -10,6 +10,9 @@ Rails 8 + PostgreSQL + Turbo/Stimulus; the Gemfile has the rest. What the Gemfil
   (CSS-first config). **daisyUI is vendored** as standalone `.mjs` files
   (`app/assets/tailwind/daisyui.mjs`, `daisyui-theme.mjs`), not an npm package.
 - Design-system rules live in `app/views/CLAUDE.md`; testing details in `spec/CLAUDE.md`.
+- **`DESIGN.md`** (repo root) is the canonical visual spec (tokens, components, named rules), with
+  a `.impeccable/design.json` sidecar; **`PRODUCT.md`** holds users, purpose, and product
+  principles. Both are read by the Impeccable design skill (`/impeccable`).
 
 ## Testing
 
@@ -213,6 +216,17 @@ and a portfolio piece that demonstrates RBAC and SSO done properly.
 3. Role-based view gating (nav + buttons + sections).
 4. OmniAuth scaffolding + Google SSO.
 5. Microsoft + SAML providers, JIT provisioning, SSO-only mode.
+
+## Planned: Design Quality Pass (Phase 7)
+
+Queued **after Phase 5's milestones 2–3** (roles + view gating change the nav and buttons these
+reviews would judge). A scored critique/audit/polish pass over the surfaces a portfolio reviewer
+sees first, judged against [`DESIGN.md`](DESIGN.md) and [`PRODUCT.md`](PRODUCT.md) rather than
+taste. The item list, targets, and exact `/impeccable` commands live in
+[`TODO.md`](TODO.md) → "Phase 7 — Design Quality Pass". In short: critique the dashboard, bring
+the stock `public/` error pages onto the theme, audit the quote estimation editor, and decide the
+unused `accent` token. Any token or component change re-runs `/impeccable document` in the same PR
+so DESIGN.md stays in sync with `application.css`.
 
 ---
 
