@@ -10,29 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_003336) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_032957) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.bigint "record_id", null: false
-    t.string "record_type", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
-    t.bigint "byte_size", null: false
-    t.string "checksum"
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.string "filename", null: false
     t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
     t.text "metadata"
     t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -43,12 +43,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_003336) do
   end
 
   create_table "activity_notes", force: :cascade do |t|
-    t.string "author"
-    t.text "body", null: false
-    t.datetime "created_at", null: false
-    t.bigint "notable_id", null: false
     t.string "notable_type", null: false
+    t.bigint "notable_id", null: false
+    t.text "body", null: false
+    t.string "author"
     t.boolean "pinned", default: false, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["notable_type", "notable_id"], name: "index_activity_notes_on_notable"
   end
@@ -70,14 +70,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_003336) do
   end
 
   create_table "documents", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "document_type"
-    t.bigint "documentable_id", null: false
     t.string "documentable_type", null: false
+    t.bigint "documentable_id", null: false
     t.string "label"
-    t.datetime "updated_at", null: false
+    t.string "document_type"
     t.string "uploaded_by"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["documentable_type", "documentable_id"], name: "index_documents_on_documentable"
   end
 
@@ -119,31 +119,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_003336) do
   end
 
   create_table "line_items", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "description", null: false
-    t.integer "item_type", null: false
     t.bigint "order_id", null: false
+    t.integer "item_type", null: false
+    t.string "description", null: false
     t.decimal "quantity", precision: 10, scale: 2, default: "1.0"
-    t.decimal "total", precision: 10, scale: 2, default: "0.0"
     t.string "unit"
     t.decimal "unit_price", precision: 10, scale: 2, default: "0.0"
+    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 
   create_table "orders", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
-    t.date "due_date"
-    t.date "issued_date"
     t.bigint "job_id", null: false
     t.bigint "lead_id"
-    t.text "notes"
-    t.string "order_number"
     t.integer "status", default: 0, null: false
+    t.string "order_number"
     t.decimal "subtotal", precision: 10, scale: 2, default: "0.0"
     t.decimal "tax_rate", precision: 5, scale: 4, default: "0.0"
     t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.date "issued_date"
+    t.date "due_date"
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_orders_on_customer_id"
     t.index ["job_id"], name: "index_orders_on_job_id"
@@ -152,62 +152,63 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_003336) do
   end
 
   create_table "quote_line_items", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "description", null: false
-    t.integer "item_type", null: false
-    t.decimal "quantity", precision: 10, scale: 2, default: "1.0"
     t.bigint "quote_id", null: false
-    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.integer "item_type", null: false
+    t.string "description", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0"
     t.string "unit"
     t.decimal "unit_price", precision: 10, scale: 2, default: "0.0"
+    t.decimal "total", precision: 10, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["quote_id"], name: "index_quote_line_items_on_quote_id"
   end
 
   create_table "quotes", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "customer_id", null: false
-    t.date "issued_date"
     t.bigint "lead_id", null: false
-    t.text "notes"
-    t.string "quote_number"
+    t.bigint "customer_id", null: false
     t.integer "status", default: 0, null: false
+    t.string "quote_number"
     t.decimal "subtotal", precision: 10, scale: 2, default: "0.0"
     t.decimal "tax_rate", precision: 5, scale: 4, default: "0.0"
     t.decimal "total", precision: 10, scale: 2, default: "0.0"
-    t.datetime "updated_at", null: false
+    t.date "issued_date"
     t.date "valid_until"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_quotes_on_customer_id"
     t.index ["lead_id"], name: "index_quotes_on_lead_id"
     t.index ["quote_number"], name: "index_quotes_on_quote_number", unique: true
   end
 
   create_table "rooms", force: :cascade do |t|
-    t.decimal "area", precision: 10, scale: 2
-    t.datetime "created_at", null: false
-    t.decimal "length", precision: 8, scale: 2, null: false
-    t.string "name", null: false
-    t.string "notes"
     t.bigint "quote_id", null: false
-    t.datetime "updated_at", null: false
+    t.string "name", null: false
+    t.decimal "length", precision: 8, scale: 2, null: false
     t.decimal "width", precision: 8, scale: 2, null: false
+    t.decimal "area", precision: 10, scale: 2
+    t.string "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["quote_id"], name: "index_rooms_on_quote_id"
   end
 
   create_table "sessions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "ip_address"
-    t.datetime "updated_at", null: false
-    t.string "user_agent"
     t.bigint "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "password_digest", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "role", default: 0
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
