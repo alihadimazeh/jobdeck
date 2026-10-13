@@ -4,26 +4,30 @@ class QuotesController < ApplicationController
 
   # GET /leads/:lead_id/quotes
   def index
-    @quotes = @lead.quotes.order(created_at: :desc)
+    @quotes = policy_scope(@lead.quotes).order(created_at: :desc)
   end
 
   # GET /quotes/:id
   def show
+    authorize @quote
   end
 
   # GET /leads/:lead_id/quotes/new
   def new
     @quote = @lead.quotes.build(customer: @lead.customer)
+    authorize @quote
     @quote.rooms.build
   end
 
   # GET /quotes/:id/edit
   def edit
+    authorize @quote
   end
 
   # POST /leads/:lead_id/quotes
   def create
     @quote = @lead.quotes.build(quote_params)
+    authorize @quote
 
     respond_to do |format|
       if @quote.save
@@ -38,6 +42,7 @@ class QuotesController < ApplicationController
 
   # PATCH/PUT /quotes/:id
   def update
+    authorize @quote
     respond_to do |format|
       if @quote.update(quote_params)
         format.html { redirect_to @quote, notice: "Quote was successfully updated.", status: :see_other }
@@ -51,6 +56,7 @@ class QuotesController < ApplicationController
 
   # PATCH /quotes/:id/accept
   def accept
+    authorize @quote
     @quote.update!(status: :accepted)
     redirect_to @quote, notice: "Quote accepted — job created."
   rescue ActiveRecord::RecordInvalid => e
@@ -62,6 +68,7 @@ class QuotesController < ApplicationController
   # DELETE /quotes/:id
   def destroy
     @lead = @quote.lead
+    authorize @quote
 
     if @quote.destroy
       respond_to do |format|

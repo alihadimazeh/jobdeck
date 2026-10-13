@@ -1,4 +1,8 @@
 class User < ApplicationRecord
+  # viewer is 0 deliberately: the column default (0) lands anyone created
+  # without an explicit role at the least-privileged one.
+  enum :role, { viewer: 0, sales: 1, project_manager: 2, admin: 3 }
+
   has_secure_password
   has_many :sessions, dependent: :destroy
 

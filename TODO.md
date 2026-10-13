@@ -408,12 +408,31 @@
       `distinct: true` query needs the same explicit order.
 
 ### Role-based views and permissions
-- [ ] `role` enum on User — `admin | project_manager | sales | viewer` (integer-backed)
-- [ ] Add Pundit — one policy per model
-- [ ] `authorize` in every controller action, `policy_scope` on every index
+
+> **Gem choice (2026-10-05):** considered Pundit vs. CanCanCan vs. ActionPolicy vs. hand-rolled
+> policy objects vs. ad-hoc `if current_user.admin?` checks. Staying with **Pundit** (already
+> the plan below) — one policy class per model fits this app's small, stable model count
+> (Customer/Lead/Quote/Job/Order/Document/ActivityNote/User) better than CanCanCan's single
+> `Ability` class, which gets unwieldy as rules accumulate across models. ActionPolicy's extra
+> features (caching, GraphQL helpers) solve problems this app doesn't have. No row-level/
+> multi-tenant filtering exists, so `policy_scope` is mostly `scope.all` per role — satisfies
+> the convention below without fighting Pundit's scope mechanism.
+
+- [x] `role` enum on User — `viewer | sales | project_manager | admin` (integer-backed,
+      `viewer` deliberately `0` so a user created without an explicit role lands at the
+      least-privileged one)
+- [x] Add Pundit — one policy per model (`Customer`/`Lead`/`Quote`/`Job`/`Order`/`User`, plus
+      `ActivityNote`/`Document` for the two polymorphic models)
+- [x] `authorize` in every controller action, `policy_scope` on every index
 - [ ] Role-based view gating — nav, action buttons (Edit/Delete/Accept Quote/Convert), sections
       via `policy(record).action?` (no ad-hoc role checks in views)
-- [ ] Deny-by-default (missing policy method ⇒ no access)
+- [x] Deny-by-default (`ApplicationPolicy`'s predicates all default to `false`)
+
+> **Note:** `ActivityNote`/`Document` authorization is deliberately independent of the parent
+> record's own policy — any role except `viewer` can add/edit/remove a note or document on any
+> notable (Customer/Lead/Job/Order), even where that role is read-only on the parent itself (e.g.
+> `sales` on a Job). There's no per-user ownership yet (`author`/`uploaded_by` are free text, not
+> `user_id`), so this can't be narrowed to "your own notes" until that migration lands.
 
 ### SSO
 - [ ] Add OmniAuth scaffolding

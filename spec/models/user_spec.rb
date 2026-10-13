@@ -83,6 +83,16 @@ RSpec.describe User, type: :model do
     end
   end
 
+  describe "#role" do
+    it "pins the integer values so a reorder can't silently change existing rows" do
+      expect(User.roles).to eq("viewer" => 0, "sales" => 1, "project_manager" => 2, "admin" => 3)
+    end
+
+    it "defaults to viewer for a user created without an explicit role" do
+      expect(User.new.role).to eq("viewer")
+    end
+  end
+
   describe "associations" do
     it "destroys sessions when the user is destroyed" do
       user = create(:user)

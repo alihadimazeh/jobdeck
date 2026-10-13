@@ -3,26 +3,30 @@ class JobsController < ApplicationController
 
   # GET /jobs or /jobs.json
   def index
-    @q = Job.ransack(params[:q])
+    @q = policy_scope(Job).ransack(params[:q])
     @pagy, @jobs = pagy(@q.result(distinct: true).includes(:customer).order(:id))
   end
 
   # GET /jobs/1 or /jobs/1.json
   def show
+    authorize @job
   end
 
   # GET /jobs/new
   def new
     @job = Job.new
+    authorize @job
   end
 
   # GET /jobs/1/edit
   def edit
+    authorize @job
   end
 
   # POST /jobs or /jobs.json
   def create
     @job = Job.new(job_params)
+    authorize @job
 
     respond_to do |format|
       if @job.save
@@ -37,6 +41,7 @@ class JobsController < ApplicationController
 
   # PATCH/PUT /jobs/1 or /jobs/1.json
   def update
+    authorize @job
     respond_to do |format|
       if @job.update(job_params)
         format.html { redirect_to @job, notice: "Job was successfully updated.", status: :see_other }
@@ -50,6 +55,7 @@ class JobsController < ApplicationController
 
   # DELETE /jobs/1 or /jobs/1.json
   def destroy
+    authorize @job
     if @job.destroy
       respond_to do |format|
         format.html { redirect_to jobs_url, notice: "Job was successfully deleted.", status: :see_other }
