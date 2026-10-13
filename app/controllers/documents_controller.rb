@@ -10,6 +10,7 @@ class DocumentsController < ApplicationController
   # POST /customers/:customer_id/documents
   def create
     @document = Document.new(document_params.merge(documentable: @documentable))
+    authorize @document
 
     respond_to do |format|
       if @document.save
@@ -25,6 +26,7 @@ class DocumentsController < ApplicationController
   # DELETE /documents/1
   def destroy
     documentable = @document.documentable
+    authorize @document
 
     if @document.destroy
       respond_to do |format|

@@ -1,22 +1,26 @@
 class CustomersController < ApplicationController
   before_action :set_customer, only: [ :show, :edit, :update, :destroy ]
   def index
-    @q = Customer.visible.ransack(params[:q])
+    @q = policy_scope(Customer).visible.ransack(params[:q])
     @pagy, @customers = pagy(@q.result(distinct: true).order(:id))
   end
 
   def show
+    authorize @customer
   end
 
   def new
     @customer = Customer.new
+    authorize @customer
   end
 
   def edit
+    authorize @customer
   end
 
   def create
     @customer = Customer.new(customer_params)
+    authorize @customer
 
     respond_to do |format|
       if @customer.save
@@ -30,6 +34,7 @@ class CustomersController < ApplicationController
   end
 
   def update
+    authorize @customer
     respond_to do |format|
       if @customer.update(customer_params)
         format.html { redirect_to @customer, notice: "Customer was successfully updated.", status: :see_other }
@@ -42,6 +47,7 @@ class CustomersController < ApplicationController
   end
 
   def destroy
+    authorize @customer
     if @customer.destroy
       respond_to do |format|
         format.html { redirect_to customers_url, notice: "Customer was successfully deleted.", status: :see_other }

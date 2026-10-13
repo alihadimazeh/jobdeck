@@ -4,25 +4,29 @@ class OrdersController < ApplicationController
 
   # GET /jobs/:job_id/orders
   def index
-    @orders = @job.orders.order(created_at: :desc)
+    @orders = policy_scope(@job.orders).order(created_at: :desc)
   end
 
   # GET /orders/:id
   def show
+    authorize @order
   end
 
   # GET /jobs/:job_id/orders/new
   def new
     @order = @job.orders.build(customer: @job.customer)
+    authorize @order
   end
 
   # GET /orders/:id/edit
   def edit
+    authorize @order
   end
 
   # POST /jobs/:job_id/orders/
   def create
     @order = @job.orders.build(order_params)
+    authorize @order
 
     respond_to do |format|
       if @order.save
@@ -37,6 +41,7 @@ class OrdersController < ApplicationController
 
   # PATCH/PUT /orders/:id
   def update
+    authorize @order
     respond_to do |format|
       if @order.update(order_params)
         format.html { redirect_to @order, notice: "Order was successfully updated.", status: :see_other }
@@ -51,6 +56,7 @@ class OrdersController < ApplicationController
   # DELETE /orders/:id
   def destroy
     @job = @order.job
+    authorize @order
 
     if @order.destroy
       respond_to do |format|

@@ -10,6 +10,7 @@ class ActivityNotesController < ApplicationController
   # POST /customers/:customer_id/activity_notes
   def create
     @activity_note = ActivityNote.new(activity_note_params.merge(notable: @notable))
+    authorize @activity_note
 
     respond_to do |format|
       if @activity_note.save
@@ -24,10 +25,12 @@ class ActivityNotesController < ApplicationController
 
   # GET /activity_notes/1/edit
   def edit
+    authorize @activity_note
   end
 
   # PATCH/PUT /activity_notes/1
   def update
+    authorize @activity_note
     respond_to do |format|
       if @activity_note.update(activity_note_params)
         format.html { redirect_to @activity_note.notable, notice: "Note was successfully updated.", status: :see_other }
@@ -42,6 +45,7 @@ class ActivityNotesController < ApplicationController
   # DELETE /activity_notes/1
   def destroy
     notable = @activity_note.notable
+    authorize @activity_note
 
     if @activity_note.destroy
       respond_to do |format|

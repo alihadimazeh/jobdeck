@@ -3,26 +3,30 @@ class LeadsController < ApplicationController
 
   # GET /leads or /leads.json
   def index
-    @q = Lead.ransack(params[:q])
+    @q = policy_scope(Lead).ransack(params[:q])
     @pagy, @leads = pagy(@q.result(distinct: true).order(:id))
   end
 
   # GET /leads/1 or /leads/1.json
   def show
+    authorize @lead
   end
 
   # GET /leads/new
   def new
     @lead = Lead.new
+    authorize @lead
   end
 
   # GET /leads/1/edit
   def edit
+    authorize @lead
   end
 
   # POST /leads or /leads.json
   def create
     @lead = Lead.new(lead_params)
+    authorize @lead
 
     respond_to do |format|
       if @lead.save
@@ -37,6 +41,7 @@ class LeadsController < ApplicationController
 
   # PATCH/PUT /leads/1 or /leads/1.json
   def update
+    authorize @lead
     respond_to do |format|
       if @lead.update(lead_params)
         format.html { redirect_to @lead, notice: "Lead was successfully updated.", status: :see_other }
@@ -50,6 +55,7 @@ class LeadsController < ApplicationController
 
   # DELETE /leads/1 or /leads/1.json
   def destroy
+    authorize @lead
     if @lead.destroy
       respond_to do |format|
         format.html { redirect_to leads_url, notice: "Lead was successfully deleted.", status: :see_other }
