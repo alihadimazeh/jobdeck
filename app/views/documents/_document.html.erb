@@ -30,6 +30,7 @@
         delete_path: document_path(document),
         delete_confirm: "Are you sure you want to delete this document?",
         label: name,
-        id: dom_id(document)
+        id: dom_id(document),
+        destroy: policy(document).destroy?
       } %>
 </div>

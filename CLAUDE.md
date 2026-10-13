@@ -145,10 +145,10 @@ concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral
 
 ---
 
-## Authentication (Phase 5, milestone 1 — shipped)
+## Authentication (Phase 5, milestones 1-2 — shipped)
 
-Every controller requires a signed-in user. Roles/Pundit (milestone 2) and SSO (milestone 3) are
-still planned — see "Planned: Authorization & SSO" below.
+Every controller requires a signed-in user, and every action/view is now role-gated via Pundit
+(milestone 2). SSO (milestone 3) is still planned — see "Planned: Authorization & SSO" below.
 
 - **Session-based**, not token/JWT: a real `Session` row per sign-in, referenced by a signed,
   `httponly`, `same_site: :lax` cookie holding only the session's id
@@ -178,25 +178,33 @@ still planned — see "Planned: Authorization & SSO" below.
   Pundit + an admin role exist. The free-text `assigned_to`/`author`/`uploaded_by` fields are
   **not** yet backed by `user_id`.
 
-## Planned: Authorization & SSO
+## Role-based Authorization (Phase 5, milestone 2 — shipped) & Planned: SSO
 
 The intent is to make Jobdeck a real, multi-user product other construction businesses could run,
 and a portfolio piece that demonstrates RBAC and SSO done properly.
 
 ### Role-based views and permissions
 
-- Roles: **admin**, **project_manager**, **sales**, **viewer** (integer-backed
-  enum on User, consistent with the other status enums).
+- Roles: **viewer**, **sales**, **project_manager**, **admin** (integer-backed enum on `User`,
+  `viewer` deliberately `0` so a user created without an explicit role lands at the
+  least-privileged one).
   - `admin` — full access, user management, settings.
   - `project_manager` — full access to customers/leads/quotes/jobs/orders, no user management.
   - `sales` — customers, leads, quotes; read-only on jobs/orders.
   - `viewer` — read-only across the board (e.g. an owner who just wants dashboards).
-- Authorization layer via **Pundit** (policy per model) — one policy object per
-  model, `authorize` in every controller action, `policy_scope` on every index.
-- **Role-based views** — navigation, action buttons (Edit / Delete / "Accept Quote" /
-  "Convert to Job"), and whole sections show/hide based on the current user's role.
-  Use `policy(record).action?` in views, not ad-hoc role checks.
-- Deny-by-default: a missing policy method means no access.
+- Authorization layer via **Pundit** (`app/policies/`) — one policy per model
+  (`Customer`/`Lead`/`Quote`/`Job`/`Order`/`User`), plus `ActivityNote`/`Document` for the two
+  polymorphic ones. `authorize` in every controller action, `policy_scope` on every index.
+  `ActivityNote`/`Document` authorize on role alone (any role except viewer), independent of
+  the parent record's own policy — e.g. `sales` can still log a note on a Job despite being
+  read-only on Jobs otherwise. No per-user ownership yet (`author`/`uploaded_by` are free text),
+  so this can't be narrowed to "your own notes."
+- **Role-based views** — nav, action buttons (Edit/Delete/"Accept Quote"/"New X"/"Create Quote"),
+  and the ActivityNote/Document "add" forms show/hide via `policy(record).action?` in views (a
+  class-level `policy(Model).create?` where there's no instance yet). No ad-hoc role checks. Nav
+  itself needs no gating — every role has `index?`/`show?` on Customer/Lead/Job.
+- Deny-by-default: `ApplicationPolicy`'s predicates all default to `false`, so a missing policy
+  method means no access.
 
 ### SSO (Single Sign-On)
 
@@ -212,8 +220,8 @@ and a portfolio piece that demonstrates RBAC and SSO done properly.
 ### Rollout order
 
 1. ~~User model + session-based login/logout + password reset.~~ **Shipped** (see above).
-2. Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.
-3. Role-based view gating (nav + buttons + sections).
+2. ~~Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.~~ **Shipped.**
+3. ~~Role-based view gating (nav + buttons + sections).~~ **Shipped.**
 4. OmniAuth scaffolding + Google SSO.
 5. Microsoft + SAML providers, JIT provisioning, SSO-only mode.
 
@@ -367,8 +375,6 @@ Lead/Job (see TODO.md's "needs a product decision" list for that gap).
 
 - **Dark theme** — the token structure supports it, no `jobdeck-dark` theme exists yet.
 - **Ransack/Pagy on Quote/Order indexes** — see "Search & Pagination" above.
-- **Role-based nav/action-button gating** — blocked on the auth work (Phase 5) below;
-  the shell is built to have `policy(record).action?` checks layered in later.
 - **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
   (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
   `before_validation` normalization and touches both Quote's and Order's show pages.
