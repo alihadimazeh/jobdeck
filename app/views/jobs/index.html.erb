@@ -2,7 +2,7 @@
 
 <%= render partial: "shared/page_header", locals: {
       title: "Jobs",
-      action: { label: "New Job", path: new_job_path }
+      action: (policy(Job).create? ? { label: "New Job", path: new_job_path } : nil)
     } %>
 
 <%= search_form_for @q, url: jobs_path, class: "mb-4 flex gap-2 max-w-lg" do |f| %>
@@ -23,7 +23,7 @@
   <% else %>
     <%= render partial: "shared/empty_state", locals: {
           title: "No jobs yet.", colspan: 5,
-          cta: { label: "Add the first one", path: new_job_path }
+          cta: (policy(Job).create? ? { label: "Add the first one", path: new_job_path } : nil)
         } %>
   <% end %>
 <% end %>
