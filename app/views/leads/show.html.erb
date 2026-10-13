@@ -1,7 +1,9 @@
 <% content_for :title, @lead.title %>
 
 <% actions = capture do %>
-  <%= link_to "Edit", edit_lead_path(@lead), class: "btn btn-ghost btn-sm" %>
+  <% if policy(@lead).edit? %>
+    <%= link_to "Edit", edit_lead_path(@lead), class: "btn btn-ghost btn-sm" %>
+  <% end %>
 <% end %>
 
 <%= render partial: "shared/page_header", locals: {
@@ -44,7 +46,9 @@
 
 <%# Quotes %>
 <% quote_actions = capture do %>
-  <%= link_to "Create Quote", new_lead_quote_path(@lead), class: "btn btn-ghost btn-sm text-primary" %>
+  <% if policy(Quote).create? %>
+    <%= link_to "Create Quote", new_lead_quote_path(@lead), class: "btn btn-ghost btn-sm text-primary" %>
+  <% end %>
 <% end %>
 
 <%= render "shared/card", { title: "Quotes", actions: quote_actions, padded: false } do %>
