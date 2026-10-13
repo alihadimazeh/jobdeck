@@ -14,6 +14,8 @@
         delete_confirm: "Are you sure you want to delete this note?",
         label: activity_note.body.truncate(30),
         id: dom_id(activity_note),
-        turbo_frame: "_top"
+        turbo_frame: "_top",
+        edit: policy(activity_note).edit?,
+        destroy: policy(activity_note).destroy?
       } %>
 <% end %>

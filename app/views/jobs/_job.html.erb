@@ -17,7 +17,9 @@
             delete_path: job_path(job),
             delete_confirm: "Are you sure you want to delete this job?",
             label: job.title,
-            id: dom_id(job)
+            id: dom_id(job),
+            edit: policy(job).edit?,
+            destroy: policy(job).destroy?
           } %>
     </td>
   <% end %>

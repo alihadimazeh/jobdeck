@@ -11,7 +11,9 @@
           delete_path: customer_path(customer),
           delete_confirm: "Are you sure you want to delete #{customer.full_name}?",
           label: customer.full_name,
-          id: dom_id(customer)
+          id: dom_id(customer),
+          edit: policy(customer).edit?,
+          destroy: policy(customer).destroy?
         } %>
   </td>
 </tr>
