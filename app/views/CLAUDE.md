@@ -39,9 +39,17 @@ Palette values live in that file.
   `application.css`, a `color-mix()` off `base-content`) rather than daisyUI's `table-zebra`,
   because `table-zebra` reuses `base-200`, which is already the page canvas color.
 - `shared/_row_actions` is the kebab menu, built on the Popover API (no JS). A delete rendered
-  inside a Turbo Frame needs its `turbo_frame: "_top"` local to escape the frame.
+  inside a Turbo Frame needs its `turbo_frame: "_top"` local to escape the frame. Its `edit:`/
+  `destroy:` locals (default `true`) let a caller role-gate each item individually — pass
+  `policy(record).edit?`/`destroy?` — and the whole trigger is skipped when both are false.
 - `leads/_lead` and `jobs/_job` take `show_customer:`/`show_actions:` (both default true); show
   pages render them compact rather than hand-rolling preview rows.
+- **Role-based view gating (Phase 5, milestone 2 — shipped)**: every Edit/Delete/"Accept Quote"/
+  "New X"/"Create Quote" control, and the ActivityNote/Document "add" forms, are wrapped in
+  `policy(record).action?` (or a class-level `policy(Model).create?` where there's no instance
+  yet, e.g. index "New X" buttons). No ad-hoc role checks — see root CLAUDE.md → "Required
+  fields" sibling section for the same pattern applied to `field_required?`. Nav itself needs no
+  gating: every role has `index?`/`show?` on Customer/Lead/Job, so nothing in the sidebar hides.
 
 ## App shell & JS
 
@@ -50,8 +58,6 @@ Palette values live in that file.
   `shared/_page_header` inside `<main>`. Don't reintroduce `content_for(:page_heading)` /
   `(:breadcrumbs)`; the old layout `<header>` driven by them was never used and was removed
   (PR #59).
-- The sidebar's "Sign out" button still uses a raw `hover:text-white`, deliberately left for the
-  Phase 5 view-gating work.
 - `drawer_controller.js` is an a11y layer (focus management, Escape-to-close, `aria-expanded`) on
   top of the checkbox-driven drawer, which needs no JS to open/close.
 - `quote_form_controller.js` / `order_form_controller.js` (estimation tool, dynamic rows) depend

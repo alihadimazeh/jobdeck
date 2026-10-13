@@ -424,8 +424,11 @@
 - [x] Add Pundit — one policy per model (`Customer`/`Lead`/`Quote`/`Job`/`Order`/`User`, plus
       `ActivityNote`/`Document` for the two polymorphic models)
 - [x] `authorize` in every controller action, `policy_scope` on every index
-- [ ] Role-based view gating — nav, action buttons (Edit/Delete/Accept Quote/Convert), sections
-      via `policy(record).action?` (no ad-hoc role checks in views)
+- [x] Role-based view gating — nav, action buttons (Edit/Delete/Accept Quote/"New X"/"Create
+      Quote"), and the ActivityNote/Document "add" forms via `policy(record).action?` (no
+      ad-hoc role checks in views). Nav itself needed no gating — every role has `index?`/
+      `show?` on Customer/Lead/Job. Also fixed the sidebar's raw `hover:text-white` to a
+      semantic token while in there.
 - [x] Deny-by-default (`ApplicationPolicy`'s predicates all default to `false`)
 
 > **Note:** `ActivityNote`/`Document` authorization is deliberately independent of the parent
