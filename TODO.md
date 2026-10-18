@@ -369,7 +369,10 @@
 
 > **Goal:** make Jobdeck a real, multi-user product other construction
 > businesses could run, and a portfolio piece demonstrating auth / RBAC / SSO.
-> See CLAUDE.md → "Planned: Authentication, Users & Authorization".
+> See CLAUDE.md → "Authentication" / "Role-based Authorization" / "Planned: User Management UI".
+> **SSO postponed (2026-10-18)** — long-term/portfolio item, not needed for a near-term
+> single-store deployment; see CLAUDE.md → "Role-based Authorization" → "Rollout order" for why.
+> User Management UI is next instead — a real store's admin can't onboard staff without it.
 
 ### Users + session-based login
 - [x] `User` model — email + `has_secure_password` (or Rails 8 auth generator)
@@ -393,7 +396,9 @@
       — **deliberately deferred**, not part of the milestone-1 PR above: touches several
       models' forms/views (Lead, Job, ActivityNote, Document) and is really milestone-2-shaped
       work (attributing actions to a real user only means something once roles/Pundit exist to
-      say who's allowed to act as whom) — its own follow-up PR.
+      say who's allowed to act as whom) — its own follow-up PR. **Unblocked** now that roles +
+      Pundit shipped (PRs #92/#93). Also the prerequisite for narrowing ActivityNote/Document
+      permissions to "your own" (see the note under Role-based views below).
 
 #### Bug found while shipping the above (2026-09-21)
 - [x] **`CustomersController`/`LeadsController#index` pagination relies on unspecified row
@@ -418,18 +423,18 @@
 > multi-tenant filtering exists, so `policy_scope` is mostly `scope.all` per role — satisfies
 > the convention below without fighting Pundit's scope mechanism.
 
-- [x] `role` enum on User — `viewer | sales | project_manager | admin` (integer-backed,
+- [x] `role` enum on User (PR #92) — `viewer | sales | project_manager | admin` (integer-backed,
       `viewer` deliberately `0` so a user created without an explicit role lands at the
       least-privileged one)
-- [x] Add Pundit — one policy per model (`Customer`/`Lead`/`Quote`/`Job`/`Order`/`User`, plus
+- [x] Add Pundit (PR #92) — one policy per model (`Customer`/`Lead`/`Quote`/`Job`/`Order`/`User`, plus
       `ActivityNote`/`Document` for the two polymorphic models)
-- [x] `authorize` in every controller action, `policy_scope` on every index
-- [x] Role-based view gating — nav, action buttons (Edit/Delete/Accept Quote/"New X"/"Create
+- [x] `authorize` in every controller action, `policy_scope` on every index (PR #92)
+- [x] Role-based view gating (PR #93) — nav, action buttons (Edit/Delete/Accept Quote/"New X"/"Create
       Quote"), and the ActivityNote/Document "add" forms via `policy(record).action?` (no
       ad-hoc role checks in views). Nav itself needed no gating — every role has `index?`/
       `show?` on Customer/Lead/Job. Also fixed the sidebar's raw `hover:text-white` to a
       semantic token while in there.
-- [x] Deny-by-default (`ApplicationPolicy`'s predicates all default to `false`)
+- [x] Deny-by-default (`ApplicationPolicy`'s predicates all default to `false`) (PR #92)
 
 > **Note:** `ActivityNote`/`Document` authorization is deliberately independent of the parent
 > record's own policy — any role except `viewer` can add/edit/remove a note or document on any
@@ -437,7 +442,35 @@
 > `sales` on a Job). There's no per-user ownership yet (`author`/`uploaded_by` are free text, not
 > `user_id`), so this can't be narrowed to "your own notes" until that migration lands.
 
-### SSO
+### User Management UI — next up
+
+> Lets an admin create/edit staff accounts (email + role) without `rails console` access. See
+> CLAUDE.md → "Planned: User Management UI" for the full scope and the reasoning behind each
+> call below.
+
+- [ ] `UsersController`, admin-only — wires up `UserPolicy` (exists since PR #92, unused so far)
+      with the same `authorize`/`policy_scope` pattern every other controller uses
+- [ ] `users/new` + `users/edit` forms: **email + role only, never a password field** —
+      `password_digest` is `NOT NULL` and `has_secure_password` requires a password on create, so
+      account creation sets a random never-displayed password (`SecureRandom.alphanumeric`)
+- [ ] New `:account_setup` token purpose (`generates_token_for`, same salting as
+      `:password_reset`) with a **longer expiry** (proposed 7 days vs. the existing 15 minutes) —
+      an invite email may sit unopened for a day or two
+- [ ] Invite email reusing the `PasswordsMailer`/`deliver_later` pattern, sent on user creation
+- [ ] `users/index` — admin-only list of staff (email, role, created at)
+- [ ] Admin-only "Users"/"Team" sidebar nav link — the first nav item that actually needs role
+      gating; every current one is visible to all roles
+- [ ] **Deferred (YAGNI):** delete/deactivate a user — no `deactivated_at`/status concept on
+      `User` yet; reopen when someone actually leaves the company
+
+### SSO — postponed (2026-10-18), long-term/portfolio item
+
+> Exists to let *other* construction businesses bring their own identity provider once Jobdeck is
+> multi-tenant. A single store's handful of staff accounts don't need it — password+session auth
+> plus roles/Pundit (both already shipped) already cover them. Reopen once there's a second
+> business running Jobdeck, or a specific partner asking for their own IdP. The design below is
+> unchanged from the original plan.
+
 - [ ] Add OmniAuth scaffolding
 - [ ] `Identity` join model — `user_id`, `provider`, `uid` (multiple providers per user)
 - [ ] Google Workspace (OAuth2) provider
@@ -466,8 +499,8 @@
       (PRs #43–#51), well after this redesign shipped. Stale checkbox correction only.
 - [x] Polished dashboard layout (follow-up leads, active jobs, unpaid orders) — Step 14
 - [x] Responsive / mobile-friendly layouts — verified at 375/768/1024/1440px throughout
-- [ ] Wire role-based nav + action buttons into the revamped UI — **not started**, blocked on
-      Phase 5 (no User/role model yet)
+- [x] Wire role-based nav + action buttons into the revamped UI — done in PR #93 (Phase 5's
+      view gating; see Phase 5 → Role-based views above).
 
 ### UI/UX Audit findings (2026-09-03) — addressed 2026-09-18
 
@@ -568,9 +601,11 @@
 
 > **Goal:** a scored, evidence-based design review and polish of the surfaces a portfolio
 > reviewer sees first, measured against the documented design system rather than taste.
-> **Starts after Phase 5's milestones 2–3** (roles + role-based view gating), since gating
-> changes the nav and action buttons these reviews would judge. P7.2 doesn't touch gated UI
-> and can be pulled forward.
+> **Unblocked (2026-10-18).** It was queued behind Phase 5's roles + role-based view gating,
+> since gating changes the nav and action buttons these reviews judge; both shipped in PRs
+> #92/#93. Phase 5's remaining work — User Management UI (next up) and SSO (postponed) — doesn't
+> block this phase: SSO only touches the sign-in page, and User Management UI only adds one new
+> admin-only nav item and screen, not a change to any surface already in the reviewer-order queue.
 >
 > - Visual authority: [`DESIGN.md`](DESIGN.md) (tokens, components, named rules) and its
 >   `.impeccable/design.json` sidecar. Product context: [`PRODUCT.md`](PRODUCT.md).
@@ -711,7 +746,7 @@
       Tailwind colors in views" rule.
       — fixed (U3, PR #60): now `text-primary-content`/`text-neutral-content/70`. The
       sidebar's separate "Sign out" button still has a raw `hover:text-white`, deliberately
-      left for the Phase 5 role-gating work.
+      left for the Phase 5 role-gating work — fixed there (PR #93).
 - [x] Photo-type Documents (JPEG/PNG) never get an inline preview — only PDFs get "View";
       `photo` is a named `document_type` for a real use case (job-site photos).
       — fixed (U7, PR #65): inline thumbnail/"View" link. Uses the original blob rather than

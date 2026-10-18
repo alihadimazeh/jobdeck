@@ -14,8 +14,8 @@ bill through orders. Work is split between the office (quoting, billing, follow-
 the job site (adding notes, uploading photos and documents, checking job details on a phone or
 tablet).
 
-Planned roles (not built yet): admin, project manager, sales, and a read-only viewer such as an
-owner who only wants the dashboard.
+Roles: admin, project manager, sales, and a read-only viewer such as an owner who only wants the
+dashboard. Each role sees only the actions it is allowed to take.
 
 ## Product Purpose
 
@@ -25,7 +25,7 @@ documents on each stage.
 
 **Current priority: portfolio first.** No live business depends on it yet. It is built to be shown
 to reviewers and hiring managers as a realistic, well-made product. The longer-term intent is a
-multi-user product other construction businesses could run (roles, SSO). When the two pull apart,
+multi-user product other construction businesses could run (roles now, SSO later). When the two pull apart,
 the bar is "would a real contractor trust and use this," shown with production-grade quality.
 
 ## Positioning
@@ -55,7 +55,8 @@ contractor actually talks about and runs work:
 - Customers with job or billing history are archived, never deleted. Financial records are never
   silently destroyed.
 - Rails 8 server-rendered app (Turbo/Stimulus), no Node/npm.
-- Authentication is built; roles/permissions and SSO are planned (see CLAUDE.md).
+- Authentication and role-based permissions are built. An admin screen for managing staff
+  accounts is next; SSO is postponed (see CLAUDE.md).
 - **Undecided:** combined Lead + Customer creation on one form; top-level Quotes/Orders pages;
   what the Customer "Lifetime Value"/"Outstanding" figures should count; `tax_rate` entry format.
 
