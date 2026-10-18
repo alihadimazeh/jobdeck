@@ -11,7 +11,9 @@
           delete_path: quote_path(quote),
           delete_confirm: "Are you sure you want to delete this quote?",
           label: quote.quote_number,
-          id: dom_id(quote)
+          id: dom_id(quote),
+          edit: policy(quote).edit?,
+          destroy: policy(quote).destroy?
         } %>
   </td>
 </tr>

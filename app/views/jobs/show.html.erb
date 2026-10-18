@@ -1,10 +1,14 @@
 <% content_for :title, @job.title %>
 
 <% actions = capture do %>
-  <%= link_to "Edit", edit_job_path(@job), class: "btn btn-ghost btn-sm" %>
-  <%= button_to "Delete", @job, method: :delete,
-        form: { data: { turbo_confirm: "Are you sure you want to delete this job?" } },
-        class: "btn btn-ghost btn-sm text-error" %>
+  <% if policy(@job).edit? %>
+    <%= link_to "Edit", edit_job_path(@job), class: "btn btn-ghost btn-sm" %>
+  <% end %>
+  <% if policy(@job).destroy? %>
+    <%= button_to "Delete", @job, method: :delete,
+          form: { data: { turbo_confirm: "Are you sure you want to delete this job?" } },
+          class: "btn btn-ghost btn-sm text-error" %>
+  <% end %>
 <% end %>
 
 <%= render partial: "shared/page_header", locals: {
@@ -59,7 +63,9 @@
 
 <%# Orders %>
 <% order_actions = capture do %>
-  <%= link_to "New Order", new_job_order_path(@job), class: "btn btn-ghost btn-sm text-primary" %>
+  <% if policy(Order).create? %>
+    <%= link_to "New Order", new_job_order_path(@job), class: "btn btn-ghost btn-sm text-primary" %>
+  <% end %>
 <% end %>
 
 <%= render "shared/card", { title: "Orders", actions: order_actions, padded: false } do %>

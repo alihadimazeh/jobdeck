@@ -2,7 +2,7 @@
 
 <%= render partial: "shared/page_header", locals: {
       title: "Customers",
-      action: { label: "New Customer", path: new_customer_path }
+      action: (policy(Customer).create? ? { label: "New Customer", path: new_customer_path } : nil)
     } %>
 
 <%= search_form_for @q, url: customers_path, class: "mb-4 flex gap-2 max-w-sm" do |f| %>
@@ -18,7 +18,7 @@
   <% else %>
     <%= render partial: "shared/empty_state", locals: {
           title: "No customers yet.", colspan: 5,
-          cta: { label: "Add the first one", path: new_customer_path }
+          cta: (policy(Customer).create? ? { label: "Add the first one", path: new_customer_path } : nil)
         } %>
   <% end %>
 <% end %>
