@@ -34,8 +34,17 @@ Every controller requires a signed-in user.
   - After `click_button "Sign in"` the helper waits on `have_current_path(root_path)`. The form
     submits via Turbo (a fetch, not a navigation), so `click_button` returns before the redirect
     finishes; without the wait the next `visit` can race the cookie.
-- **Minitest:** a `test/fixtures/users.yml` fixture plus an `ActionDispatch::IntegrationTest`
-  `setup` block in `test/test_helper.rb`.
+- **Minitest:** a `test/fixtures/users.yml` fixture (role `project_manager`) plus an
+  `ActionDispatch::IntegrationTest` `setup` block in `test/test_helper.rb`.
+
+## Roles in specs
+
+- The `:user` factory defaults to **`admin`**, not the model's `viewer` default, so the global
+  signed-in user above keeps full access and existing specs don't trip Pundit. To test a role,
+  use a trait (`:viewer`, `:sales`, `:project_manager`, `:admin`) and sign in as that user.
+- Role gating is covered in `spec/requests/role_gating_spec.rb` (what each role sees on show
+  pages, the note-add form, and index "New X" buttons) and `spec/policies/`. New gated actions
+  or views need a case there, including at least one role that should be denied.
 
 ## Running system specs locally
 

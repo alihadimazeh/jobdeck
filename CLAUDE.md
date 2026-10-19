@@ -148,7 +148,8 @@ concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral
 ## Authentication (Phase 5, milestones 1-2 — shipped)
 
 Every controller requires a signed-in user, and every action/view is now role-gated via Pundit
-(milestone 2). SSO (milestone 3) is still planned — see "Planned: Authorization & SSO" below.
+(milestone 2). A User Management UI is next (see "Planned: User Management UI" below); SSO is
+postponed — see "Role-based Authorization" → "Rollout order" below.
 
 - **Session-based**, not token/JWT: a real `Session` row per sign-in, referenced by a signed,
   `httponly`, `same_site: :lax` cookie holding only the session's id
@@ -173,15 +174,17 @@ Every controller requires a signed-in user, and every action/view is now role-ga
   authenticated-only sidebar on the sign-in page would be backwards.
 - `password` validates `length: { minimum: 8 }, allow_nil: true` — `allow_nil` so updating a
   User without touching the password doesn't fail the length check.
-- **Deliberately not done yet** (TODO.md → Phase 5): no sign-up/user-management UI —
-  `db/seeds.rb` creates one dev user (`admin@jobdeck.test`), others via `rails console` until
-  Pundit + an admin role exist. The free-text `assigned_to`/`author`/`uploaded_by` fields are
-  **not** yet backed by `user_id`.
+- **Deliberately not done yet** — no sign-up/user-management UI — `db/seeds.rb` creates one dev
+  user (`admin@jobdeck.test`, role `admin`); others, and role changes, go through `rails
+  console`. The `admin` role and `UserPolicy` exist, but no screen uses them yet; see "Planned:
+  User Management UI" below — this is the near-term priority, not SSO. The free-text
+  `assigned_to`/`author`/`uploaded_by` fields are **not** yet backed by
+  `user_id` (now unblocked; it's also what would let notes/documents be limited to their author).
 
-## Role-based Authorization (Phase 5, milestone 2 — shipped) & Planned: SSO
+## Role-based Authorization (Phase 5, milestone 2 — shipped)
 
 The intent is to make Jobdeck a real, multi-user product other construction businesses could run,
-and a portfolio piece that demonstrates RBAC and SSO done properly.
+and a portfolio piece that demonstrates RBAC done properly.
 
 ### Role-based views and permissions
 
@@ -206,29 +209,58 @@ and a portfolio piece that demonstrates RBAC and SSO done properly.
 - Deny-by-default: `ApplicationPolicy`'s predicates all default to `false`, so a missing policy
   method means no access.
 
-### SSO (Single Sign-On)
-
-- Support **OmniAuth**-based SSO so partner companies can bring their own identity provider.
-- Providers: **Google Workspace** (OAuth2) first, then **Microsoft Entra ID**,
-  then generic **SAML 2.0** for enterprise customers.
-- `Identity` / `Authentication` join model: `user_id`, `provider`, `uid`,
-  so one User can link multiple providers and still have a local password fallback.
-- Just-in-time provisioning — first SSO login creates the User with a default
-  role of `viewer`; an admin promotes them.
-- Optional per-deployment config: "SSO only" mode that disables password login.
-
 ### Rollout order
 
 1. ~~User model + session-based login/logout + password reset.~~ **Shipped** (see above).
 2. ~~Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.~~ **Shipped.**
 3. ~~Role-based view gating (nav + buttons + sections).~~ **Shipped.**
-4. OmniAuth scaffolding + Google SSO.
-5. Microsoft + SAML providers, JIT provisioning, SSO-only mode.
+4. User Management UI (see "Planned: User Management UI" below) — **next**, needed before a
+   real store can onboard its own staff.
+5. SSO (OmniAuth + Google Workspace, then Microsoft Entra ID, then SAML 2.0) — **postponed,
+   long-term/portfolio item, not a near-term deployment need.** It exists to let *other*
+   construction businesses bring their own identity provider once Jobdeck is multi-tenant; a
+   single store's handful of staff accounts don't need federated identity, and the
+   password+session auth (milestone 1) plus roles/Pundit (milestone 2) already cover them.
+   Decided 2026-10-18 while scoping a near-term single-store deployment. Reopen this once
+   there's a second business running Jobdeck, or a specific partner asking for their own IdP.
+   The design itself (`Identity`/`Authentication` join model keyed on `user_id`/`provider`/`uid`
+   so a User keeps a local password fallback alongside any linked SSO identity; JIT
+   provisioning at `viewer`; optional "SSO only" mode) is unchanged from the original plan —
+   nothing below is a decision reversal, just a reordering.
+
+## Planned: User Management UI (Phase 5, milestone 2.5)
+
+Lets an admin create and edit staff accounts (email + role) without `rails console` access, so a
+real store's admin can onboard their own staff. This is the actual near-term blocker for a
+single-store deployment — see "Rollout order" above.
+
+- `UsersController`, admin-only. `UserPolicy` already exists (Phase 5 milestone 2) and is unused
+  today — this wires it up with the same `authorize`/`policy_scope` pattern every other
+  controller uses.
+- The admin form sets **email + role only — never a password directly**:
+  - `password_digest` is `NOT NULL` and `has_secure_password`'s default validation requires a
+    password on create, so account creation sets a random, never-displayed password
+    (`SecureRandom.alphanumeric`) and immediately emails an invite/set-password link, reusing
+    the password-reset mechanics (`generates_token_for`, `PasswordsMailer`-style
+    `deliver_later`).
+  - That invite link needs its **own token purpose** (`:account_setup`, not `:password_reset`)
+    with a **longer expiry** — proposed 7 days vs. the existing 15-minute reset window, since an
+    invite email may sit unopened for a day or two and 15 minutes would expire most of them
+    before the new hire opens it. Same salting trick (`password_salt`) applies.
+  - Editing an existing user is email/role only. Password stays exclusively self-service via the
+    existing forgot-password flow — no admin should be able to see or set someone else's
+    password.
+- Sidebar gets a new admin-only "Users" (or "Team") nav link — the first nav item that actually
+  needs role gating; every existing one is visible to all roles.
+- **Deferred (YAGNI):** deleting/deactivating a user. There's no `deactivated_at`/status concept
+  on `User` yet (unlike `Customer.status`), and removing a staff account outright is rare and
+  consequential with no urgency driving it yet. Reopen when a real need shows up (someone
+  leaves the company).
 
 ## Planned: Design Quality Pass (Phase 7)
 
-Queued **after Phase 5's milestones 2–3** (roles + view gating change the nav and buttons these
-reviews would judge). A scored critique/audit/polish pass over the surfaces a portfolio reviewer
+**Unblocked** — it waited on roles + view gating (they change the nav and buttons these reviews
+judge), which shipped in PRs #92/#93. A scored critique/audit/polish pass over the surfaces a portfolio reviewer
 sees first, judged against [`DESIGN.md`](DESIGN.md) and [`PRODUCT.md`](PRODUCT.md) rather than
 taste. The item list, targets, and exact `/impeccable` commands live in
 [`TODO.md`](TODO.md) → "Phase 7 — Design Quality Pass". In short: critique the dashboard, bring
