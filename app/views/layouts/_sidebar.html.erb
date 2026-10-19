@@ -18,6 +18,9 @@
       <li><%= nav_link "Customers", customers_path %></li>
       <li><%= nav_link "Leads", leads_path %></li>
       <li><%= nav_link "Jobs", jobs_path %></li>
+      <% if authenticated? && current_user.admin? %>
+        <li><%= nav_link "Users", users_path %></li>
+      <% end %>
     </ul>
   </nav>
 

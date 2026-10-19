@@ -22,4 +22,22 @@ RSpec.describe "layouts/_sidebar", type: :view do
     expect(rendered).to have_selector("p", text: "pm@example.com")
     expect(rendered).to have_selector("button", text: "Sign out")
   end
+
+  it "shows the Users nav link to an admin" do
+    user = build_stubbed(:user, :admin)
+    view.define_singleton_method(:authenticated?) { true }
+    view.define_singleton_method(:current_user) { user }
+    render partial: "layouts/sidebar"
+
+    expect(rendered).to have_selector("nav[aria-label='Primary'] a[href='/users']", text: "Users")
+  end
+
+  it "hides the Users nav link from a non-admin" do
+    user = build_stubbed(:user, :project_manager)
+    view.define_singleton_method(:authenticated?) { true }
+    view.define_singleton_method(:current_user) { user }
+    render partial: "layouts/sidebar"
+
+    expect(rendered).not_to have_selector("nav[aria-label='Primary'] a", text: "Users")
+  end
 end
