@@ -1,5 +1,9 @@
 # Jobdeck UI/UX Redesign — Step-by-Step Summary
 
+> **Historical record.** The slate + safety orange palette below was replaced by navy + blue
+> right after this redesign (merged in PR #42). For the live palette and design rules, see
+> [`DESIGN.md`](DESIGN.md) and `CLAUDE.md` → "Design System".
+
 High-level reference for the daisyUI redesign, broken into small steps on
 `feature/ui-foundation-prep`. Full technical detail lives in
 `~/.claude/plans/using-the-design-skill-immutable-hippo.md` (the original design plan)
