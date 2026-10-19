@@ -1,0 +1,17 @@
+<% content_for :title, "Users" %>
+
+<%= render partial: "shared/page_header", locals: {
+      title: "Users",
+      action: (policy(User).create? ? { label: "New User", path: new_user_path } : nil)
+    } %>
+
+<%= render "shared/table", { columns: [ "Email", "Role", "" ] } do %>
+  <% if @users.any? %>
+    <%= render @users %>
+  <% else %>
+    <%= render partial: "shared/empty_state", locals: {
+          title: "No users yet.", colspan: 3,
+          cta: (policy(User).create? ? { label: "Add the first one", path: new_user_path } : nil)
+        } %>
+  <% end %>
+<% end %>

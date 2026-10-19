@@ -1,0 +1,7 @@
+<p>Hi <%= @user.email %>,</p>
+
+<p>An admin has created a Jobdeck account for you. Click the link below to set your password and sign in. This link expires in 7 days.</p>
+
+<p><%= link_to "Set your password", edit_account_setup_url(@token) %></p>
+
+<p>If you weren't expecting this, you can safely ignore this email.</p>

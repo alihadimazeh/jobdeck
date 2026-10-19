@@ -17,4 +17,11 @@ class User < ApplicationRecord
   generates_token_for :password_reset, expires_in: 15.minutes do
     password_salt&.last(10)
   end
+
+  # Longer-lived than :password_reset since an admin-sent invite email may sit
+  # unopened for a day or two; same salting trick, so it also dies the moment
+  # the invited user sets their real password.
+  generates_token_for :account_setup, expires_in: 7.days do
+    password_salt&.last(10)
+  end
 end
