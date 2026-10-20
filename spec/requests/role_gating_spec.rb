@@ -90,4 +90,25 @@ RSpec.describe "Role-based view gating", type: :request do
       expect(response.body).not_to include("New Customer")
     end
   end
+
+  describe "User role changes (admin only)" do
+    # Brakeman flags permit(:email, :role) in UsersController; this is the request-level
+    # proof that only an admin can reach it (see config/brakeman.ignore).
+    %i[viewer sales project_manager].each do |role|
+      it "rejects a #{role} trying to make themselves admin" do
+        user = create(:user, role)
+        sign_in_as(user)
+        patch user_path(user), params: { user: { email: user.email, role: "admin" } }
+        expect(response).to have_http_status(:redirect)
+        expect(user.reload.role).to eq(role.to_s)
+      end
+
+      it "rejects a #{role} creating an admin account" do
+        sign_in_as(create(:user, role))
+        expect {
+          post users_path, params: { user: { email: "sneaky@example.com", role: "admin" } }
+        }.not_to change(User, :count)
+      end
+    end
+  end
 end
