@@ -1,7 +1,7 @@
 class UserPolicy < ApplicationPolicy
-  # User management: admin only. No controller uses this yet (no
-  # user-management UI exists), but the rule is already the one CLAUDE.md
-  # commits to, so it's correct the moment that UI lands.
+  # User management: admin only. UsersController authorizes every action
+  # through this, which is what makes permitting :role safe there (see
+  # config/brakeman.ignore).
   def index? = user.admin?
   def show? = user.admin?
   def create? = user.admin?
