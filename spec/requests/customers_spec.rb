@@ -2,6 +2,26 @@ require "rails_helper"
 
 RSpec.describe "Customers", type: :request do
   describe "GET /customers" do
+    it "shows a no-match message with a Clear search link, not the first-run empty state" do
+      create(:customer)
+
+      get customers_path, params: { q: { first_name_or_last_name_or_phone_or_email_cont: "no-such-customer-zzz" } }
+
+      expect(response.body).to include("No customers match your search.")
+      expect(response.body).to include('href="' + customers_path + '"')
+      expect(response.body).not_to include("No customers yet.")
+    end
+
+    it "keeps the first-run empty state for a blank search when there are no customers" do
+      # Rows can be left in the shared test DB by a Minitest run; clear for a true empty case.
+      ActiveRecord::Base.connection.disable_referential_integrity { Customer.delete_all }
+
+      get customers_path, params: { q: { first_name_or_last_name_or_phone_or_email_cont: "" } }
+
+      expect(response.body).to include("No customers yet.")
+      expect(response.body).not_to include("match your search")
+    end
+
     it "renders the index" do
       create(:customer)
       get customers_path

@@ -4,6 +4,26 @@ RSpec.describe "Leads", type: :request do
   let(:customer) { create(:customer) }
 
   describe "GET /leads" do
+    it "shows a no-match message with a Clear search link, not the first-run empty state" do
+      create(:lead, customer: customer)
+
+      get leads_path, params: { q: { title_or_customer_first_name_or_customer_last_name_cont: "no-such-lead-zzz" } }
+
+      expect(response.body).to include("No leads match your search.")
+      expect(response.body).to include('href="' + leads_path + '"')
+      expect(response.body).not_to include("No leads yet.")
+    end
+
+    it "keeps the first-run empty state for a blank search when there are no leads" do
+      # Rows can be left in the shared test DB by a Minitest run; clear for a true empty case.
+      ActiveRecord::Base.connection.disable_referential_integrity { Lead.delete_all }
+
+      get leads_path, params: { q: { title_or_customer_first_name_or_customer_last_name_cont: "" } }
+
+      expect(response.body).to include("No leads yet.")
+      expect(response.body).not_to include("match your search")
+    end
+
     it "renders the index" do
       create(:lead, customer: customer)
       get leads_path
