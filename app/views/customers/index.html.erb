@@ -15,6 +15,11 @@
 <%= render "shared/table", { columns: [ "Name", "Phone", "Email", "Status", "" ] } do %>
   <% if @customers.any? %>
     <%= render @customers %>
+  <% elsif @q.conditions.any? %>
+    <%= render partial: "shared/empty_state", locals: {
+          title: "No customers match your search.", colspan: 5,
+          cta: { label: "Clear search", path: customers_path }
+        } %>
   <% else %>
     <%= render partial: "shared/empty_state", locals: {
           title: "No customers yet.", colspan: 5,
