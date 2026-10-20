@@ -59,7 +59,8 @@ module ApplicationHelper
     "Dashboard" => %w[dashboard],
     "Customers" => %w[customers],
     "Leads"     => %w[leads quotes rooms quote_line_items],
-    "Jobs"      => %w[jobs orders line_items]
+    "Jobs"      => %w[jobs orders line_items],
+    "Users"     => %w[users]
   }.freeze
 
   def nav_section_active?(section)

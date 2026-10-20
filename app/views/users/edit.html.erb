@@ -1,0 +1,10 @@
+<% content_for :title, "Edit #{@user.email}" %>
+
+<%= render partial: "shared/page_header", locals: {
+      title: "Edit #{@user.email}",
+      breadcrumbs: [ [ "Users", users_path ], [ @user.email, user_path(@user) ] ]
+    } %>
+
+<%= render "shared/form_container" do %>
+  <%= render "form", user: @user %>
+<% end %>

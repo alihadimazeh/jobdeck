@@ -1,0 +1,18 @@
+<%#
+  Email + role only - an admin never sets a password here. A new user gets a
+  random throwaway password and an invite email (UsersController#create);
+  an existing user's password stays exclusively self-service.
+%>
+<%= form_with model: user do |form| %>
+  <%= render partial: "shared/form_errors", locals: { model: user } %>
+
+  <div class="space-y-4">
+    <%= render partial: "shared/field", locals: { form: form, attr: :email, as: :email } %>
+    <%= render partial: "shared/field", locals: {
+          form: form, attr: :role, as: :select,
+          collection: User.roles.keys.map { |role| [ role.titleize, role ] }
+        } %>
+  </div>
+
+  <%= form.submit class: "btn btn-primary mt-6", data: { turbo_submits_with: "Saving…" } %>
+<% end %>

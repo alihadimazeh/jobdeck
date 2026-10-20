@@ -1,0 +1,11 @@
+<tr id="<%= dom_id(user) %>" class="hover">
+  <td class="font-medium text-base-content">
+    <%= link_to user.email, user, class: "hover:text-primary" %>
+  </td>
+  <td class="text-base-content/70"><%= user.role.titleize %></td>
+  <td class="text-right">
+    <% if policy(user).edit? %>
+      <%= link_to "Edit", edit_user_path(user), class: "link link-hover text-sm" %>
+    <% end %>
+  </td>
+</tr>

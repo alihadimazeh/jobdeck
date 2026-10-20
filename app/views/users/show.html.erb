@@ -1,0 +1,23 @@
+<% content_for :title, @user.email %>
+
+<% actions = capture do %>
+  <% if policy(@user).edit? %>
+    <%= link_to "Edit", edit_user_path(@user), class: "btn btn-ghost btn-sm" %>
+  <% end %>
+<% end %>
+
+<%= render partial: "shared/page_header", locals: {
+      title: @user.email,
+      breadcrumbs: [ [ "Users", users_path ] ],
+      actions: actions
+    } %>
+
+<div class="mb-6">
+  <%= render "shared/card" do %>
+    <%= render partial: "shared/detail_list", locals: { items: [
+          [ "Email", @user.email ],
+          [ "Role", @user.role.titleize ],
+          [ "Created", format_date(@user.created_at) ]
+        ] } %>
+  <% end %>
+</div>
