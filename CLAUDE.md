@@ -116,7 +116,7 @@ one. This isn't just style: a `restrict_with_error` guard reached via another mo
 `Lead → orders (restrict_with_error)`) does not surface its error message on the
 top-level record, and — because none of the `transaction` calls involved open a real
 savepoint — doesn't cleanly roll back whatever the cascade already did before the
-abort (see TODO.md → Bugs for the full trace this was found from). Declaring the
+abort (see `docs/archive/TODO-2026-10-20.md` → Model Review → Bugs for the full trace this was found from). Declaring the
 restrict checks first on both `Customer` and `Lead` means a blocked delete is caught
 immediately, before any cascade that could partially mutate data even starts.
 
@@ -134,7 +134,7 @@ concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral
 
 ## UX / Workflow Notes
 
-- **Lead + Customer creation on one form** was the original intent (a separate customer-creation step adds friction during a quick walk-in or phone inquiry) but was **never built** — `leads/_form.html.erb` only offers a `customer_id` select of existing customers. Parked in TODO.md's UI Backlog as "needs a product decision" (build it or drop it).
+- **Lead + Customer creation on one form** was the original intent (a separate customer-creation step adds friction during a quick walk-in or phone inquiry) but was **never built** — `leads/_form.html.erb` only offers a `customer_id` select of existing customers. Listed in TODO.md under "Needs a product decision" (build it or drop it).
 - **Quotes live on the Lead show page** — there's a "Create Quote" button that opens the quote form, and the page lists all of the lead's quotes. A lead can have several (revisions, or split scopes), but only one can be `accepted`.
 - **Estimation tool on the Quote form** — a Stimulus-powered room calculator where you enter room name + dimensions. It sums sq footage across all rooms and auto-populates labor and material line items (based on rates you enter). Line items remain fully editable after the tool runs.
 - **Quote → Job conversion** is triggered from the Quote show page ("Accept Quote" button).
@@ -145,11 +145,11 @@ concepts: `active`/`inactive` is a manual, staff-chosen label with no behavioral
 
 ---
 
-## Authentication (Phase 5, milestones 1-2 — shipped)
+## Authentication (Phase 5, milestones 1-2.5 — shipped)
 
-Every controller requires a signed-in user, and every action/view is now role-gated via Pundit
-(milestone 2). A User Management UI is next (see "Planned: User Management UI" below); SSO is
-postponed — see "Role-based Authorization" → "Rollout order" below.
+Every controller requires a signed-in user, every action/view is role-gated via Pundit
+(milestone 2), and admins manage staff accounts in-app (milestone 2.5, see "User Management"
+below). SSO is postponed — see "Role-based Authorization" → "Rollout order" below.
 
 - **Session-based**, not token/JWT: a real `Session` row per sign-in, referenced by a signed,
   `httponly`, `same_site: :lax` cookie holding only the session's id
@@ -174,12 +174,10 @@ postponed — see "Role-based Authorization" → "Rollout order" below.
   authenticated-only sidebar on the sign-in page would be backwards.
 - `password` validates `length: { minimum: 8 }, allow_nil: true` — `allow_nil` so updating a
   User without touching the password doesn't fail the length check.
-- **Deliberately not done yet** — no sign-up/user-management UI — `db/seeds.rb` creates one dev
-  user (`admin@jobdeck.test`, role `admin`); others, and role changes, go through `rails
-  console`. The `admin` role and `UserPolicy` exist, but no screen uses them yet; see "Planned:
-  User Management UI" below — this is the near-term priority, not SSO. The free-text
-  `assigned_to`/`author`/`uploaded_by` fields are **not** yet backed by
-  `user_id` (now unblocked; it's also what would let notes/documents be limited to their author).
+- No public sign-up: `db/seeds.rb` creates one dev user (`admin@jobdeck.test`, role `admin`), and
+  every other account is created by an admin (see "User Management" below). The free-text
+  `assigned_to`/`author`/`uploaded_by` fields are **not** yet backed by `user_id` (tracked in
+  TODO.md; it's also what would let notes/documents be limited to their author).
 
 ## Role-based Authorization (Phase 5, milestone 2 — shipped)
 
@@ -214,8 +212,7 @@ and a portfolio piece that demonstrates RBAC done properly.
 1. ~~User model + session-based login/logout + password reset.~~ **Shipped** (see above).
 2. ~~Roles enum + Pundit policies + `authorize` / `policy_scope` everywhere.~~ **Shipped.**
 3. ~~Role-based view gating (nav + buttons + sections).~~ **Shipped.**
-4. User Management UI (see "Planned: User Management UI" below) — **next**, needed before a
-   real store can onboard its own staff.
+4. ~~User Management UI.~~ **Shipped** (PR #98, see "User Management" below).
 5. SSO (OmniAuth + Google Workspace, then Microsoft Entra ID, then SAML 2.0) — **postponed,
    long-term/portfolio item, not a near-term deployment need.** It exists to let *other*
    construction businesses bring their own identity provider once Jobdeck is multi-tenant; a
@@ -228,34 +225,30 @@ and a portfolio piece that demonstrates RBAC done properly.
    provisioning at `viewer`; optional "SSO only" mode) is unchanged from the original plan —
    nothing below is a decision reversal, just a reordering.
 
-## Planned: User Management UI (Phase 5, milestone 2.5)
+## User Management (Phase 5, milestone 2.5 — shipped, PR #98)
 
-Lets an admin create and edit staff accounts (email + role) without `rails console` access, so a
-real store's admin can onboard their own staff. This is the actual near-term blocker for a
-single-store deployment — see "Rollout order" above.
+An admin creates and edits staff accounts (email + role) in-app, so a store can onboard its own
+staff without `rails console`.
 
-- `UsersController`, admin-only. `UserPolicy` already exists (Phase 5 milestone 2) and is unused
-  today — this wires it up with the same `authorize`/`policy_scope` pattern every other
-  controller uses.
-- The admin form sets **email + role only — never a password directly**:
-  - `password_digest` is `NOT NULL` and `has_secure_password`'s default validation requires a
-    password on create, so account creation sets a random, never-displayed password
-    (`SecureRandom.alphanumeric`) and immediately emails an invite/set-password link, reusing
-    the password-reset mechanics (`generates_token_for`, `PasswordsMailer`-style
-    `deliver_later`).
-  - That invite link needs its **own token purpose** (`:account_setup`, not `:password_reset`)
-    with a **longer expiry** — proposed 7 days vs. the existing 15-minute reset window, since an
-    invite email may sit unopened for a day or two and 15 minutes would expire most of them
-    before the new hire opens it. Same salting trick (`password_salt`) applies.
-  - Editing an existing user is email/role only. Password stays exclusively self-service via the
-    existing forgot-password flow — no admin should be able to see or set someone else's
-    password.
-- Sidebar gets a new admin-only "Users" (or "Team") nav link — the first nav item that actually
-  needs role gating; every existing one is visible to all roles.
-- **Deferred (YAGNI):** deleting/deactivating a user. There's no `deactivated_at`/status concept
-  on `User` yet (unlike `Customer.status`), and removing a staff account outright is rare and
-  consequential with no urgency driving it yet. Reopen when a real need shows up (someone
-  leaves the company).
+- `UsersController` (index/show/new/create/edit/update), admin-only via `UserPolicy` and the
+  usual `authorize`/`policy_scope` pattern.
+- The admin form sets **email + role only — never a password**:
+  - `password_digest` is `NOT NULL` and `has_secure_password` requires a password on create, so
+    `create` sets a throwaway `SecureRandom.alphanumeric(20)` password nobody is shown, then
+    sends `UsersMailer#invite` (`deliver_later`) with a set-password link.
+  - The link uses its **own token purpose**, `:account_setup`, with a **7-day expiry** (vs. 15
+    minutes for `:password_reset`), since an invite may sit unopened for a day or two. Same
+    `password_salt` salting, so the link dies once the real password is set.
+  - `AccountSetupsController` (unauthenticated, `layouts/auth`) handles the link: it sets the
+    password and signs the user in.
+  - After that, passwords are self-service only (forgot-password flow). No admin can see or set
+    someone else's password.
+- **An admin can't change their own role** — `UsersController#update` rejects it, because a sole
+  admin demoting themselves would leave no way to recover admin access.
+- The sidebar's admin-only "Users" link is the one nav item with role gating; every other one is
+  visible to all roles.
+- **Deferred (YAGNI):** deleting/deactivating a user. `User` has no `deactivated_at`/status
+  concept (unlike `Customer.status`). Reopen when someone actually leaves the company.
 
 ## Planned: Design Quality Pass (Phase 7)
 
@@ -382,7 +375,7 @@ outstanding orders (`Order.outstanding`), each a 5-row preview with a true total
 
 Wired into the **Customer, Lead, and Job index pages** (Job via PR #56) — `Quote`/`Order` indexes
 are still plain unfiltered/unpaginated `render @collection`, and are only listed nested under a
-Lead/Job (see TODO.md's "needs a product decision" list for that gap).
+Lead/Job (see TODO.md → "Needs a product decision").
 
 - Controller pattern: `@q = Model.ransack(params[:q])` then `@pagy, @records =
   pagy(@q.result(distinct: true))`. Every ransack-able model needs explicit
