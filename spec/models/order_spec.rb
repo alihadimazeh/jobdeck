@@ -88,4 +88,31 @@ RSpec.describe Order, type: :model do
       expect(order.total).to eq(27.5)
     end
   end
+
+  describe ".to_bill / .awaiting_payment" do
+    it "puts drafts and confirmed orders in to_bill, invoiced in awaiting_payment, and neither paid nor cancelled" do
+      orders = described_class.statuses.keys.index_with { |status| create(:order, status: status) }
+
+      # Scoped to these rows: Minitest fixture orders can be committed in the shared test DB.
+      mine = described_class.where(id: orders.values)
+      expect(mine.to_bill).to contain_exactly(orders["draft"], orders["confirmed"])
+      expect(mine.awaiting_payment).to contain_exactly(orders["invoiced"])
+    end
+  end
+
+  describe "#days_overdue" do
+    it "counts whole days past the due date for an invoiced order" do
+      expect(build(:order, status: :invoiced, due_date: 12.days.ago.to_date).days_overdue).to eq(12)
+    end
+
+    it "is nil on or before the due date" do
+      expect(build(:order, status: :invoiced, due_date: Date.current).days_overdue).to be_nil
+      expect(build(:order, status: :invoiced, due_date: Date.tomorrow).days_overdue).to be_nil
+    end
+
+    it "is nil without a due date, or when the order isn't invoiced" do
+      expect(build(:order, status: :invoiced, due_date: nil).days_overdue).to be_nil
+      expect(build(:order, status: :draft, due_date: 12.days.ago.to_date).days_overdue).to be_nil
+    end
+  end
 end
