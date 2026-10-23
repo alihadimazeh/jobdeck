@@ -126,4 +126,15 @@ RSpec.describe Lead, type: :model do
       expect(Document.exists?(document.id)).to be false
     end
   end
+
+  describe "#follow_up_days_late" do
+    it "counts whole days since the follow-up date, 0 when it's due today" do
+      expect(build(:lead, follow_up_date: 4.days.ago.to_date).follow_up_days_late).to eq(4)
+      expect(build(:lead, follow_up_date: Date.current).follow_up_days_late).to eq(0)
+    end
+
+    it "is nil with no follow-up date" do
+      expect(build(:lead, follow_up_date: nil).follow_up_days_late).to be_nil
+    end
+  end
 end

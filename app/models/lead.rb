@@ -17,6 +17,11 @@ class Lead < ApplicationRecord
   # true against NULL in SQL, no explicit `.where.not(follow_up_date: nil)` needed.
   scope :needs_follow_up, -> { where(follow_up_date: ..Date.current).where.not(status: [ :converted, :lost ]) }
 
+  # Whole days since the follow-up came due: 0 when it's due today, nil with no follow-up date.
+  def follow_up_days_late
+    (Date.current - follow_up_date).to_i if follow_up_date
+  end
+
   def convert_to_job!(quote)
     raise "This lead has already been converted to a job" if job.present?
 

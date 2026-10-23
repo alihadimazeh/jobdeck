@@ -1,5 +1,6 @@
 <%#
-  locals: title: nil, actions: nil (captured html), padded: true
+  locals: title: nil, actions: nil (captured html), padded: true,
+          count: nil (shown muted after the title, e.g. a dashboard card's true total)
 
   Call as: render "shared/card", { title: "Rooms" } do ... end
   NOT: render partial: "shared/card", locals: { title: "Rooms" } do ... end
@@ -12,9 +13,16 @@
 <div class="card card-border bg-base-100">
   <% if local_assigns[:title].present? || local_assigns[:actions].present? %>
     <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-base-300">
-      <h2 class="text-sm font-semibold text-base-content"><%= title if local_assigns[:title].present? %></h2>
+      <h2 class="text-sm font-semibold text-base-content">
+        <%= title if local_assigns[:title].present? %>
+        <% unless local_assigns[:count].nil? %>
+          <span class="ml-1.5 font-normal tabular-nums text-base-content/70"><%= count %></span>
+        <% end %>
+      </h2>
+      <%# min-h-11 matches a btn-sm's 44px, so a header with a plain-text action (a total) is the
+          same height as one with a "View all" button and side-by-side cards line up. %>
       <% if local_assigns[:actions].present? %>
-        <div><%= actions %></div>
+        <div class="flex items-center min-h-11"><%= actions %></div>
       <% end %>
     </div>
   <% end %>

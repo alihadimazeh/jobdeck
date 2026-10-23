@@ -1,13 +1,16 @@
 <%#
-  locals: path:, title:, subtitle:, aside: (captured html, right-hand value - a date, or a total + badge)
+  locals: path:, title:, subtitle:, aside: (captured html, right-hand value - a date, or a total + badge),
+          call: nil ({ phone:, name: } - adds a tap-to-call button beside the row)
 
   One dashboard preview row. A list item rather than a table row: the cards are narrow at every
   width (a third of the page on desktop, the full phone width on site), and a 3-4 column table
   squeezed into them pushed the money column off-card behind a scroll with no visible cue. The
-  whole row is the link, so the tap target is the full row, not just the title text.
+  whole row is the link, so the tap target is the full row, not just the title text. The call
+  button sits beside that link rather than inside it (a link can't contain another link).
 %>
-<li>
-  <%= link_to path, class: "flex items-center justify-between gap-4 min-h-11 px-6 py-3 hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
+<% call = local_assigns[:call] %>
+<li class="flex items-stretch">
+  <%= link_to path, class: "flex flex-1 min-w-0 items-center justify-between gap-4 min-h-11 py-3 pl-6 #{call ? "pr-2" : "pr-6"} hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
     <div class="min-w-0">
       <%# Two lines before clipping, not one: similar titles ("Kitchen Renovation — Mitchell
           Residence") differ at the end, which single-line truncation hides on a phone. %>
@@ -15,5 +18,14 @@
       <p class="text-base-content/70 truncate"><%= subtitle %></p>
     </div>
     <div class="shrink-0 text-right tabular-nums whitespace-nowrap"><%= aside %></div>
+  <% end %>
+  <% if call %>
+    <div class="flex items-center pr-4">
+      <a href="tel:<%= call[:phone].to_s.gsub(/[^\d+]/, "") %>" class="btn btn-ghost btn-square text-primary" aria-label="Call <%= call[:name] %>, <%= call[:phone] %>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" />
+        </svg>
+      </a>
+    </div>
   <% end %>
 </li>
