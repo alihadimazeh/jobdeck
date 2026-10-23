@@ -10,24 +10,24 @@
       ] } %>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<%# Leads and jobs side by side from lg up; orders always get the full width so the money
+    column never has to share a third of the page. Rows are lists, not tables - see
+    dashboard/_preview_row for why. %>
+<div class="grid grid-cols-1 lg:grid-cols-2 items-start gap-6">
   <%# Leads needing follow-up %>
   <% leads_actions = capture do %>
     <%= link_to "View all", leads_path, class: "btn btn-ghost btn-sm text-primary" %>
   <% end %>
   <%= render "shared/card", { title: "Leads Needing Follow-up", actions: leads_actions, padded: false } do %>
-    <%= render "shared/table", { columns: [ "Title", "Customer", "Follow-up" ] } do %>
-      <% if @follow_up_leads.any? %>
+    <% if @follow_up_leads.any? %>
+      <ul class="divide-y divide-base-300 text-sm">
         <% @follow_up_leads.each do |lead| %>
-          <tr class="hover">
-            <td class="font-medium text-base-content"><%= link_to lead.title, lead, class: "hover:text-primary" %></td>
-            <td class="text-base-content/70"><%= lead.customer.full_name %></td>
-            <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
-          </tr>
+          <%= render "dashboard/preview_row", path: lead, title: lead.title, subtitle: lead.customer.full_name,
+                aside: tag.span(format_date(lead.follow_up_date), class: "text-base-content/70") %>
         <% end %>
-      <% else %>
-        <%= render partial: "shared/empty_state", locals: { title: "Nothing needs follow-up.", colspan: 3 } %>
-      <% end %>
+      </ul>
+    <% else %>
+      <%= render partial: "shared/empty_state", locals: { title: "Nothing needs follow-up." } %>
     <% end %>
   <% end %>
 
@@ -36,37 +36,39 @@
     <%= link_to "View all", jobs_path, class: "btn btn-ghost btn-sm text-primary" %>
   <% end %>
   <%= render "shared/card", { title: "Active Jobs", actions: jobs_actions, padded: false } do %>
-    <%= render "shared/table", { columns: [ "Title", "Customer", "Start Date" ] } do %>
-      <% if @active_jobs.any? %>
+    <% if @active_jobs.any? %>
+      <ul class="divide-y divide-base-300 text-sm">
         <% @active_jobs.each do |job| %>
-          <tr class="hover">
-            <td class="font-medium text-base-content"><%= link_to job.title, job, class: "hover:text-primary" %></td>
-            <td class="text-base-content/70"><%= job.customer.full_name %></td>
-            <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
-          </tr>
+          <%= render "dashboard/preview_row", path: job, title: job.title, subtitle: job.customer.full_name,
+                aside: tag.span(format_date(job.start_date), class: "text-base-content/70") %>
         <% end %>
-      <% else %>
-        <%= render partial: "shared/empty_state", locals: { title: "No active jobs.", colspan: 3 } %>
-      <% end %>
+      </ul>
+    <% else %>
+      <%= render partial: "shared/empty_state", locals: { title: "No active jobs." } %>
     <% end %>
   <% end %>
 
   <%# Outstanding orders - no unscoped orders index exists (orders are nested under
       Jobs), so there's no "View all" target here unlike the other two cards. %>
-  <%= render "shared/card", { title: "Outstanding Orders", padded: false } do %>
-    <%= render "shared/table", { columns: [ "Order #", "Customer", "Status", "Total" ] } do %>
+  <div class="lg:col-span-2">
+    <%= render "shared/card", { title: "Outstanding Orders", padded: false } do %>
       <% if @outstanding_orders.any? %>
-        <% @outstanding_orders.each do |order| %>
-          <tr class="hover">
-            <td class="font-medium text-base-content"><%= link_to order.order_number, order, class: "hover:text-primary" %></td>
-            <td class="text-base-content/70"><%= order.customer.full_name %></td>
-            <td><%= status_badge(order) %></td>
-            <td class="font-medium text-base-content"><%= format_currency(order.total) %></td>
-          </tr>
-        <% end %>
+        <ul class="divide-y divide-base-300 text-sm">
+          <% @outstanding_orders.each do |order| %>
+            <%# Total over badge on phones; side by side once the full-width card has room. %>
+            <% aside = capture do %>
+              <span class="flex flex-col items-end gap-1 sm:flex-row-reverse sm:items-center sm:gap-3">
+                <span class="font-medium text-base-content"><%= format_currency(order.total) %></span>
+                <%= status_badge(order) %>
+              </span>
+            <% end %>
+            <%= render "dashboard/preview_row", path: order, title: order.order_number,
+                  subtitle: order.customer.full_name, aside: aside %>
+          <% end %>
+        </ul>
       <% else %>
-        <%= render partial: "shared/empty_state", locals: { title: "Nothing outstanding.", colspan: 4 } %>
+        <%= render partial: "shared/empty_state", locals: { title: "Nothing outstanding." } %>
       <% end %>
     <% end %>
-  <% end %>
+  </div>
 </div>

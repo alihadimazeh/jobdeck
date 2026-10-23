@@ -28,4 +28,28 @@ RSpec.describe "Dashboard UI (Step 14)", type: :system do
     overflow = page.evaluate_script("document.documentElement.scrollWidth > document.documentElement.clientWidth")
     expect(overflow).to be false
   end
+
+  # The cards used to hold 3-4 column tables, which at 1024px pushed the order total off-card
+  # behind an inner scroll the page-level check above can't see.
+  [ [ 375, 900 ], [ 1024, 768 ], [ 1440, 900 ] ].each do |width, height|
+    it "keeps every card's content inside the card at #{width}px, money column included" do
+      create(:lead, title: "Bathroom tile — long customer name follow-up", follow_up_date: Date.yesterday, status: :contacted)
+      create(:job, title: "Kitchen Renovation — Mitchell Residence, full floor", status: :active)
+      order = create(:order, status: :confirmed)
+
+      page.driver.browser.manage.window.resize_to(width, height)
+      visit root_path
+
+      expect(page).to have_content(order.order_number)
+      clipped = page.evaluate_script(<<~JS)
+        [...document.querySelectorAll("#main .card")].some((card) =>
+          [...card.querySelectorAll("*")].some((el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== "visible" && !el.matches(".truncate")))
+      JS
+      expect(clipped).to be false
+
+      total = page.find("a[href='#{order_path(order)}']")
+      card = total.ancestor(".card")
+      expect(page.evaluate_script("arguments[0].getBoundingClientRect().right <= arguments[1].getBoundingClientRect().right", total, card)).to be true
+    end
+  end
 end
