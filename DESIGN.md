@@ -292,6 +292,15 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
 - Each row's actions sit in a centered kebab (⋮) button that opens a popover menu (Edit, then
   Delete in Stop Red). Totals go in a real `<tfoot>`.
 
+### Preview lists (dashboard)
+- Short previews inside a narrow card (the dashboard's 5-row cards) are lists, not tables
+  (`dashboard/_preview_row`): a squeezed 3–4 column table pushed the money column off-card.
+- Each row is one link, at least 44px tall: a medium-weight title (up to two lines, so similar
+  titles stay distinguishable) over a muted customer line, with the value right-aligned in
+  tabular figures (a date, or a total with its status badge).
+- Rows are separated by 1px Chalk Line dividers rather than zebra stripes. Hover adds a 4% Ink
+  wash; focus is the 2px Job Blue outline, inset.
+
 ### Inputs / Fields
 - **Style:** white field, 1px border of Ink at 20%, 6px radius, 40px tall, 12px horizontal
   padding, 14px text.
