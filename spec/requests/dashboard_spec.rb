@@ -40,8 +40,8 @@ RSpec.describe "Dashboard", type: :request do
 
     get root_path
     page = Nokogiri::HTML(response.body)
-    waiting  = page.at_xpath("//div[contains(@class,'card')][.//h2[text()='Waiting on Payment']]").text
-    to_bill  = page.at_xpath("//div[contains(@class,'card')][.//h2[text()='Not Yet Billed']]").text
+    waiting  = page.at_xpath("//div[contains(@class,'card')][.//h2[contains(., 'Waiting on Payment')]]").text
+    to_bill  = page.at_xpath("//div[contains(@class,'card')][.//h2[contains(., 'Not Yet Billed')]]").text
 
     expect(waiting).to include(invoiced.order_number, "$1,200.00")
     expect(waiting).not_to include(confirmed.order_number)
@@ -78,7 +78,7 @@ RSpec.describe "Dashboard", type: :request do
 
     get root_path
 
-    expect(response.body).to include("Nothing needs follow-up.")
+    expect(response.body).to include("No follow-ups due.")
     expect(response.body).to include("No active jobs.")
     expect(response.body).to include("Nothing waiting on payment.")
     expect(response.body).to include("Nothing to bill.")
@@ -90,6 +90,28 @@ RSpec.describe "Dashboard", type: :request do
 
     get root_path
 
-    expect(response.body).to match(/stat-value[^"]*">\s*#{DashboardController::PREVIEW_LIMIT + 2}\s*</)
+    count = Nokogiri::HTML(response.body).at_xpath("//h2[contains(., 'Active Jobs')]/span").text.strip
+    expect(count).to eq((DashboardController::PREVIEW_LIMIT + 2).to_s)
+  end
+
+  it "gives each follow-up a tap-to-call link and says how late it is" do
+    customer = create(:customer, first_name: "Sarah", last_name: "Mitchell", phone: "(905) 555-0142")
+    create(:lead, customer: customer, follow_up_date: 3.days.ago.to_date, status: :contacted)
+    create(:lead, follow_up_date: Date.current, status: :contacted)
+
+    get root_path
+
+    expect(response.body).to include('href="tel:9055550142"')
+    expect(response.body).to include('aria-label="Call Sarah Mitchell, (905) 555-0142"')
+    expect(response.body).to include("3 days late")
+    expect(response.body).to include(">Today<")
+  end
+
+  it "shows each active job's site address, not the customer's billing address" do
+    job = create(:job, status: :active, address_line_1: "48 Birch Lane", city: "Hamilton")
+
+    get root_path
+
+    expect(response.body).to include("48 Birch Lane, Hamilton · #{job.customer.full_name}")
   end
 end
