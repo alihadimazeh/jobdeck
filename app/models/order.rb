@@ -13,8 +13,20 @@ class Order < ApplicationRecord
 
   accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
 
-  # Orders that still owe work or money - not yet paid, not cancelled.
-  scope :outstanding, -> { where(status: [ :draft, :confirmed, :invoiced ]) }
+  # Split on purpose rather than one "outstanding" bucket: a draft isn't money anyone owes yet,
+  # and lumping it in with invoices made the dashboard's "owed" number mean two things.
+  # Not yet billed - still being put together or agreed, no invoice out.
+  scope :to_bill, -> { where(status: [ :draft, :confirmed ]) }
+  # Invoiced, waiting on the customer to pay.
+  scope :awaiting_payment, -> { where(status: :invoiced) }
+
+  # Whole days past due_date, or nil when it isn't due yet (or has no due date). Only an
+  # invoiced order can be overdue - a draft's due_date is a plan, not a demand for payment.
+  def days_overdue
+    return unless invoiced_status? && due_date
+    days = (Date.current - due_date).to_i
+    days if days.positive?
+  end
 
   before_validation :assign_customer_from_job
   before_create     :assign_order_number

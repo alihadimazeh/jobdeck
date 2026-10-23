@@ -368,8 +368,10 @@ sets `aria-required="true"` on the control.
 ### Root / dashboard
 
 `root "dashboard#show"` (was `customers#index`) — `DashboardController` shows leads
-needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and
-outstanding orders (`Order.outstanding`), each a 5-row preview with a true total count.
+needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and orders split
+two ways: waiting on payment (`Order.awaiting_payment`, invoiced, most overdue first) and not yet
+billed (`Order.to_bill`, draft/confirmed). Each is a 5-row preview with a true total count; the
+order cards also show their dollar total. Drafts are deliberately not counted as money owed.
 
 ### Search & Pagination (Ransack + Pagy)
 
