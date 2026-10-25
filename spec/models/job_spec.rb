@@ -70,4 +70,16 @@ RSpec.describe Job, type: :model do
       expect(Document.exists?(document.id)).to be false
     end
   end
+
+  describe "#days_over" do
+    it "counts whole days an active job has run past its end date" do
+      expect(build(:job, status: :active, end_date: 5.days.ago.to_date).days_over).to eq(5)
+    end
+
+    it "is nil on or before the end date, without one, or once the job isn't active" do
+      expect(build(:job, status: :active, end_date: Date.current).days_over).to be_nil
+      expect(build(:job, status: :active, end_date: nil).days_over).to be_nil
+      expect(build(:job, status: :completed, end_date: 5.days.ago.to_date).days_over).to be_nil
+    end
+  end
 end

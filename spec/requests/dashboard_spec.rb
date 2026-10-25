@@ -86,7 +86,8 @@ RSpec.describe "Dashboard", type: :request do
   end
 
   it "shows the true total count even when the preview list is capped" do
-    ActiveRecord::Base.connection.disable_referential_integrity { Job.delete_all }
+    # Orders go too: one left pointing at a deleted job would break its row's job title.
+    ActiveRecord::Base.connection.disable_referential_integrity { LineItem.delete_all; Order.delete_all; Job.delete_all }
     create_list(:job, DashboardController::PREVIEW_LIMIT + 2, status: :active)
 
     get root_path
@@ -147,5 +148,35 @@ RSpec.describe "Dashboard", type: :request do
     h1 = Nokogiri::HTML(response.body).at_css("h1")
     expect(h1.text.squish).to start_with("Today")
     expect(h1.at_css("time")["datetime"]).to eq(Date.current.iso8601)
+  end
+
+  it "labels each active job's date: days over, else the end date, else the start date, plus the crew" do
+    over     = create(:job, title: "Lobby LVT", status: :active, end_date: 4.days.ago.to_date, assigned_to: "Mike's crew")
+    ending   = create(:job, title: "Ensuite tile", status: :active, start_date: Date.new(2026, 1, 5), end_date: Date.new(2099, 3, 2))
+    starting = create(:job, title: "Basement LVP", status: :active, start_date: Date.new(2099, 6, 1), end_date: nil)
+
+    get root_path
+    rows = Nokogiri::HTML(response.body).css("li").map(&:text).map(&:squish)
+
+    expect(rows.find { |r| r.include?(over.title) }).to include("4 days over", "Crew: Mike's crew")
+    expect(rows.find { |r| r.include?(ending.title) }).to include("Ends Mar 02, 2099")
+    expect(rows.find { |r| r.include?(starting.title) }).to include("Starts Jun 01, 2099")
+  end
+
+  it "titles money rows by job, and labels the header totals only when the card has rows" do
+    ActiveRecord::Base.connection.disable_referential_integrity { LineItem.delete_all; Order.delete_all }
+    job = create(:job, title: "Gonzalez kitchen backsplash")
+    order = create(:order, job: job, status: :invoiced)
+    order.update_columns(total: 2_500)
+
+    get root_path
+    page = Nokogiri::HTML(response.body)
+    waiting = page.at_xpath("//div[contains(@class,'card')][.//h2[contains(., 'Waiting on Payment')]]")
+    to_bill = page.at_xpath("//div[contains(@class,'card')][.//h2[contains(., 'Not Yet Billed')]]")
+
+    expect(waiting.at_css("li p.font-medium").text).to eq(job.title)
+    expect(waiting.text.squish).to include("#{order.customer.full_name} · #{order.order_number}", "$2,500.00 owed")
+    expect(to_bill.text).not_to match(/\$[\d,.]+ to bill/)
+    expect(to_bill.text).not_to include("$0.00")
   end
 end

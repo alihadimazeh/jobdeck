@@ -69,9 +69,22 @@
                 two jobs with the same title. Site first, so a phone's truncation cuts the
                 customer name rather than the street. %>
             <% site = [ job.address_line_1, job.city ].compact_blank.join(", ") %>
+            <% crew = "Crew: #{job.assigned_to}" if job.assigned_to.present? %>
+            <%# The one date that matters today, always labeled: running over beats the end
+                date, which beats the start date. %>
+            <% aside = capture do %>
+              <% if (over = job.days_over) %>
+                <%= render "shared/badge", label: "#{pluralize(over, "day")} over", variant: :warning %>
+              <% elsif job.end_date %>
+                <span class="text-base-content/70">Ends <%= format_date(job.end_date) %></span>
+              <% elsif job.start_date %>
+                <span class="text-base-content/70"><%= job.start_date > Date.current ? "Starts" : "Started" %> <%= format_date(job.start_date) %></span>
+              <% else %>
+                <span class="text-base-content/70">No dates set</span>
+              <% end %>
+            <% end %>
             <%= render "dashboard/preview_row", path: job, title: job.title,
-                  subtitle: [ site, job.customer.full_name ].compact_blank.join(" · "),
-                  aside: tag.span(format_date(job.start_date), class: "text-base-content/70") %>
+                  subtitle: [ site, crew, job.customer.full_name ].compact_blank.join(" · "), aside: aside %>
           <% end %>
         </ul>
       <% else %>
@@ -83,9 +96,11 @@
 
   <%# Orders, split by what the money is doing: invoiced and owed to us, or work not billed yet.
       No unscoped orders index exists (orders are nested under Jobs), so neither card has a
-      "View all"; the header carries the card's dollar total instead. %>
+      "View all"; the header carries the card's labeled dollar total instead, left off when the
+      card is empty ("$0.00 owed" says nothing the empty state doesn't). Rows lead with the job,
+      which is how a contractor names the work; the order number is secondary. %>
   <%= render "shared/card", { title: "Waiting on Payment", count: @awaiting_payment_count, padded: false,
-        actions: tag.span(format_currency(@awaiting_payment_total), class: "font-semibold tabular-nums text-base-content") } do %>
+        actions: (tag.span("#{format_currency(@awaiting_payment_total)} owed", class: "text-sm font-semibold tabular-nums text-base-content") if @awaiting_payment_count.positive?) } do %>
     <% if @awaiting_payment.any? %>
       <ul class="divide-y divide-base-300 text-sm">
         <% @awaiting_payment.each do |order| %>
@@ -97,8 +112,8 @@
               <span class="block text-base-content/70"><%= order.due_date ? "Due #{format_date(order.due_date)}" : "No due date" %></span>
             <% end %>
           <% end %>
-          <%= render "dashboard/preview_row", path: order, title: order.order_number,
-                subtitle: order.customer.full_name, aside: aside %>
+          <%= render "dashboard/preview_row", path: order, title: order.job.title,
+                subtitle: "#{order.customer.full_name} · #{order.order_number}", aside: aside %>
         <% end %>
       </ul>
     <% else %>
@@ -108,7 +123,7 @@
   <% end %>
 
   <%= render "shared/card", { title: "Not Yet Billed", count: @to_bill_count, padded: false,
-        actions: tag.span(format_currency(@to_bill_total), class: "font-semibold tabular-nums text-base-content") } do %>
+        actions: (tag.span("#{format_currency(@to_bill_total)} to bill", class: "text-sm font-semibold tabular-nums text-base-content") if @to_bill_count.positive?) } do %>
     <% if @to_bill.any? %>
       <ul class="divide-y divide-base-300 text-sm">
         <% @to_bill.each do |order| %>
@@ -116,8 +131,8 @@
             <span class="block font-medium text-base-content"><%= format_currency(order.total) %></span>
             <span class="block mt-1"><%= status_badge(order) %></span>
           <% end %>
-          <%= render "dashboard/preview_row", path: order, title: order.order_number,
-                subtitle: order.customer.full_name, aside: aside %>
+          <%= render "dashboard/preview_row", path: order, title: order.job.title,
+                subtitle: "#{order.customer.full_name} · #{order.order_number}", aside: aside %>
         <% end %>
       </ul>
     <% else %>
