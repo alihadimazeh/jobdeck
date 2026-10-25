@@ -11,6 +11,14 @@ class Job < ApplicationRecord
   has_many :activity_notes, as: :notable, dependent: :destroy
   has_many :documents, as: :documentable, dependent: :destroy
 
+  # Most urgent first: one ascending end_date sort puts jobs already past their end date on
+  # top (oldest end date = most days over), then the nearest upcoming end date, then jobs with
+  # no end date by start date. The dashboard caps Active Jobs at 5 rows, so sorting by start
+  # date could cut the one job that's running over.
+  scope :by_urgency, -> {
+    order(arel_table[:end_date].asc.nulls_last, arel_table[:start_date].asc.nulls_last, :id)
+  }
+
   # Whole days an active job has run past its end_date, or nil when it's on schedule (or has
   # no end date). Only an active job can run over - a completed one finished when it finished.
   def days_over

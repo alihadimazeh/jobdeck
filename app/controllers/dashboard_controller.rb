@@ -15,7 +15,7 @@ class DashboardController < ApplicationController
     @overdue = leads.follow_up_overdue.includes(:customer).order(:follow_up_date, :id).limit(PREVIEW_LIMIT)
 
     @active_jobs_count = jobs.active_status.count
-    @active_jobs = jobs.active_status.includes(:customer).order(:start_date).limit(PREVIEW_LIMIT)
+    @active_jobs = jobs.active_status.includes(:customer).by_urgency.limit(PREVIEW_LIMIT)
 
     # Most overdue first; an invoice with no due date can't be late, so it goes last.
     @awaiting_payment_count = orders.awaiting_payment.count

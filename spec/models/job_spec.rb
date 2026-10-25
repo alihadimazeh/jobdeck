@@ -71,6 +71,20 @@ RSpec.describe Job, type: :model do
     end
   end
 
+  describe ".by_urgency" do
+    it "puts jobs past their end date first (most days over on top), then nearest end date, then no end date by start" do
+      soon     = create(:job, end_date: 3.days.from_now.to_date, start_date: 20.days.ago.to_date)
+      way_over = create(:job, end_date: 10.days.ago.to_date, start_date: 2.days.ago.to_date)
+      no_end   = create(:job, end_date: nil, start_date: 40.days.ago.to_date)
+      over     = create(:job, end_date: 2.days.ago.to_date, start_date: 1.day.ago.to_date)
+      later    = create(:job, end_date: 30.days.from_now.to_date, start_date: 50.days.ago.to_date)
+      # Scoped to these rows: Minitest fixture jobs can be committed in the shared test DB.
+      mine = described_class.where(id: [ soon, way_over, no_end, over, later ])
+
+      expect(mine.by_urgency).to eq([ way_over, over, soon, later, no_end ])
+    end
+  end
+
   describe "#days_over" do
     it "counts whole days an active job has run past its end date" do
       expect(build(:job, status: :active, end_date: 5.days.ago.to_date).days_over).to eq(5)
