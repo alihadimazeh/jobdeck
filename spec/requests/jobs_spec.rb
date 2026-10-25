@@ -4,6 +4,30 @@ RSpec.describe "Jobs", type: :request do
   let(:customer) { create(:customer) }
 
   describe "GET /jobs" do
+    it "lands the dashboard's urgency drill-down with the over-running job first, its days over, and a note" do
+      ActiveRecord::Base.connection.disable_referential_integrity { LineItem.delete_all; Order.delete_all; Job.delete_all }
+      early = create(:job, title: "Started first", status: :active, start_date: 60.days.ago.to_date, end_date: 10.days.from_now.to_date)
+      over  = create(:job, title: "Running over", status: :active, start_date: 3.days.ago.to_date, end_date: 5.days.ago.to_date)
+
+      get jobs_path(q: { status_eq: Job.statuses["active"], s: [ "end_date asc", "start_date asc" ] })
+      rows = Nokogiri::HTML(response.body).css("tbody tr").map { |tr| tr.text.squish }
+
+      expect(rows.first).to include(over.title, "5 days over")
+      expect(rows.second).to include(early.title)
+      expect(response.body).to include("Most urgent first")
+      # A search from here keeps the sort.
+      expect(response.body).to include('name="q[s][]" value="end_date asc"')
+    end
+
+    it "shows an Ends column, but no urgency note without the sort" do
+      create(:job, status: :active, end_date: Date.new(2099, 3, 2))
+
+      get jobs_path
+
+      expect(response.body).to include(">Ends</th>", "Mar 02, 2099")
+      expect(response.body).not_to include("Most urgent first")
+    end
+
     it "shows a no-match message with a Clear search link, not the first-run empty state" do
       create(:job, customer: customer)
 

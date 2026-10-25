@@ -24,8 +24,6 @@ in the same PR so DESIGN.md stays in sync with `application.css`.
       times (20 → 23 → 25 → 24 out of 36; snapshots in `.impeccable/critique/`), fixes in PRs
       #102–#112: now a "Today" sheet with due-today/overdue follow-ups, urgency-sorted active
       jobs, and owed vs to-bill money, on Eastern time. Still open from the 4th critique:
-      - **P1 Jobs drill-down:** "View all active jobs" lands on an id-sorted table with no end
-        date or "days over"; keep the card's urgency sort and show it there.
       - **P1 Act on today:** no way to reschedule or close a follow-up (or mark an invoice paid)
         from the dashboard; each call is open lead → Edit → change date → save. Wants a
         per-row reschedule control (Turbo Stream, gated by `policy(lead).update?`).
