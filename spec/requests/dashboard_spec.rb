@@ -193,4 +193,3 @@ RSpec.describe "Dashboard", type: :request do
     expect(rows.first).to include(over.title, "5 days over")
   end
 end
-
