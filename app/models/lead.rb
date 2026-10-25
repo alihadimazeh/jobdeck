@@ -12,10 +12,16 @@ class Lead < ApplicationRecord
   has_many :activity_notes, as: :notable, dependent: :destroy
   has_many :documents, as: :documentable, dependent: :destroy
 
+  # A converted or lost lead never needs following up, whatever its follow_up_date says.
+  CLOSED_STATUSES = %w[converted lost].freeze
+
   # Leads still in the pipeline (not converted or lost) with a follow-up date today or
   # earlier. NULL follow_up_date rows are excluded automatically - `<= value` is never
   # true against NULL in SQL, no explicit `.where.not(follow_up_date: nil)` needed.
-  scope :needs_follow_up, -> { where(follow_up_date: ..Date.current).where.not(status: [ :converted, :lost ]) }
+  scope :needs_follow_up, -> { where(follow_up_date: ..Date.current).where.not(status: CLOSED_STATUSES) }
+  # Split so stale leads can't push today's calls off the dashboard's 5-row preview.
+  scope :follow_up_due_today, -> { needs_follow_up.where(follow_up_date: Date.current) }
+  scope :follow_up_overdue,   -> { needs_follow_up.where(follow_up_date: ...Date.current) }
 
   # Whole days since the follow-up came due: 0 when it's due today, nil with no follow-up date.
   def follow_up_days_late

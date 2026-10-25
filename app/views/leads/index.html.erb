@@ -5,6 +5,18 @@
       action: (policy(Lead).create? ? { label: "New Lead", path: new_lead_path } : nil)
     } %>
 
+<%# The dashboard's "View all" links arrive with a follow-up filter the search form below has no
+    field for - say so, or the list silently looks like it's missing leads. %>
+<% follow_up_filter = if params.dig(:q, :follow_up_date_eq).present? then "due today"
+                      elsif params.dig(:q, :follow_up_date_lt).present? then "overdue"
+                      end %>
+<% if follow_up_filter %>
+  <p class="mb-4 text-sm text-base-content/70">
+    Showing open leads with a follow-up <%= follow_up_filter %>.
+    <%= link_to "Show all leads", leads_path, class: "link link-primary" %>
+  </p>
+<% end %>
+
 <%= search_form_for @q, url: leads_path, class: "mb-4 flex gap-2 max-w-lg" do |f| %>
   <%= f.label :title_or_customer_first_name_or_customer_last_name_cont, "Search leads", class: "sr-only" %>
   <%= f.search_field :title_or_customer_first_name_or_customer_last_name_cont,

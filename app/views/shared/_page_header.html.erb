@@ -1,4 +1,4 @@
-<%# locals: title:, breadcrumbs: (Array<[label, path]>, default []), action: ({label:,path:,method:} or nil), actions: (captured html, or nil) %>
+<%# locals: title:, title_meta: nil (html shown muted after the title inside the H1, e.g. a date), breadcrumbs: (Array<[label, path]>, default []), action: ({label:,path:,method:} or nil), actions: (captured html, or nil) %>
 <% breadcrumbs = local_assigns.fetch(:breadcrumbs, []) %>
 <% show_breadcrumbs = breadcrumbs.present? && breadcrumbs.last&.first != title %>
 <div class="mb-6">
@@ -12,7 +12,8 @@
     </nav>
   <% end %>
   <div class="flex items-center justify-between gap-4">
-    <h1 class="text-xl font-semibold text-base-content"><%= title %></h1>
+    <%# One line on purpose: with no title_meta the H1 renders exactly as it always has. %>
+    <h1 class="text-xl font-semibold text-base-content"><%= title %><% if local_assigns[:title_meta].present? %> <span class="ml-2 font-normal text-base-content/70"><%= title_meta %></span><% end %></h1>
     <% if local_assigns[:actions].present? %>
       <div class="flex items-center gap-2"><%= actions %></div>
     <% elsif local_assigns[:action].present? %>

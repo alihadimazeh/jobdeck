@@ -78,7 +78,8 @@ RSpec.describe "Dashboard", type: :request do
 
     get root_path
 
-    expect(response.body).to include("No follow-ups due.")
+    expect(response.body).to include("No follow-ups due today.")
+    expect(response.body).to include("No overdue follow-ups.")
     expect(response.body).to include("No active jobs.")
     expect(response.body).to include("Nothing waiting on payment.")
     expect(response.body).to include("Nothing to bill.")
@@ -104,7 +105,6 @@ RSpec.describe "Dashboard", type: :request do
     expect(response.body).to include('href="tel:9055550142"')
     expect(response.body).to include('aria-label="Call Sarah Mitchell, (905) 555-0142"')
     expect(response.body).to include("3 days late")
-    expect(response.body).to include(">Today<")
   end
 
   it "shows each active job's site address, not the customer's billing address" do
@@ -113,5 +113,39 @@ RSpec.describe "Dashboard", type: :request do
     get root_path
 
     expect(response.body).to include("48 Birch Lane, Hamilton · #{job.customer.full_name}")
+  end
+
+  it "keeps today's follow-ups visible however many overdue ones pile up" do
+    ActiveRecord::Base.connection.disable_referential_integrity { Lead.delete_all }
+    create_list(:lead, DashboardController::PREVIEW_LIMIT + 1, follow_up_date: 10.days.ago.to_date, status: :contacted)
+    today = create(:lead, title: "Call back about the ensuite", follow_up_date: Date.current, status: :contacted)
+
+    get root_path
+    page = Nokogiri::HTML(response.body)
+    due_today = page.at_xpath("//div[contains(@class,'card')][.//h2[contains(., 'Due Today')]]").text
+    overdue   = page.at_xpath("//div[contains(@class,'card')][.//h2[contains(., 'Overdue')]]")
+
+    expect(due_today).to include(today.title)
+    expect(overdue.text).not_to include(today.title)
+    expect(overdue.at_xpath(".//h2/span").text.strip).to eq((DashboardController::PREVIEW_LIMIT + 1).to_s)
+  end
+
+  it "points each 'View all' at the card's own filter, using integer enum values" do
+    get root_path
+    links = Nokogiri::HTML(response.body).css("a").map { |a| [ a["aria-label"], CGI.unescape(a["href"].to_s) ] }.to_h
+    closed = Lead.statuses.values_at("converted", "lost")
+
+    expect(links["View all follow-ups due today"]).to include("q[follow_up_date_eq]=#{Date.current.iso8601}")
+    expect(links["View all overdue follow-ups"]).to include("q[follow_up_date_lt]=#{Date.current.iso8601}", "q[s]=follow_up_date asc")
+    closed.each { |value| expect(links["View all overdue follow-ups"]).to include("q[status_not_in][]=#{value}") }
+    expect(links["View all active jobs"]).to include("q[status_eq]=#{Job.statuses["active"]}")
+  end
+
+  it "is titled Today with the date" do
+    get root_path
+
+    h1 = Nokogiri::HTML(response.body).at_css("h1")
+    expect(h1.text.squish).to start_with("Today")
+    expect(h1.at_css("time")["datetime"]).to eq(Date.current.iso8601)
   end
 end

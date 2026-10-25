@@ -55,6 +55,20 @@ RSpec.describe "Leads", type: :request do
       expect(response.body).not_to include(new_lead.title)
     end
 
+    it "applies the dashboard's overdue filter and says it's filtered" do
+      overdue = create(:lead, title: "Overdue tile call", follow_up_date: 2.days.ago.to_date, status: :contacted)
+      today   = create(:lead, title: "Today tile call", follow_up_date: Date.current, status: :contacted)
+      closed  = create(:lead, title: "Lost tile call", follow_up_date: 2.days.ago.to_date, status: :lost)
+
+      get leads_path(q: { follow_up_date_lt: Date.current.iso8601,
+                          status_not_in: Lead.statuses.values_at("converted", "lost"), s: "follow_up_date asc" })
+
+      expect(response.body).to include(overdue.title)
+      expect(response.body).not_to include(today.title)
+      expect(response.body).not_to include(closed.title)
+      expect(response.body).to include("Showing open leads with a follow-up overdue.")
+    end
+
     it "paginates when there are more leads than one page" do
       leads = create_list(:lead, 21, customer: customer)
       last_lead = leads.max_by(&:id)

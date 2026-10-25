@@ -3,8 +3,12 @@ class DashboardController < ApplicationController
 
   # GET /
   def show
-    @follow_up_leads_count = Lead.needs_follow_up.count
-    @follow_up_leads = Lead.needs_follow_up.includes(:customer).order(:follow_up_date).limit(PREVIEW_LIMIT)
+    @due_today_count = Lead.follow_up_due_today.count
+    @due_today = Lead.follow_up_due_today.includes(:customer).order(:id).limit(PREVIEW_LIMIT)
+
+    # Longest-waiting first.
+    @overdue_count = Lead.follow_up_overdue.count
+    @overdue = Lead.follow_up_overdue.includes(:customer).order(:follow_up_date, :id).limit(PREVIEW_LIMIT)
 
     @active_jobs_count = Job.active_status.count
     @active_jobs = Job.active_status.includes(:customer).order(:start_date).limit(PREVIEW_LIMIT)

@@ -367,13 +367,14 @@ sets `aria-required="true"` on the control.
 
 ### Root / dashboard
 
-`root "dashboard#show"` (was `customers#index`) — `DashboardController` shows leads
-needing follow-up (`Lead.needs_follow_up`), active jobs (`Job.active_status`), and orders split
-two ways: waiting on payment (`Order.awaiting_payment`, invoiced, most overdue first) and not yet
-billed (`Order.to_bill`, draft/confirmed). Each is a 5-row preview with a true total count in
-its card header (no stat strip); the order cards also show their dollar total. Drafts are
-deliberately not counted as money owed. Follow-up rows get a `tel:` call button and a "days
-late" badge; job rows show the site address. Layout rules: DESIGN.md → "Dashboard".
+`root "dashboard#show"` (was `customers#index`), titled "Today". `DashboardController` shows
+follow-ups split into due today (`Lead.follow_up_due_today`) and overdue (`Lead.follow_up_overdue`),
+active jobs (`Job.active_status`), and orders split two ways: waiting on payment
+(`Order.awaiting_payment`, invoiced, most overdue first) and not yet billed (`Order.to_bill`,
+draft/confirmed). Each is a 5-row preview with a true total count in its card header (no stat
+strip); the order cards also show their dollar total. Drafts are deliberately not counted as money
+owed. Each "View all" links to the index pre-filtered with Ransack params (integer enum values), and
+the Leads index says when a follow-up filter is applied. Layout rules: DESIGN.md → "Dashboard".
 
 ### Search & Pagination (Ransack + Pagy)
 
