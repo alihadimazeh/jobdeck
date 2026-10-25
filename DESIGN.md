@@ -340,8 +340,8 @@ over first, then nearest end date) so that job is never cut from the 5-row previ
 
 ### Navigation
 - **Rail:** Night Navy, 224px wide: the logo and wordmark at the top, four links (Dashboard,
-  Customers, Leads, Jobs), and the signed-in email plus Sign out at the bottom above a faint
-  divider.
+  Customers, Leads, Jobs) plus a fifth, Users, for admins only, and the signed-in email plus
+  Sign out at the bottom above a faint divider.
 - **Links:** 14px medium, 8px × 12px padding, 6px radius. Inactive links are Rail Mist at 70%;
   hover brightens the text and adds a 5% light wash. The active link gets a 15% Job Blue wash,
   full-white text, and `aria-current="page"`. A nested page (a Quote, an Order) lights up its

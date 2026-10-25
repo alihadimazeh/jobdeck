@@ -20,9 +20,24 @@ A scored design review of the surfaces a portfolio reviewer sees first, judged a
 item, off `origin/main`. If an item changes a token or component, re-run `/impeccable document`
 in the same PR so DESIGN.md stays in sync with `application.css`.
 
-- [ ] **P7.1** — `/impeccable critique app/views/dashboard/show.html.erb`. No surface has been
-      critiqued yet. The dashboard is the first screen after sign-in and the one PRODUCT.md
-      centers on. Its scored snapshot becomes the backlog for a follow-up `/impeccable polish`.
+- [ ] **P7.1** — Dashboard (`app/views/dashboard/show.html.erb`), in progress. Critiqued four
+      times (20 → 23 → 25 → 24 out of 36; snapshots in `.impeccable/critique/`), fixes in PRs
+      #102–#112: now a "Today" sheet with due-today/overdue follow-ups, urgency-sorted active
+      jobs, and owed vs to-bill money, on Eastern time. Still open from the 4th critique:
+      - **P1 Jobs drill-down:** "View all active jobs" lands on an id-sorted table with no end
+        date or "days over"; keep the card's urgency sort and show it there.
+      - **P1 Act on today:** no way to reschedule or close a follow-up (or mark an invoice paid)
+        from the dashboard; each call is open lead → Edit → change date → save. Wants a
+        per-row reschedule control (Turbo Stream, gated by `policy(lead).update?`).
+      - **P2 Severity hierarchy:** cards follow time of day, so 40-day-overdue money sits last;
+        Due Today's "Quoted" badge shares the lateness amber. Show lead status as muted text,
+        keep amber for lateness, consider an overdue-money summary up top.
+      - **P2 Relative dates:** rows say "Due Oct 24, 2026" for today and zero-pad ("Nov 03");
+        DESIGN.md wants "today" / "tomorrow" / "Nov 3", year only when not current.
+      - **P2 Money drill-down:** the money cards stop at 5 rows with no "View all" (tied to the
+        top-level Orders decision below).
+      - **P3 Call links:** `tel:` appends an extension's digits to the number; dial with a
+        pause or drop the extension.
 - [ ] **P7.2** — `/impeccable polish public`. The Rails error pages (`400`, `404`,
       `406-unsupported-browser`, `422`, `500.html`) are still stock. They sit outside the
       Tailwind pipeline, so like `layouts/mailer.html.erb` they must hardcode hex. Add them to
