@@ -302,8 +302,12 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
   tabular figures (a date, or a total with its status badge).
 - Rows are separated by 1px Chalk Line dividers rather than zebra stripes. Hover adds a 4% Ink
   wash; focus is the 2px Job Blue outline, inset.
-- A follow-up row adds a tap-to-call ghost icon button (Job Blue phone stroke icon, 44px square,
-  `aria-label` naming the customer and number) beside the row link, never inside it.
+- A follow-up row adds a tap-to-call ghost icon button (Job Blue phone stroke icon, a true 44px
+  square, `aria-label` naming the customer and number) beside the row link, never inside it,
+  with an 8px gap between the two hit areas.
+- In a narrow row the value stacks under the title (a total and its badge side by side) instead
+  of sitting on the right. The switch is a container query on the row at 28rem, not a viewport
+  breakpoint: a half-width card on a 1024px laptop is as narrow as a phone.
 - Lateness reads as a soft badge: Caution Amber "N days late" for a follow-up, Stop Red "N days
   overdue" for an unpaid invoice.
 
