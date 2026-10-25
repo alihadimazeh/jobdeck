@@ -58,8 +58,15 @@ Palette values live in that file.
   `shared/_page_header` inside `<main>`. Don't reintroduce `content_for(:page_heading)` /
   `(:breadcrumbs)`; the old layout `<header>` driven by them was never used and was removed
   (PR #59).
-- `drawer_controller.js` is an a11y layer (focus management, Escape-to-close, `aria-expanded`) on
-  top of the checkbox-driven drawer, which needs no JS to open/close.
+- `drawer_controller.js` is an a11y layer (focus management, Escape-to-close, `aria-expanded`,
+  Enter/Space on the hamburger) on top of the checkbox-driven drawer, which needs no JS to
+  open/close by mouse or touch. A focused `<label>` does **not** toggle its checkbox on
+  Enter/Space natively, hence `triggerKeydown`.
+- Keyboard order is pinned by `spec/system/shell_keyboard_spec.rb`: the drawer checkbox is
+  `tabindex="-1" aria-hidden` (the hamburger label is the real control), "Skip to navigation"
+  (lg+ only) jumps to `#primary-nav` because the rail sits after `<main>` in the DOM, and the
+  focus ring's color is re-asserted unlayered in `application.css` because daisyUI's `.btn`
+  outline color otherwise wins for ghost buttons.
 - `quote_form_controller.js` / `order_form_controller.js` (estimation tool, dynamic rows) depend
   on `data-*` hooks in the row partials; preserve them when restyling. Keyboard focus after
   add/remove is handled by the shared `controllers/row_focus.js` helper (not a `*_controller`,

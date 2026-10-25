@@ -24,9 +24,19 @@
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:btn focus:btn-primary">
       Skip to content
     </a>
+    <%# The rail comes after <main> in the DOM (daisyUI's drawer needs drawer-content first), so
+        from lg up, where it's a permanent rail, keyboard users would otherwise tab through the
+        whole page to reach it. Hidden below lg: there the nav is behind the hamburger, which is
+        already the first stop after "Skip to content". %>
+    <a href="#primary-nav" class="max-lg:hidden sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:btn focus:btn-primary">
+      Skip to navigation
+    </a>
 
     <div class="drawer lg:drawer-open h-full" data-controller="drawer">
-      <input id="app-drawer" type="checkbox" class="drawer-toggle" data-drawer-target="checkbox">
+      <%# Out of the tab order and hidden from assistive tech: the hamburger <label> in
+          layouts/_navbar is the real, named control. Left focusable, this 0x0 unnamed
+          checkbox was an invisible tab stop on phones. %>
+      <input id="app-drawer" type="checkbox" class="drawer-toggle" data-drawer-target="checkbox" tabindex="-1" aria-hidden="true">
 
       <%# Drawer content: navbar (mobile only) + page body %>
       <div class="drawer-content flex flex-col h-full min-h-0 min-w-0">
