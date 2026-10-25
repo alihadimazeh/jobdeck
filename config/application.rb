@@ -21,7 +21,12 @@ module Jobdeck
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # The business's day, not UTC: "Today", follow-ups due/overdue, and every "N days late /
+    # over / overdue" count come from Date.current, which follows this zone. Under UTC they all
+    # rolled over to tomorrow at 8pm Eastern. One zone for now; per-business zones come with
+    # multi-tenancy. The DB keeps storing UTC (Active Record's default), so this only changes
+    # how times are read and how "today" is decided.
+    config.time_zone = "Eastern Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end
