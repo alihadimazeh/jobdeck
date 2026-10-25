@@ -32,4 +32,16 @@ RSpec.describe "Jobs UI (Step 10 restyle)", type: :system do
     overflow = page.evaluate_script("document.documentElement.scrollWidth > document.documentElement.clientWidth")
     expect(overflow).to be false
   end
+
+  it "keeps the Ends column on screen at 375px, with no sideways scroll" do
+    create(:job, title: "Basement rec room LVP", status: :active, start_date: 3.days.ago.to_date, end_date: 5.days.ago.to_date)
+
+    page.driver.browser.manage.window.resize_to(375, 812)
+    visit jobs_path
+
+    ends = find("td", text: "5 days over")
+    expect(page.evaluate_script("arguments[0].getBoundingClientRect().right <= window.innerWidth", ends)).to be true
+    scrolls = page.evaluate_script("[...document.querySelectorAll('#main .overflow-x-auto')].some((el) => el.scrollWidth > el.clientWidth + 1)")
+    expect(scrolls).to be false
+  end
 end

@@ -31,7 +31,8 @@
   <%= f.submit "Search", class: "btn btn-sm" %>
 <% end %>
 
-<%= render "shared/table", { columns: [ "Title", "Customer", "Status", "Start Date", "Ends", "" ] } do %>
+<%= render "shared/table", { columns: [ "Title", { label: "Customer", class: "max-sm:hidden" },
+      { label: "Status", class: "max-sm:hidden" }, { label: "Start Date", class: "max-sm:hidden" }, "Ends", "" ] } do %>
   <% if @jobs.any? %>
     <%= render partial: "jobs/job", collection: @jobs, locals: { show_end_date: true } %>
   <% elsif @q.conditions.any? %>

@@ -1,5 +1,6 @@
 <%#
-  locals: columns: (Array<String> or Array<{label:, align:}>), footer: nil (captured <tr>...</tr>
+  locals: columns: (Array<String> or Array<{label:, align:, class:}>; class: e.g. "max-sm:hidden"
+          to drop a column on phones - the matching <td>s must carry the same class), footer: nil (captured <tr>...</tr>
           html for a summary/totals row, rendered inside <tfoot>) - block yields the <tbody> rows
 
   Call as: render "shared/table", { columns: [...] } do ... end (see shared/_card for why)
@@ -9,8 +10,8 @@
     <thead>
       <tr>
         <% columns.each do |column| %>
-          <% label, align = column.is_a?(Hash) ? [column[:label], column[:align]] : [column, nil] %>
-          <th class="<%= "text-#{align}" if align %>"><%= label %></th>
+          <% label, align, klass = column.is_a?(Hash) ? column.values_at(:label, :align, :class) : [ column, nil, nil ] %>
+          <th class="<%= [ ("text-#{align}" if align), klass ].compact.join(" ") %>"><%= label %></th>
         <% end %>
       </tr>
     </thead>
