@@ -29,6 +29,19 @@
   <%= f.select :status_eq, Lead.statuses.map { |key, value| [ key.titleize, value ] },
         { include_blank: "Any status" }, class: "select select-sm" %>
   <%= f.submit "Search", class: "btn btn-sm" %>
+  <%# Carry the dashboard's filter through a search. These have no visible control here, so
+      without them a search on "Overdue" silently widened to every lead, converted and lost
+      included, and the note above vanished. "Show all leads" is the way out. %>
+  <% %w[follow_up_date_eq follow_up_date_lt].each do |key| %>
+    <% if (value = params.dig(:q, key)).present? %>
+      <%= hidden_field_tag "q[#{key}]", value, id: nil %>
+    <% end %>
+  <% end %>
+  <% %w[status_not_in s].each do |key| %>
+    <% Array(params.dig(:q, key)).each do |value| %>
+      <%= hidden_field_tag "q[#{key}][]", value, id: nil %>
+    <% end %>
+  <% end %>
 <% end %>
 
 <%= render "shared/table", { columns: [ "Title", "Customer", "Status", "Follow-up", "" ] } do %>

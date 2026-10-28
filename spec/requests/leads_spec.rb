@@ -55,6 +55,28 @@ RSpec.describe "Leads", type: :request do
       expect(response.body).not_to include(new_lead.title)
     end
 
+    it "keeps the dashboard's follow-up filter when searching from the filtered list" do
+      overdue   = create(:lead, title: "Tile call overdue", follow_up_date: 2.days.ago.to_date, status: :contacted)
+      today     = create(:lead, title: "Tile call today", follow_up_date: Date.current, status: :contacted)
+      converted = create(:lead, title: "Tile call converted", follow_up_date: 2.days.ago.to_date, status: :converted)
+      closed    = Lead.statuses.values_at("converted", "lost")
+      filter    = { follow_up_date_lt: Date.current.iso8601, status_not_in: closed, s: "follow_up_date asc" }
+
+      get leads_path(q: filter)
+      form = Nokogiri::HTML(response.body).at_css("form[action='#{leads_path}']")
+      carried = form.css("input[type=hidden]").map { |i| [ i["name"], i["value"] ] }
+
+      expect(carried).to include([ "q[follow_up_date_lt]", Date.current.iso8601 ], [ "q[s][]", "follow_up_date asc" ])
+      closed.each { |value| expect(carried).to include([ "q[status_not_in][]", value.to_s ]) }
+
+      # What submitting that form with a search term sends.
+      get leads_path(q: filter.merge(title_or_customer_first_name_or_customer_last_name_cont: "Tile call"))
+
+      expect(response.body).to include(overdue.title, "Showing open leads with a follow-up overdue.")
+      expect(response.body).not_to include(today.title)
+      expect(response.body).not_to include(converted.title)
+    end
+
     it "applies the dashboard's overdue filter and says it's filtered" do
       overdue = create(:lead, title: "Overdue tile call", follow_up_date: 2.days.ago.to_date, status: :contacted)
       today   = create(:lead, title: "Today tile call", follow_up_date: Date.current, status: :contacted)
