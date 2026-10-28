@@ -341,7 +341,10 @@ date gets a soft Caution Amber "N days over" badge.
   full-white text, and `aria-current="page"`. A nested page (a Quote, an Order) lights up its
   parent section.
 - **Mobile:** a white top bar with a hamburger and the wordmark; the rail slides in as an
-  overlay with focus management and Escape to close.
+  overlay with focus management and Escape to close. The hamburger opens on Enter/Space too.
+- **Skip links:** "Skip to content" everywhere, and "Skip to navigation" from `lg` up, where the
+  rail is permanent but comes after the page in the DOM. Both appear as a primary button only
+  when focused.
 
 ### Flash toasts
 Top-right, soft success or error alert with a dismiss button. Errors carry `role="alert"`; the

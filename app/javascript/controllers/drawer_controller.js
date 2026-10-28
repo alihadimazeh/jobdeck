@@ -62,6 +62,17 @@ export default class extends Controller {
     setTimeout(finish, 400) // fallback if no transition ever fires (e.g. reduced-motion)
   }
 
+  // The hamburger is a <label role="button">. Browsers don't toggle a label's checkbox on
+  // Enter/Space the way they do on click, so without this a keyboard user on a phone could
+  // focus the menu button but never open it.
+  triggerKeydown(event) {
+    if (event.key !== "Enter" && event.key !== " ") return
+
+    event.preventDefault()
+    this.checkboxTarget.checked = !this.checkboxTarget.checked
+    this.onToggle()
+  }
+
   onKeydown = (event) => {
     if (event.key !== "Escape") return
     if (!this.isOverlay() || !this.checkboxTarget.checked) return

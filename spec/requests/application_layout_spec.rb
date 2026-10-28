@@ -13,7 +13,8 @@ RSpec.describe "Application layout", type: :request do
   it "renders the daisyUI drawer structure wired to a single toggle checkbox" do
     get customers_path
 
-    expect(response.body).to include('<input id="app-drawer" type="checkbox" class="drawer-toggle" data-drawer-target="checkbox">')
+    # Out of the tab order and hidden from AT - the hamburger label is the real control.
+    expect(response.body).to include('<input id="app-drawer" type="checkbox" class="drawer-toggle" data-drawer-target="checkbox" tabindex="-1" aria-hidden="true">')
     expect(response.body).to include('drawer-side')
     # both the mobile hamburger and the overlay close-label target the same checkbox
     expect(response.body.scan('for="app-drawer"').size).to eq(2)
@@ -22,7 +23,7 @@ RSpec.describe "Application layout", type: :request do
   it "renders the primary sidebar nav with all three top-level sections" do
     get customers_path
 
-    expect(response.body).to match(%r{<nav aria-label="Primary".*?</nav>}m)
+    expect(response.body).to match(%r{<nav [^>]*aria-label="Primary".*?</nav>}m)
     expect(response.body).to include(%(href="#{customers_path}"))
     expect(response.body).to include(%(href="#{leads_path}"))
     expect(response.body).to include(%(href="#{jobs_path}"))
