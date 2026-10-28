@@ -44,7 +44,7 @@ contractor actually talks about and runs work:
   line items), revising quotes, accepting a quote to convert it into a job, tracking unpaid orders.
 - **Job site:** phone or tablet use for activity notes, job-site photos, and PDFs/spreadsheets,
   and for checking job details. Self-hosted fonts were chosen so it works offline on site.
-- **Dashboard:** leads needing follow-up, active jobs, and outstanding orders.
+- **Dashboard:** leads needing follow-up, active jobs, money waiting on payment, and work not yet billed.
 
 ## Capabilities and Constraints
 
