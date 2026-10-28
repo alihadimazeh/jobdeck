@@ -91,6 +91,20 @@ RSpec.describe "Role-based view gating", type: :request do
     end
   end
 
+  describe "Dashboard 'New Lead' button" do
+    it "shows New Lead to sales" do
+      sign_in_as(create(:user, :sales))
+      get root_path
+      expect(response.body).to include("New Lead")
+    end
+
+    it "hides New Lead from viewer" do
+      sign_in_as(create(:user, :viewer))
+      get root_path
+      expect(response.body).not_to include("New Lead")
+    end
+  end
+
   describe "User role changes (admin only)" do
     # Brakeman flags permit(:email, :role) in UsersController; this is the request-level
     # proof that only an admin can reach it (see config/brakeman.ignore).

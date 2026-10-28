@@ -196,7 +196,7 @@ label style, not from big type. It reads like a well-kept form.
 
 ### Hierarchy
 - **Headline** (600, 1.25rem / 1.75rem): the single H1 per page in `shared/_page_header`.
-- **Figure** (800, 1.5rem / 2rem): stat values on the dashboard and show pages (`shared/_stats`).
+- **Figure** (800, 1.5rem / 2rem): stat values on show pages (`shared/_stats`).
 - **Title** (600, 0.875rem / 1.25rem): card headings and form section legends. Form legends
   are uppercase with wide tracking.
 - **Body** (400, 0.875rem / 1.25rem): table cells, values, notes, buttons.
@@ -283,7 +283,9 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
 - **Background:** Clipboard White on Site Canvas.
 - **Shadow strategy:** none (see Elevation).
 - **Border:** 1px Chalk Line. A titled card has a header strip (24px × 16px padding, 14px
-  semibold title, optional actions on the right) above a 1px divider.
+  semibold title, optional actions on the right) above a 1px divider. An optional count sits
+  after the title in regular weight, Ink at 70%. The actions slot is at least 44px tall, so a
+  header holding a plain total lines up with one holding a "View all" button.
 - **Internal padding:** 24px, or unpadded when the card wraps a full-bleed table.
 
 ### Tables
@@ -300,6 +302,16 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
   tabular figures (a date, or a total with its status badge).
 - Rows are separated by 1px Chalk Line dividers rather than zebra stripes. Hover adds a 4% Ink
   wash; focus is the 2px Job Blue outline, inset.
+- A follow-up row adds a tap-to-call ghost icon button (Job Blue phone stroke icon, 44px square,
+  `aria-label` naming the customer and number) beside the row link, never inside it.
+- Lateness reads as a soft badge: Caution Amber "N days late" for a follow-up, Stop Red "N days
+  overdue" for an unpaid invoice.
+
+### Dashboard
+A today-sheet, not a metrics page. Cards run in the order the day does: Follow-ups Due, Active
+Jobs (with the site address first), Waiting on Payment, Not Yet Billed. There is no stat strip:
+each card header carries its own count, and the money cards their dollar total, so a phone's
+first screen is the follow-up list. "New Lead" is the page's one primary button.
 
 ### Inputs / Fields
 - **Style:** white field, 1px border of Ink at 20%, 6px radius, 40px tall, 12px horizontal
