@@ -107,7 +107,7 @@
           <% aside = capture do %>
             <span class="block font-medium text-base-content"><%= format_currency(order.total) %></span>
             <% if (overdue = order.days_overdue) %>
-              <span class="block mt-1"><%= render "shared/badge", label: "#{pluralize(overdue, "day")} overdue", variant: :error %></span>
+              <span class="block @md:mt-1"><%= render "shared/badge", label: "#{pluralize(overdue, "day")} overdue", variant: :error %></span>
             <% else %>
               <span class="block text-base-content/70"><%= order.due_date ? "Due #{format_date(order.due_date)}" : "No due date" %></span>
             <% end %>
@@ -129,7 +129,7 @@
         <% @to_bill.each do |order| %>
           <% aside = capture do %>
             <span class="block font-medium text-base-content"><%= format_currency(order.total) %></span>
-            <span class="block mt-1"><%= status_badge(order) %></span>
+            <span class="block @md:mt-1"><%= status_badge(order) %></span>
           <% end %>
           <%= render "dashboard/preview_row", path: order, title: order.job.title,
                 subtitle: "#{order.customer.full_name} · #{order.order_number}", aside: aside %>

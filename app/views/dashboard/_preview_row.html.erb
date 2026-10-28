@@ -9,19 +9,28 @@
   button sits beside that link rather than inside it (a link can't contain another link).
 %>
 <% call = local_assigns[:call] %>
-<li class="flex items-stretch">
-  <%= link_to path, class: "flex flex-1 min-w-0 items-center justify-between gap-4 min-h-11 py-3 pl-6 #{call ? "pr-2" : "pr-6"} hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
+<li class="@container flex items-stretch">
+  <%# In a narrow row the value stacks under the title instead of beside it: a badge or date
+      plus the call button took ~170px of a 375px row and cut titles to one word. The switch is
+      a container query on the row (@md = 28rem), not a viewport breakpoint - a half-width card
+      at 1024px is as narrow as a phone. %>
+  <%= link_to path, class: "flex flex-1 min-w-0 flex-col gap-1 @md:flex-row @md:items-center @md:justify-between @md:gap-4 min-h-11 py-3 pl-6 #{call ? "pr-2" : "pr-6"} hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
     <div class="min-w-0">
       <%# Two lines before clipping, not one: similar titles ("Kitchen Renovation — Mitchell
           Residence") differ at the end, which single-line truncation hides on a phone. %>
       <p class="font-medium text-base-content line-clamp-2"><%= title %></p>
       <p class="text-base-content/70 truncate"><%= subtitle %></p>
     </div>
-    <div class="shrink-0 text-right tabular-nums whitespace-nowrap"><%= aside %></div>
+    <%# flex-wrap in a narrow row lays a total and its badge side by side under the title;
+        @md:block restores their stacked, right-aligned form. %>
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 @md:block @md:shrink-0 @md:text-right tabular-nums whitespace-nowrap"><%= aside %></div>
   <% end %>
   <% if call %>
-    <div class="flex items-center pr-4">
-      <a href="tel:<%= call[:phone].to_s.gsub(/[^\d+]/, "") %>" class="btn btn-ghost btn-square text-primary" aria-label="Call <%= call[:name] %>, <%= call[:phone] %>">
+    <%# size-11: btn-square alone is 40px wide (the 44px .btn floor only sets height). pl-2
+        leaves a gap between the row link's hit area and the call button's, so a thumb aimed at
+        one doesn't land on the other. %>
+    <div class="flex items-center pl-2 pr-4">
+      <a href="tel:<%= call[:phone].to_s.gsub(/[^\d+]/, "") %>" class="btn btn-ghost btn-square size-11 text-primary" aria-label="Call <%= call[:name] %>, <%= call[:phone] %>">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" />
         </svg>

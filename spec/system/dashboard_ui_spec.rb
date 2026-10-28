@@ -52,4 +52,26 @@ RSpec.describe "Dashboard UI (Step 14)", type: :system do
       expect(page.evaluate_script("arguments[0].getBoundingClientRect().right <= arguments[1].getBoundingClientRect().right", total, card)).to be true
     end
   end
+
+  # 1024px is in here on purpose: a half-width card there is as narrow as a phone, which is why
+  # the row layout switches on a container query, not a viewport breakpoint.
+  [ [ 375, 900 ], [ 1024, 768 ] ].each do |width, height|
+    it "at #{width}px, gives the call button a full 44px square apart from the row, and titles the full width" do
+    create(:lead, title: "Whole-house engineered hardwood install", follow_up_date: 2.days.ago.to_date, status: :contacted)
+
+    page.driver.browser.manage.window.resize_to(width, height)
+    visit root_path
+
+    call = find("a[href^='tel:']", match: :first)
+    row_link = call.ancestor("li").find("a:not([href^='tel:'])")
+    box = ->(el) { page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return [r.left, r.right, r.width, r.height]; })()", el) }
+
+    _, _, width, height = box.(call)
+    expect([ width, height ]).to all(be >= 44)
+    expect(box.(call)[0] - box.(row_link)[1]).to be >= 4
+
+    title = row_link.find("p.font-medium")
+    expect(box.(title)[2]).to be >= box.(row_link)[2] - 40 # the title spans the row; nothing sits beside it
+    end
+  end
 end
