@@ -33,4 +33,21 @@ RSpec.describe "Leads UI (Step 9 restyle)", type: :system do
     overflow = page.evaluate_script("document.documentElement.scrollWidth > document.documentElement.clientWidth")
     expect(overflow).to be false
   end
+
+  it "on a 360px phone, keeps the follow-up column on screen when arriving from a dashboard follow-up card" do
+    create(:lead, title: "Condo hallway carpet tile", follow_up_date: 30.days.ago.to_date, status: :contacted)
+    create(:lead, title: "Whole-house engineered hardwood install", follow_up_date: 120.days.ago.to_date, status: :contacted)
+
+    # 360px, not 375: the narrowest common Android width, where a few px of padding decide it.
+    page.driver.browser.manage.window.resize_to(360, 812)
+    visit leads_path(q: { follow_up_date_lt: Date.current.iso8601, status_not_in: Lead.statuses.values_at("converted", "lost") })
+
+    late = find("td", text: "30 days late")
+    call = late.find("a[href^='tel:']")
+    expect(page.evaluate_script("arguments[0].getBoundingClientRect().right <= window.innerWidth", call)).to be true
+    size = page.evaluate_script("(() => { const r = arguments[0].getBoundingClientRect(); return [r.width, r.height]; })()", call)
+    expect(size).to all(be >= 44)
+    scrolls = page.evaluate_script("[...document.querySelectorAll('#main .overflow-x-auto')].some((el) => el.scrollWidth > el.clientWidth + 1)")
+    expect(scrolls).to be false
+  end
 end

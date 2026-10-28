@@ -1,17 +1,40 @@
-<%# locals: (lead:, show_customer: true, show_actions: true) -%>
+<%# locals: (lead:, show_customer: true, show_actions: true, follow_up_mode: false) -%>
+<%# follow_up_mode: the index arrived from a dashboard follow-up card ("View all"). The
+    follow-up column then carries the dashboard's meaning (lateness + call) instead of a bare
+    date, and on a phone the row keeps only title, follow-up and the row menu - with five
+    columns the follow-up column sat off-screen behind a horizontal scroll. %>
+<% phone_hidden = ("max-sm:hidden" if follow_up_mode) %>
+<%# Badge + call button + row menu ran past a 375px screen; stacking the badge over the call
+    button (below) plus tighter side padding on these two cells keeps the table from scrolling
+    sideways down to 360px. %>
+<% phone_tight = ("max-sm:px-2" if follow_up_mode) %>
 <tr id="<%= dom_id(lead) %>" class="hover">
   <td class="font-medium text-base-content">
     <%= link_to lead.title, lead, class: "hover:text-primary" %>
   </td>
   <% if show_customer %>
-    <td class="text-base-content/70">
+    <td class="text-base-content/70 <%= phone_hidden %>">
       <%= link_to lead.customer.full_name, lead.customer, class: "hover:text-primary" %>
     </td>
   <% end %>
-  <td><%= status_badge(lead) %></td>
-  <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
+  <td class="<%= phone_hidden %>"><%= status_badge(lead) %></td>
+  <% if follow_up_mode %>
+    <td class="<%= phone_tight %>">
+      <%# Stacked on phones: badge beside call button didn't fit a 360px screen. %>
+      <div class="flex items-center gap-1 whitespace-nowrap max-sm:flex-col max-sm:items-start">
+        <% if (late = lead.follow_up_days_late).to_i.positive? %>
+          <%= render "shared/badge", label: "#{pluralize(late, "day")} late", variant: :warning %>
+        <% else %>
+          <span class="font-medium text-base-content">Today</span>
+        <% end %>
+        <%= render "shared/call_button", phone: lead.customer.phone, name: lead.customer.full_name %>
+      </div>
+    </td>
+  <% else %>
+    <td class="text-base-content/70"><%= format_date(lead.follow_up_date) %></td>
+  <% end %>
   <% if show_actions %>
-    <td>
+    <td class="<%= phone_tight %>">
       <%= render partial: "shared/row_actions", locals: {
             edit_path: edit_lead_path(lead),
             delete_path: lead_path(lead),

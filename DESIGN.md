@@ -296,7 +296,9 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
   Delete in Stop Red). Totals go in a real `<tfoot>`.
 - A table can drop secondary columns below `sm` (a per-column `class:` on `shared/_table`, matched
   on the row's cells) so the column a page exists for stays on screen. The Jobs index keeps
-  Title, Ends and the row menu on a phone.
+  Title, Ends and the row menu on a phone; the Leads index, when it arrives from a dashboard
+  follow-up card, keeps Title, Follow-up (lateness badge stacked over a call button) and the
+  row menu, down to 360px.
 
 ### Preview lists (dashboard)
 - Short previews inside a narrow card (the dashboard's 5-row cards) are lists, not tables

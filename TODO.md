@@ -36,9 +36,6 @@ in the same PR so DESIGN.md stays in sync with `application.css`.
         top-level Orders decision below).
       - **P3 Call links:** `tel:` appends an extension's digits to the number; dial with a
         pause or drop the extension.
-      - **P1 Leads landing, phones:** the filtered Leads table overflows ~150-176px at 375px
-        with the Follow-up column off-screen, and shows bare dates, not "N days late". Give
-        `_lead` the treatment `_job` got (#115).
       - **P2 Same-titled jobs on phones:** the Jobs landing at 375px shows only title + Ends,
         so two "Kitchen Renovation — Mitchell Residence" rows can't be told apart. Add a muted
         second line (site or customer).
