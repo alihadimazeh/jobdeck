@@ -318,7 +318,8 @@ nav item keeps "Dashboard"). Cards run in the order the day does: Due Today and 
 follow-ups side by side (split so stale leads can't push today's calls out of the 5-row
 preview), Active Jobs full width (site address first), then Waiting on Payment and Not Yet
 Billed. There is no stat strip: each card header carries its own count, and the money cards
-their dollar total. Every "View all" opens the list already filtered to that card's rows.
+their dollar total. Every "View all" opens the list already filtered to that card's rows, in the card's order
+(Active Jobs lands most urgent first, with an Ends column carrying the same "days over" badge).
 Empty states say how a row gets onto the card. "New Lead" is the page's one primary button.
 Every value on the right of a row is labeled ("Ends Oct 30", "Started Sep 24", "Due Nov 3"),
 never a bare date. Money rows are titled by job, with "Customer · ORD-…" beneath; header totals

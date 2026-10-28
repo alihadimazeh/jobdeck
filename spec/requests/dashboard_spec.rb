@@ -139,7 +139,7 @@ RSpec.describe "Dashboard", type: :request do
     expect(links["View all follow-ups due today"]).to include("q[follow_up_date_eq]=#{Date.current.iso8601}")
     expect(links["View all overdue follow-ups"]).to include("q[follow_up_date_lt]=#{Date.current.iso8601}", "q[s]=follow_up_date asc")
     closed.each { |value| expect(links["View all overdue follow-ups"]).to include("q[status_not_in][]=#{value}") }
-    expect(links["View all active jobs"]).to include("q[status_eq]=#{Job.statuses["active"]}")
+    expect(links["View all active jobs"]).to include("q[status_eq]=#{Job.statuses["active"]}", "q[s][]=end_date asc", "q[s][]=start_date asc")
   end
 
   it "is titled Today with the date" do

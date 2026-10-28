@@ -57,7 +57,7 @@
   <% end %>
 
   <% jobs_actions = capture do %>
-    <%= link_to "View all", jobs_path(q: { status_eq: Job.statuses["active"] }),
+    <%= link_to "View all", jobs_path(q: { status_eq: Job.statuses["active"], s: [ "end_date asc", "start_date asc" ] }),
           class: "btn btn-ghost btn-sm text-primary", aria: { label: "View all active jobs" } %>
   <% end %>
   <div class="lg:col-span-2">

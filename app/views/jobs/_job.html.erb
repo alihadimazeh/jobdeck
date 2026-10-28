@@ -1,4 +1,4 @@
-<%# locals: (job:, show_customer: true, show_actions: true) -%>
+<%# locals: (job:, show_customer: true, show_actions: true, show_end_date: false) -%>
 <tr id="<%= dom_id(job) %>" class="hover">
   <td class="font-medium text-base-content">
     <%= link_to job.title, job, class: "hover:text-primary" %>
@@ -10,6 +10,17 @@
   <% end %>
   <td><%= status_badge(job) %></td>
   <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
+  <%# Only the index shows it (customer/lead show pages reuse this row in narrower tables).
+      Same signal as the dashboard's Active Jobs card: a job past its end date says so. %>
+  <% if show_end_date %>
+    <td class="whitespace-nowrap">
+      <% if (over = job.days_over) %>
+        <%= render "shared/badge", label: "#{pluralize(over, "day")} over", variant: :warning %>
+      <% else %>
+        <span class="text-base-content/70"><%= format_date(job.end_date) %></span>
+      <% end %>
+    </td>
+  <% end %>
   <% if show_actions %>
     <td>
       <%= render partial: "shared/row_actions", locals: {

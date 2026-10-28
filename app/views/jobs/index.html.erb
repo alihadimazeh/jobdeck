@@ -5,7 +5,21 @@
       action: (policy(Job).create? ? { label: "New Job", path: new_job_path } : nil)
     } %>
 
+<%# The dashboard's "View all active jobs" arrives sorted by urgency (end date, then start date),
+    the same order as Job.by_urgency. The sort has no control on this page, so say it's on. %>
+<% sorts = Array(params.dig(:q, :s)) %>
+<% if sorts.first == "end_date asc" %>
+  <p class="mb-4 text-sm text-base-content/70">
+    Most urgent first: jobs past their end date, then the nearest end date.
+    <%= link_to "Default order", jobs_path(q: params[:q].to_unsafe_h.except("s")), class: "link link-primary" %>
+  </p>
+<% end %>
+
 <%= search_form_for @q, url: jobs_path, class: "mb-4 flex gap-2 max-w-lg" do |f| %>
+  <%# Keep the urgency sort across a search. %>
+  <% sorts.each do |sort| %>
+    <%= hidden_field_tag "q[s][]", sort, id: nil %>
+  <% end %>
   <%= f.label :title_or_customer_first_name_or_customer_last_name_cont, "Search jobs", class: "sr-only" %>
   <%= f.search_field :title_or_customer_first_name_or_customer_last_name_cont,
         class: "input input-sm w-full", placeholder: "Search jobs…" %>
@@ -17,17 +31,17 @@
   <%= f.submit "Search", class: "btn btn-sm" %>
 <% end %>
 
-<%= render "shared/table", { columns: [ "Title", "Customer", "Status", "Start Date", "" ] } do %>
+<%= render "shared/table", { columns: [ "Title", "Customer", "Status", "Start Date", "Ends", "" ] } do %>
   <% if @jobs.any? %>
-    <%= render @jobs %>
+    <%= render partial: "jobs/job", collection: @jobs, locals: { show_end_date: true } %>
   <% elsif @q.conditions.any? %>
     <%= render partial: "shared/empty_state", locals: {
-          title: "No jobs match your search.", colspan: 5,
+          title: "No jobs match your search.", colspan: 6,
           cta: { label: "Clear search", path: jobs_path }
         } %>
   <% else %>
     <%= render partial: "shared/empty_state", locals: {
-          title: "No jobs yet.", colspan: 5,
+          title: "No jobs yet.", colspan: 6,
           cta: (policy(Job).create? ? { label: "Add the first one", path: new_job_path } : nil)
         } %>
   <% end %>
