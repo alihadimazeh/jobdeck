@@ -1,15 +1,20 @@
 <%# locals: (job:, show_customer: true, show_actions: true, show_end_date: false) -%>
+<%# On the index (show_end_date) a phone keeps only title, Ends and the row menu: the Ends
+    column is why the dashboard links here, and with five columns it sat off-screen behind a
+    horizontal scroll. The customer/lead show pages render this row without show_end_date and
+    keep every column. %>
+<% phone_hidden = ("max-sm:hidden" if show_end_date) %>
 <tr id="<%= dom_id(job) %>" class="hover">
   <td class="font-medium text-base-content">
     <%= link_to job.title, job, class: "hover:text-primary" %>
   </td>
   <% if show_customer %>
-    <td class="text-base-content/70">
+    <td class="text-base-content/70 <%= phone_hidden %>">
       <%= link_to job.customer.full_name, job.customer, class: "hover:text-primary" %>
     </td>
   <% end %>
-  <td><%= status_badge(job) %></td>
-  <td class="text-base-content/70"><%= format_date(job.start_date) %></td>
+  <td class="<%= phone_hidden %>"><%= status_badge(job) %></td>
+  <td class="text-base-content/70 <%= phone_hidden %>"><%= format_date(job.start_date) %></td>
   <%# Only the index shows it (customer/lead show pages reuse this row in narrower tables).
       Same signal as the dashboard's Active Jobs card: a job past its end date says so. %>
   <% if show_end_date %>
