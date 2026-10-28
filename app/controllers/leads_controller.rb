@@ -4,7 +4,7 @@ class LeadsController < ApplicationController
   # GET /leads or /leads.json
   def index
     @q = policy_scope(Lead).ransack(params[:q])
-    @pagy, @leads = pagy(@q.result(distinct: true).order(:id))
+    @pagy, @leads = pagy(@q.result(distinct: true).includes(:customer).order(:id))
   end
 
   # GET /leads/1 or /leads/1.json

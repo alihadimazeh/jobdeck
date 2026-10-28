@@ -44,9 +44,12 @@
   <% end %>
 <% end %>
 
-<%= render "shared/table", { columns: [ "Title", "Customer", "Status", "Follow-up", "" ] } do %>
+<% follow_up_mode = follow_up_filter.present? %>
+<% phone_hidden = ("max-sm:hidden" if follow_up_mode) %>
+<%= render "shared/table", { columns: [ "Title", { label: "Customer", class: phone_hidden },
+      { label: "Status", class: phone_hidden }, "Follow-up", "" ] } do %>
   <% if @leads.any? %>
-    <%= render @leads %>
+    <%= render partial: "leads/lead", collection: @leads, locals: { follow_up_mode: follow_up_mode } %>
   <% elsif @q.conditions.any? %>
     <%= render partial: "shared/empty_state", locals: {
           title: "No leads match your search.", colspan: 5,
