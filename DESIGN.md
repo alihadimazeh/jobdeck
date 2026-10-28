@@ -282,10 +282,11 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
 - **Corner style:** 8px.
 - **Background:** Clipboard White on Site Canvas.
 - **Shadow strategy:** none (see Elevation).
-- **Border:** 1px Chalk Line. A titled card has a header strip (24px × 16px padding, 14px
-  semibold title, optional actions on the right) above a 1px divider. An optional count sits
-  after the title in regular weight, Ink at 70%. The actions slot is at least 44px tall, so a
-  header holding a plain total lines up with one holding a "View all" button.
+- **Border:** 1px Chalk Line. A titled card has a header strip (24px × 8px padding, a fixed
+  60px minimum height, 14px semibold title, optional actions on the right) above a 1px divider.
+  An optional count sits after the title in regular weight, Ink at 70%. The height is the same
+  with or without an action, so side-by-side cards line up. In a narrow card the action wraps
+  below the title as a unit; neither the title-plus-count nor the action ever breaks mid-line.
 - **Internal padding:** 24px, or unpadded when the card wraps a full-bleed table.
 
 ### Tables

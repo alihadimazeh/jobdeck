@@ -12,17 +12,19 @@
 <% padded = local_assigns.fetch(:padded, true) %>
 <div class="card card-border bg-base-100">
   <% if local_assigns[:title].present? || local_assigns[:actions].present? %>
-    <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-base-300">
-      <h2 class="text-sm font-semibold text-base-content">
+    <%# One fixed header height (60px) whether or not there's an action, so side-by-side cards
+        line up even when only one of them shows a "View all" or a total. flex-wrap + nowrap
+        pieces: in a narrow card the action drops below the title as a unit rather than the
+        title losing its count or a total breaking mid-amount. %>
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 min-h-15 px-6 py-2 border-b border-base-300">
+      <h2 class="text-sm font-semibold text-base-content whitespace-nowrap">
         <%= title if local_assigns[:title].present? %>
         <% unless local_assigns[:count].nil? %>
           <span class="ml-1.5 font-normal tabular-nums text-base-content/70"><%= count %></span>
         <% end %>
       </h2>
-      <%# min-h-11 matches a btn-sm's 44px, so a header with a plain-text action (a total) is the
-          same height as one with a "View all" button and side-by-side cards line up. %>
       <% if local_assigns[:actions].present? %>
-        <div class="flex items-center min-h-11"><%= actions %></div>
+        <div class="flex items-center whitespace-nowrap"><%= actions %></div>
       <% end %>
     </div>
   <% end %>
