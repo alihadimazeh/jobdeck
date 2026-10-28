@@ -1,0 +1,19 @@
+<%#
+  locals: path:, title:, subtitle:, aside: (captured html, right-hand value - a date, or a total + badge)
+
+  One dashboard preview row. A list item rather than a table row: the cards are narrow at every
+  width (a third of the page on desktop, the full phone width on site), and a 3-4 column table
+  squeezed into them pushed the money column off-card behind a scroll with no visible cue. The
+  whole row is the link, so the tap target is the full row, not just the title text.
+%>
+<li>
+  <%= link_to path, class: "flex items-center justify-between gap-4 min-h-11 px-6 py-3 hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
+    <div class="min-w-0">
+      <%# Two lines before clipping, not one: similar titles ("Kitchen Renovation — Mitchell
+          Residence") differ at the end, which single-line truncation hides on a phone. %>
+      <p class="font-medium text-base-content line-clamp-2"><%= title %></p>
+      <p class="text-base-content/70 truncate"><%= subtitle %></p>
+    </div>
+    <div class="shrink-0 text-right tabular-nums whitespace-nowrap"><%= aside %></div>
+  <% end %>
+</li>
