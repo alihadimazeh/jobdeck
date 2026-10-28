@@ -110,14 +110,22 @@ bin/rails db:setup     # creates the database, loads the schema, runs db/seeds.r
 bin/dev                # starts Rails + the Tailwind watcher together
 ```
 
-Then visit **http://localhost:3000** and sign in with the seeded demo account:
+Then visit **http://localhost:3000** and sign in with one of the seeded demo accounts. They share
+the password `jobdeck-demo`, and each shows what its role can do:
 
-```
-email:    admin@jobdeck.test
-password: password123
-```
+| Email | Role |
+|---|---|
+| `admin@jobdeck.test` | Admin: everything, including managing staff accounts |
+| `pm@jobdeck.test` | Project manager: full access to customers, leads, quotes, jobs, and orders |
+| `sales@jobdeck.test` | Sales: customers, leads, and quotes; read-only on jobs and orders |
+| `viewer@jobdeck.test` | Viewer: read-only everywhere |
 
-The seed data includes a handful of customers, leads at different pipeline stages, and a couple of quotes/jobs/orders, so the app isn't empty on first load.
+The seed data is a small flooring and tile business mid-season: 10 customers, leads at every
+stage, quotes built from room measurements (including a revision and a lost one), jobs on
+schedule, running over, finished, and cancelled, and orders from draft through paid. Dates are
+relative to the day you seed, so before a demo run `bin/rails db:seed:replant` to wipe and reseed
+with fresh dates. In production, `db/seeds.rb` requires a `SEED_PASSWORD` environment variable
+instead of the default.
 
 ## Running Tests
 

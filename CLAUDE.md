@@ -174,8 +174,11 @@ below). SSO is postponed — see "Role-based Authorization" → "Rollout order" 
   authenticated-only sidebar on the sign-in page would be backwards.
 - `password` validates `length: { minimum: 8 }, allow_nil: true` — `allow_nil` so updating a
   User without touching the password doesn't fail the length check.
-- No public sign-up: `db/seeds.rb` creates one dev user (`admin@jobdeck.test`, role `admin`), and
-  every other account is created by an admin (see "User Management" below). The free-text
+- No public sign-up: `db/seeds.rb` creates one demo user per role (`admin@`, `pm@`, `sales@`,
+  `viewer@jobdeck.test`, password `jobdeck-demo`, or `SEED_PASSWORD`, which production requires),
+  and every other account is created by an admin (see "User Management" below). The seeded
+  business data is date-relative; `bin/rails db:seed:replant` refreshes it, and
+  `spec/db/seeds_spec.rb` renders every page with it. The free-text
   `assigned_to`/`author`/`uploaded_by` fields are **not** yet backed by `user_id` (tracked in
   TODO.md; it's also what would let notes/documents be limited to their author).
 
