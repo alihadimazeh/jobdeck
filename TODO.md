@@ -20,10 +20,10 @@ A scored design review of the surfaces a portfolio reviewer sees first, judged a
 item, off `origin/main`. If an item changes a token or component, re-run `/impeccable document`
 in the same PR so DESIGN.md stays in sync with `application.css`.
 
-- [ ] **P7.1** — Dashboard (`app/views/dashboard/show.html.erb`), in progress. Critiqued four
-      times (20 → 23 → 25 → 24 out of 36; snapshots in `.impeccable/critique/`), fixes in PRs
-      #102–#112: now a "Today" sheet with due-today/overdue follow-ups, urgency-sorted active
-      jobs, and owed vs to-bill money, on Eastern time. Still open from the 4th critique:
+- [ ] **P7.1** — Dashboard (`app/views/dashboard/show.html.erb`), in progress. Critiqued five
+      times (20 → 23 → 25 → 24 → 25 out of 36; snapshots in `.impeccable/critique/`), fixes in PRs
+      #102–#115: now a "Today" sheet with due-today/overdue follow-ups, urgency-sorted active
+      jobs, and owed vs to-bill money, on Eastern time. Still open from the 4th and 5th critiques:
       - **P1 Act on today:** no way to reschedule or close a follow-up (or mark an invoice paid)
         from the dashboard; each call is open lead → Edit → change date → save. Wants a
         per-row reschedule control (Turbo Stream, gated by `policy(lead).update?`).
@@ -36,6 +36,17 @@ in the same PR so DESIGN.md stays in sync with `application.css`.
         top-level Orders decision below).
       - **P3 Call links:** `tel:` appends an extension's digits to the number; dial with a
         pause or drop the extension.
+      - **P1 Leads landing, search:** searching on a filtered Leads list (from Due Today /
+        Overdue "View all") silently drops the follow-up filter and `status_not_in`, so
+        converted leads reappear. Carry them as hidden fields, as Jobs does its sort.
+      - **P1 Leads landing, phones:** the filtered Leads table overflows ~150-176px at 375px
+        with the Follow-up column off-screen, and shows bare dates, not "N days late". Give
+        `_lead` the treatment `_job` got (#115).
+      - **P2 Same-titled jobs on phones:** the Jobs landing at 375px shows only title + Ends,
+        so two "Kitchen Renovation — Mitchell Residence" rows can't be told apart. Add a muted
+        second line (site or customer).
+      - **P2 Amber overload:** "Quoted", "N days late", "N days over" and "Invoiced" share one
+        amber; a Quoted lead in Due Today looks late. Overlaps the severity item above.
 - [ ] **P7.2** — `/impeccable polish public`. The Rails error pages (`400`, `404`,
       `406-unsupported-browser`, `422`, `500.html`) are still stock. They sit outside the
       Tailwind pipeline, so like `layouts/mailer.html.erb` they must hardcode hex. Add them to
