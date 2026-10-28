@@ -27,7 +27,10 @@
         <% else %>
           <span class="font-medium text-base-content">Today</span>
         <% end %>
-        <%= render "shared/call_button", phone: lead.customer.phone, name: lead.customer.full_name %>
+        <%# Stacked under the badge on phones, the icon (centered in its 44px button) sat ~12px
+            right of the badge's edge; -ml-3 lines the glyph up with it. %>
+        <%= render "shared/call_button", phone: lead.customer.phone, name: lead.customer.full_name,
+              extra_class: "max-sm:-ml-3" %>
       </div>
     </td>
   <% else %>
