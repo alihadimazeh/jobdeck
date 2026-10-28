@@ -376,6 +376,13 @@ strip); the order cards also show their dollar total. Drafts are deliberately no
 owed. Each "View all" links to the index pre-filtered with Ransack params (integer enum values), and
 the Leads index says when a follow-up filter is applied. Layout rules: DESIGN.md → "Dashboard".
 
+**Time zone:** `config.time_zone = "Eastern Time (US & Canada)"` (`config/application.rb`). Every
+"today" (`Date.current`, the follow-up scopes, `follow_up_days_late`/`days_over`/`days_overdue`) is the
+business's day; under the old UTC default the dashboard rolled over to tomorrow at 8pm Eastern
+(`spec/requests/business_time_zone_spec.rb` pins it at 10:30pm). Always use `Date.current` /
+`Time.current`, never `Date.today` / `Time.now`, which ignore the zone. One zone for the whole app
+for now; a per-business zone is the multi-tenant follow-up.
+
 ### Search & Pagination (Ransack + Pagy)
 
 Wired into the **Customer, Lead, and Job index pages** (Job via PR #56) — `Quote`/`Order` indexes
