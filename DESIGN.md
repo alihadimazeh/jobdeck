@@ -315,6 +315,10 @@ preview), Active Jobs full width (site address first), then Waiting on Payment a
 Billed. There is no stat strip: each card header carries its own count, and the money cards
 their dollar total. Every "View all" opens the list already filtered to that card's rows.
 Empty states say how a row gets onto the card. "New Lead" is the page's one primary button.
+Every value on the right of a row is labeled ("Ends Oct 30", "Started Sep 24", "Due Nov 3"),
+never a bare date. Money rows are titled by job, with "Customer · ORD-…" beneath; header totals
+read "$X owed" / "$X to bill" at title size and are left off an empty card. A job past its end
+date gets a soft Caution Amber "N days over" badge.
 
 ### Inputs / Fields
 - **Style:** white field, 1px border of Ink at 20%, 6px radius, 40px tall, 12px horizontal

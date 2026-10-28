@@ -11,6 +11,14 @@ class Job < ApplicationRecord
   has_many :activity_notes, as: :notable, dependent: :destroy
   has_many :documents, as: :documentable, dependent: :destroy
 
+  # Whole days an active job has run past its end_date, or nil when it's on schedule (or has
+  # no end date). Only an active job can run over - a completed one finished when it finished.
+  def days_over
+    return unless active_status? && end_date
+    days = (Date.current - end_date).to_i
+    days if days.positive?
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     %w[title status job_type start_date end_date]
   end
