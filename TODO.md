@@ -23,7 +23,7 @@ in the same PR so DESIGN.md stays in sync with `application.css`.
 - [ ] **P7.1** — Dashboard (`app/views/dashboard/show.html.erb`), in progress. Critiqued five
       times (20 → 23 → 25 → 24 → 25 out of 36; snapshots in `.impeccable/critique/`), fixes in PRs
       #102–#115: now a "Today" sheet with due-today/overdue follow-ups, urgency-sorted active
-      jobs, and owed vs to-bill money, on Eastern time. Still open from the 4th critique:
+      jobs, and owed vs to-bill money, on Eastern time. Still open from the 4th and 5th critiques:
       - **P1 Act on today:** no way to reschedule or close a follow-up (or mark an invoice paid)
         from the dashboard; each call is open lead → Edit → change date → save. Wants a
         per-row reschedule control (Turbo Stream, gated by `policy(lead).update?`).
