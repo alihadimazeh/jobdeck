@@ -179,4 +179,17 @@ RSpec.describe "Dashboard", type: :request do
     expect(to_bill.text).not_to match(/\$[\d,.]+ to bill/)
     expect(to_bill.text).not_to include("$0.00")
   end
+
+  it "keeps an over-running job in the 5-row preview however many jobs started earlier" do
+    ActiveRecord::Base.connection.disable_referential_integrity { LineItem.delete_all; Order.delete_all; Job.delete_all }
+    DashboardController::PREVIEW_LIMIT.times do |i|
+      create(:job, status: :active, start_date: (60 - i).days.ago.to_date, end_date: (10 + i).days.from_now.to_date)
+    end
+    over = create(:job, title: "Basement rec room LVP", status: :active, start_date: 3.days.ago.to_date, end_date: 5.days.ago.to_date)
+
+    get root_path
+    rows = Nokogiri::HTML(response.body).xpath("//div[contains(@class,'card')][.//h2[contains(., 'Active Jobs')]]//li").map { |li| li.text.squish }
+
+    expect(rows.first).to include(over.title, "5 days over")
+  end
 end

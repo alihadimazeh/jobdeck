@@ -369,7 +369,7 @@ sets `aria-required="true"` on the control.
 
 `root "dashboard#show"` (was `customers#index`), titled "Today". `DashboardController` shows
 follow-ups split into due today (`Lead.follow_up_due_today`) and overdue (`Lead.follow_up_overdue`),
-active jobs (`Job.active_status`), and orders split two ways: waiting on payment
+active jobs (`Job.active_status.by_urgency`: running over first, then nearest end date), and orders split two ways: waiting on payment
 (`Order.awaiting_payment`, invoiced, most overdue first) and not yet billed (`Order.to_bill`,
 draft/confirmed). Each is a 5-row preview with a true total count in its card header (no stat
 strip); the order cards also show their dollar total. Drafts are deliberately not counted as money
