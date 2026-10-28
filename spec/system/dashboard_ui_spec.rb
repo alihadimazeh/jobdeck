@@ -6,7 +6,7 @@ RSpec.describe "Dashboard UI (Step 14)", type: :system do
     job  = create(:job, status: :active)
 
     visit root_path
-    expect(page).to have_content("Dashboard")
+    expect(page).to have_css("h1", text: "Today")
 
     click_link lead.title
     expect(page).to have_current_path(lead_path(lead))
@@ -24,7 +24,7 @@ RSpec.describe "Dashboard UI (Step 14)", type: :system do
     page.driver.browser.manage.window.resize_to(375, 900)
     visit root_path
 
-    expect(page).to have_content("Dashboard")
+    expect(page).to have_css("h1", text: "Today")
     overflow = page.evaluate_script("document.documentElement.scrollWidth > document.documentElement.clientWidth")
     expect(overflow).to be false
   end

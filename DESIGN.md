@@ -308,10 +308,13 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
   overdue" for an unpaid invoice.
 
 ### Dashboard
-A today-sheet, not a metrics page. Cards run in the order the day does: Follow-ups Due, Active
-Jobs (with the site address first), Waiting on Payment, Not Yet Billed. There is no stat strip:
-each card header carries its own count, and the money cards their dollar total, so a phone's
-first screen is the follow-up list. "New Lead" is the page's one primary button.
+A today-sheet, not a metrics page, titled "Today" with the date beside it in muted weight (the
+nav item keeps "Dashboard"). Cards run in the order the day does: Due Today and Overdue
+follow-ups side by side (split so stale leads can't push today's calls out of the 5-row
+preview), Active Jobs full width (site address first), then Waiting on Payment and Not Yet
+Billed. There is no stat strip: each card header carries its own count, and the money cards
+their dollar total. Every "View all" opens the list already filtered to that card's rows.
+Empty states say how a row gets onto the card. "New Lead" is the page's one primary button.
 
 ### Inputs / Fields
 - **Style:** white field, 1px border of Ink at 20%, 6px radius, 40px tall, 12px horizontal

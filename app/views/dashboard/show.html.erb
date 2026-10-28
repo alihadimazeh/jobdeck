@@ -1,61 +1,85 @@
-<% content_for :title, "Dashboard" %>
+<% content_for :title, "Today" %>
 
-<%# A walk-in or a phone call is the most common thing that starts work, so logging a lead is
-    the page's one primary action. %>
+<%# Titled "Today" with the date, not "Dashboard": every row below is relative to today ("Due
+    today", "3 days late"), so the page states which day it means. The nav item keeps its
+    "Dashboard" name. A walk-in or a phone call is the most common thing that starts work, so
+    logging a lead is the page's one primary action. %>
 <%= render partial: "shared/page_header", locals: {
-      title: "Dashboard",
+      title: "Today",
+      title_meta: tag.time(l(Date.current, format: "%a, %b %-d"), datetime: Date.current.iso8601),
       action: (policy(Lead).create? ? { label: "New Lead", path: new_lead_path } : nil) } %>
 
-<%# A today-sheet, read top to bottom on a phone: who to call, which sites are running, who owes
-    us, what still needs billing. No stat strip - each card header carries its own count or
-    total, so the first screen on a phone is the follow-up list itself rather than three
-    counters repeating the card titles. Two columns from lg up. Rows are lists, not tables, so
-    the money column fits at any card width - see dashboard/_preview_row. %>
+<%# A today-sheet, read top to bottom on a phone: calls due today, calls overdue, which sites are
+    running, who owes us, what still needs billing. No stat strip - each card header carries its
+    own count or total. Two columns from lg up, with Active Jobs spanning both. Rows are lists,
+    not tables, so the money column fits at any card width - see dashboard/_preview_row.
+    "View all" links carry the card's own filter: Ransack *_eq/_in on an enum column need the
+    integer values, not the labels (see CLAUDE.md -> "Search & Pagination"). %>
+<% closed_statuses = Lead.statuses.values_at(*Lead::CLOSED_STATUSES) %>
 <div class="grid grid-cols-1 lg:grid-cols-2 items-start gap-6">
-  <% leads_actions = capture do %>
-    <%= link_to "View all", leads_path, class: "btn btn-ghost btn-sm text-primary" %>
+  <% today_actions = capture do %>
+    <%= link_to "View all", leads_path(q: { follow_up_date_eq: Date.current.iso8601, status_not_in: closed_statuses }),
+          class: "btn btn-ghost btn-sm text-primary", aria: { label: "View all follow-ups due today" } %>
   <% end %>
-  <%= render "shared/card", { title: "Follow-ups Due", count: @follow_up_leads_count, actions: leads_actions, padded: false } do %>
-    <% if @follow_up_leads.any? %>
+  <%= render "shared/card", { title: "Due Today", count: @due_today_count, actions: today_actions, padded: false } do %>
+    <% if @due_today.any? %>
       <ul class="divide-y divide-base-300 text-sm">
-        <% @follow_up_leads.each do |lead| %>
-          <% late = lead.follow_up_days_late %>
-          <% aside = capture do %>
-            <% if late.positive? %>
-              <%= render "shared/badge", label: "#{pluralize(late, "day")} late", variant: :warning %>
-            <% else %>
-              <span class="font-medium text-base-content">Today</span>
-            <% end %>
-          <% end %>
-          <%= render "dashboard/preview_row", path: lead, title: lead.title, subtitle: lead.customer.full_name,
-                aside: aside, call: { phone: lead.customer.phone, name: lead.customer.full_name } %>
+        <% @due_today.each do |lead| %>
+          <%= render "dashboard/preview_row", path: lead, title: lead.title,
+                subtitle: [ lead.customer.full_name, lead.customer.phone ].compact_blank.join(" · "),
+                aside: status_badge(lead), call: { phone: lead.customer.phone, name: lead.customer.full_name } %>
         <% end %>
       </ul>
     <% else %>
-      <%= render partial: "shared/empty_state", locals: { title: "No follow-ups due." } %>
+      <%= render partial: "shared/empty_state", locals: {
+            title: "No follow-ups due today.",
+            message: "A lead shows up here on the follow-up date set on it." } %>
+    <% end %>
+  <% end %>
+
+  <% overdue_actions = capture do %>
+    <%= link_to "View all", leads_path(q: { follow_up_date_lt: Date.current.iso8601, status_not_in: closed_statuses, s: "follow_up_date asc" }),
+          class: "btn btn-ghost btn-sm text-primary", aria: { label: "View all overdue follow-ups" } %>
+  <% end %>
+  <%= render "shared/card", { title: "Overdue", count: @overdue_count, actions: overdue_actions, padded: false } do %>
+    <% if @overdue.any? %>
+      <ul class="divide-y divide-base-300 text-sm">
+        <% @overdue.each do |lead| %>
+          <%= render "dashboard/preview_row", path: lead, title: lead.title,
+                subtitle: [ lead.customer.full_name, lead.customer.phone ].compact_blank.join(" · "),
+                aside: render("shared/badge", label: "#{pluralize(lead.follow_up_days_late, "day")} late", variant: :warning),
+                call: { phone: lead.customer.phone, name: lead.customer.full_name } %>
+        <% end %>
+      </ul>
+    <% else %>
+      <%= render partial: "shared/empty_state", locals: { title: "No overdue follow-ups.", message: "You're caught up on calls." } %>
     <% end %>
   <% end %>
 
   <% jobs_actions = capture do %>
-    <%= link_to "View all", jobs_path, class: "btn btn-ghost btn-sm text-primary" %>
+    <%= link_to "View all", jobs_path(q: { status_eq: Job.statuses["active"] }),
+          class: "btn btn-ghost btn-sm text-primary", aria: { label: "View all active jobs" } %>
   <% end %>
-  <%= render "shared/card", { title: "Active Jobs", count: @active_jobs_count, actions: jobs_actions, padded: false } do %>
-    <% if @active_jobs.any? %>
-      <ul class="divide-y divide-base-300 text-sm">
-        <% @active_jobs.each do |job| %>
-          <%# The site, not the billing address - it's where the crew goes, and it tells apart
-              two jobs with the same title. Site first, so a phone's truncation cuts the
-              customer name rather than the street. %>
-          <% site = [ job.address_line_1, job.city ].compact_blank.join(", ") %>
-          <%= render "dashboard/preview_row", path: job, title: job.title,
-                subtitle: [ site, job.customer.full_name ].compact_blank.join(" · "),
-                aside: tag.span(format_date(job.start_date), class: "text-base-content/70") %>
-        <% end %>
-      </ul>
-    <% else %>
-      <%= render partial: "shared/empty_state", locals: { title: "No active jobs." } %>
+  <div class="lg:col-span-2">
+    <%= render "shared/card", { title: "Active Jobs", count: @active_jobs_count, actions: jobs_actions, padded: false } do %>
+      <% if @active_jobs.any? %>
+        <ul class="divide-y divide-base-300 text-sm">
+          <% @active_jobs.each do |job| %>
+            <%# The site, not the billing address - it's where the crew goes, and it tells apart
+                two jobs with the same title. Site first, so a phone's truncation cuts the
+                customer name rather than the street. %>
+            <% site = [ job.address_line_1, job.city ].compact_blank.join(", ") %>
+            <%= render "dashboard/preview_row", path: job, title: job.title,
+                  subtitle: [ site, job.customer.full_name ].compact_blank.join(" · "),
+                  aside: tag.span(format_date(job.start_date), class: "text-base-content/70") %>
+          <% end %>
+        </ul>
+      <% else %>
+        <%= render partial: "shared/empty_state", locals: {
+              title: "No active jobs.", message: "A job shows up here when a quote is accepted." } %>
+      <% end %>
     <% end %>
-  <% end %>
+  </div>
 
   <%# Orders, split by what the money is doing: invoiced and owed to us, or work not billed yet.
       No unscoped orders index exists (orders are nested under Jobs), so neither card has a
@@ -78,7 +102,8 @@
         <% end %>
       </ul>
     <% else %>
-      <%= render partial: "shared/empty_state", locals: { title: "Nothing waiting on payment." } %>
+      <%= render partial: "shared/empty_state", locals: {
+            title: "Nothing waiting on payment.", message: "Invoiced orders show here until they're marked paid." } %>
     <% end %>
   <% end %>
 
@@ -96,7 +121,8 @@
         <% end %>
       </ul>
     <% else %>
-      <%= render partial: "shared/empty_state", locals: { title: "Nothing to bill." } %>
+      <%= render partial: "shared/empty_state", locals: {
+            title: "Nothing to bill.", message: "Draft and confirmed orders show here until they're invoiced." } %>
     <% end %>
   <% end %>
 </div>

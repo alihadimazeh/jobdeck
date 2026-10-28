@@ -127,6 +127,20 @@ RSpec.describe Lead, type: :model do
     end
   end
 
+  describe ".follow_up_due_today / .follow_up_overdue" do
+    it "splits open leads by whether the follow-up is today or earlier, leaving out future and closed ones" do
+      today   = create(:lead, follow_up_date: Date.current, status: :contacted)
+      overdue = create(:lead, follow_up_date: 3.days.ago.to_date, status: :new)
+      future  = create(:lead, follow_up_date: Date.tomorrow, status: :contacted)
+      lost    = create(:lead, follow_up_date: 3.days.ago.to_date, status: :lost)
+      # Scoped to these rows: Minitest fixture leads can be committed in the shared test DB.
+      mine = described_class.where(id: [ today, overdue, future, lost ])
+
+      expect(mine.follow_up_due_today).to contain_exactly(today)
+      expect(mine.follow_up_overdue).to contain_exactly(overdue)
+    end
+  end
+
   describe "#follow_up_days_late" do
     it "counts whole days since the follow-up date, 0 when it's due today" do
       expect(build(:lead, follow_up_date: 4.days.ago.to_date).follow_up_days_late).to eq(4)
