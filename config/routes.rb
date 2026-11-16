@@ -18,6 +18,9 @@ Rails.application.routes.draw do
     resources :documents,      only: [ :create ]
   end
   resources :leads do
+    member do
+      patch :reschedule
+    end
     resources :quotes, shallow: true do
       member do
         patch :accept

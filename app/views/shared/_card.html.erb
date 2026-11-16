@@ -1,6 +1,7 @@
 <%#
   locals: title: nil, actions: nil (captured html), padded: true,
-          count: nil (shown muted after the title, e.g. a dashboard card's true total)
+          count: nil (shown muted after the title, e.g. a dashboard card's true total),
+          count_id: nil (id on the count, so a Turbo Stream can update it)
 
   Call as: render "shared/card", { title: "Rooms" } do ... end
   NOT: render partial: "shared/card", locals: { title: "Rooms" } do ... end
@@ -20,7 +21,7 @@
       <h2 class="text-sm font-semibold text-base-content whitespace-nowrap">
         <%= title if local_assigns[:title].present? %>
         <% unless local_assigns[:count].nil? %>
-          <span class="ml-1.5 font-normal tabular-nums text-base-content/70"><%= count %></span>
+          <%= tag.span count, id: local_assigns[:count_id], class: "ml-1.5 font-normal tabular-nums text-base-content/70" %>
         <% end %>
       </h2>
       <% if local_assigns[:actions].present? %>

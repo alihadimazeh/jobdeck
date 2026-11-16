@@ -21,19 +21,23 @@
     <%= link_to "View all", leads_path(q: { follow_up_date_eq: Date.current.iso8601, status_not_in: closed_statuses }),
           class: "btn btn-ghost btn-sm text-primary", aria: { label: "View all follow-ups due today" } %>
   <% end %>
-  <%= render "shared/card", { title: "Due Today", count: @due_today_count, actions: today_actions, padded: false } do %>
-    <% if @due_today.any? %>
-      <ul class="divide-y divide-base-300 text-sm">
-        <% @due_today.each do |lead| %>
-          <%= render "dashboard/preview_row", path: lead, title: lead.title,
-                subtitle: [ lead.customer.full_name, lead.customer.phone ].compact_blank.join(" · "),
-                aside: status_badge(lead), call: { phone: lead.customer.phone, name: lead.customer.full_name } %>
-        <% end %>
-      </ul>
-    <% else %>
-      <%= render partial: "shared/empty_state", locals: {
-            title: "No follow-ups due today.",
-            message: "A lead shows up here on the follow-up date set on it." } %>
+  <%# The two follow-up cards' lists and counts carry ids: leads#reschedule answers a reschedule
+      from a row with a Turbo Stream that removes the row, updates the count, and swaps in the
+      empty state when the last row goes. %>
+  <%= render "shared/card", { title: "Due Today", count: @due_today_count, count_id: "due_today_count", actions: today_actions, padded: false } do %>
+    <%= tag.div id: "due_today_rows" do %>
+      <% if @due_today.any? %>
+        <ul class="divide-y divide-base-300 text-sm">
+          <% @due_today.each do |lead| %>
+            <%= render "dashboard/preview_row", path: lead, title: lead.title,
+                  subtitle: [ lead.customer.full_name, lead.customer.phone ].compact_blank.join(" · "),
+                  aside: status_badge(lead), call: { phone: lead.customer.phone, name: lead.customer.full_name },
+                  reschedule: (lead if policy(lead).update?) %>
+          <% end %>
+        </ul>
+      <% else %>
+        <%= render "dashboard/due_today_empty" %>
+      <% end %>
     <% end %>
   <% end %>
 
@@ -41,18 +45,21 @@
     <%= link_to "View all", leads_path(q: { follow_up_date_lt: Date.current.iso8601, status_not_in: closed_statuses, s: "follow_up_date asc" }),
           class: "btn btn-ghost btn-sm text-primary", aria: { label: "View all overdue follow-ups" } %>
   <% end %>
-  <%= render "shared/card", { title: "Overdue", count: @overdue_count, actions: overdue_actions, padded: false } do %>
-    <% if @overdue.any? %>
-      <ul class="divide-y divide-base-300 text-sm">
-        <% @overdue.each do |lead| %>
-          <%= render "dashboard/preview_row", path: lead, title: lead.title,
-                subtitle: [ lead.customer.full_name, lead.customer.phone ].compact_blank.join(" · "),
-                aside: render("shared/badge", label: "#{pluralize(lead.follow_up_days_late, "day")} late", variant: :warning),
-                call: { phone: lead.customer.phone, name: lead.customer.full_name } %>
-        <% end %>
-      </ul>
-    <% else %>
-      <%= render partial: "shared/empty_state", locals: { title: "No overdue follow-ups.", message: "You're caught up on calls." } %>
+  <%= render "shared/card", { title: "Overdue", count: @overdue_count, count_id: "overdue_count", actions: overdue_actions, padded: false } do %>
+    <%= tag.div id: "overdue_rows" do %>
+      <% if @overdue.any? %>
+        <ul class="divide-y divide-base-300 text-sm">
+          <% @overdue.each do |lead| %>
+            <%= render "dashboard/preview_row", path: lead, title: lead.title,
+                  subtitle: [ lead.customer.full_name, lead.customer.phone ].compact_blank.join(" · "),
+                  aside: render("shared/badge", label: "#{pluralize(lead.follow_up_days_late, "day")} late", variant: :warning),
+                  call: { phone: lead.customer.phone, name: lead.customer.full_name },
+                  reschedule: (lead if policy(lead).update?) %>
+          <% end %>
+        </ul>
+      <% else %>
+        <%= render "dashboard/overdue_empty" %>
+      <% end %>
     <% end %>
   <% end %>
 

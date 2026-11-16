@@ -1,5 +1,5 @@
 class LeadsController < ApplicationController
-  before_action :set_lead, only: %i[ show edit update destroy ]
+  before_action :set_lead, only: %i[ show edit update destroy reschedule ]
 
   # GET /leads or /leads.json
   def index
@@ -50,6 +50,40 @@ class LeadsController < ApplicationController
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @lead.errors, status: :unprocessable_content }
       end
+    end
+  end
+
+  # PATCH /leads/1/reschedule
+  # The dashboard's per-row follow-up reschedule. Answers with a Turbo Stream that drops the row
+  # from whichever follow-up card it was on and refreshes that card's count.
+  def reschedule
+    authorize @lead, :update?
+
+    @date = begin
+      Date.iso8601(params[:follow_up_date].to_s)
+    rescue Date::Error
+      nil
+    end
+    unless @date
+      respond_to do |format|
+        format.turbo_stream { render :reschedule, status: :unprocessable_content }
+        format.html { redirect_back_or_to root_path, alert: "Pick a date to reschedule to.", status: :see_other }
+      end
+      return
+    end
+
+    # Checked before the update: after it, the lead may be on neither card.
+    scope = policy_scope(Lead)
+    was_due_today = scope.follow_up_due_today.exists?(@lead.id)
+    was_overdue = scope.follow_up_overdue.exists?(@lead.id)
+
+    @lead.update!(follow_up_date: @date)
+    @due_today_count = scope.follow_up_due_today.count if was_due_today
+    @overdue_count = scope.follow_up_overdue.count if was_overdue
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_back_or_to root_path, notice: "Follow-up moved to #{helpers.format_date(@date)}.", status: :see_other }
     end
   end
 

@@ -1,0 +1,32 @@
+<%# locals: (lead:) -%>
+<%# A 44px reschedule icon button beside a dashboard follow-up row, opening a popover (Popover
+    API, no JS - same mechanism as shared/_row_actions) with one date field. Submits to
+    leads#reschedule, which answers with a Turbo Stream that drops the row from its card. -%>
+<% anchor = "--reschedule-#{dom_id(lead)}" %>
+<% popover_id = "reschedule-#{dom_id(lead)}" %>
+<% field_id = "#{popover_id}-date" %>
+<% error_id = dom_id(lead, :reschedule_error) %>
+<button type="button"
+        class="btn btn-ghost btn-square size-11 text-primary"
+        popovertarget="<%= popover_id %>"
+        style="anchor-name:<%= anchor %>"
+        aria-label="Reschedule follow-up for <%= lead.customer.full_name %>">
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+</button>
+
+<div popover
+     id="<%= popover_id %>"
+     class="dropdown dropdown-end w-64 bg-base-100 rounded-box shadow border border-base-300 p-4"
+     style="position-anchor:<%= anchor %>">
+  <%= form_with url: reschedule_lead_path(lead), method: :patch, class: "flex flex-col gap-3" do |form| %>
+    <fieldset class="fieldset py-0">
+      <%= form.label :follow_up_date, "Next follow-up", for: field_id, class: "label" %>
+      <%= form.date_field :follow_up_date, value: Date.current.tomorrow.iso8601, id: field_id,
+            class: "input w-full", "aria-describedby": error_id %>
+      <p id="<%= error_id %>" class="form-error" aria-live="polite"></p>
+    </fieldset>
+    <%= form.submit "Reschedule", class: "btn btn-primary btn-sm", data: { turbo_submits_with: "Saving…" } %>
+  <% end %>
+</div>
