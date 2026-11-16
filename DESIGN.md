@@ -311,6 +311,11 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
 - A follow-up row adds a tap-to-call ghost icon button (Job Blue phone stroke icon, a true 44px
   square, `aria-label` naming the customer and number) beside the row link, never inside it,
   with an 8px gap between the two hit areas.
+- For anyone who can edit leads, a follow-up row also gets a reschedule button (same 44px ghost
+  square, calendar stroke icon, 8px after the call button). It opens a popover (the Float
+  shadow) with one "Next follow-up" date field, defaulting to tomorrow, and a Reschedule button.
+  Saving drops the row from its card in place, updates the card's count, and shows the empty
+  state when the last row goes.
 - In a narrow row the value stacks under the title (a total and its badge side by side) instead
   of sitting on the right. The switch is a container query on the row at 28rem, not a viewport
   breakpoint: a half-width card on a 1024px laptop is as narrow as a phone.
