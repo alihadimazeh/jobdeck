@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-25T02:43:55+00:00",
+  "generatedAt": "2026-11-16T12:51:43+00:00",
   "title": "Design System: Jobdeck",
   "extensions": {
     "colorMeta": {
@@ -245,7 +245,7 @@
       {
         "name": "float",
         "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        "purpose": "Flash toasts and the row-actions popover only."
+        "purpose": "Flash toasts and popovers (the row-actions menu, the dashboard reschedule popover) only."
       }
     ],
     "motion": [
@@ -253,6 +253,11 @@
         "name": "control-color",
         "value": "200ms ease-out",
         "purpose": "daisyUI default for button and field color changes; disabled for the drawer and toasts under prefers-reduced-motion."
+      },
+      {
+        "name": "popover-open",
+        "value": "200ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Popovers fade in and grow from 95% scale (daisyUI dropdown); off under prefers-reduced-motion."
       }
     ],
     "breakpoints": [
@@ -333,79 +338,87 @@
     {
       "name": "Dashboard Preview Row",
       "kind": "custom",
-      "description": "A whole-row link in a dashboard card: title (up to two lines) over a muted line, a labeled value or soft badge, and an optional 44px tap-to-call button 8px clear of the link. Stacks the value under the title in rows narrower than 28rem.",
-      "html": "<ul class=\"ds-rows\"><li class=\"ds-row\"><a class=\"ds-row-link\" href=\"#\"><span class=\"ds-row-text\"><span class=\"ds-row-title\">Kitchen backsplash quote</span><span class=\"ds-row-sub\">Maria Gonzalez · 905-555-0114</span></span><span class=\"ds-badge-late\">6 days late</span></a><a class=\"ds-call\" href=\"#\" aria-label=\"Call Maria Gonzalez, 905-555-0114\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z\"/></svg></a></li></ul>",
-      "css": ".ds-rows { list-style: none; margin: 0; padding: 0; max-width: 28rem; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; background: var(--color-base-100, #FFFFFF); color: var(--color-base-content, #0F172A); } .ds-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--color-base-300, #E2E8F0); container-type: inline-size; } .ds-row-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; padding: 0.75rem 0.5rem 0.75rem 1.5rem; color: inherit; text-decoration: none; } .ds-row-link:hover { background: color-mix(in oklab, var(--color-base-content, #0F172A) 4%, transparent); } .ds-row-link:focus-visible { outline: 2px solid var(--color-primary, #0369A1); outline-offset: -2px; } .ds-row-text { display: flex; flex-direction: column; min-width: 0; } .ds-row-title { font-weight: 500; } .ds-row-sub { color: color-mix(in oklab, var(--color-base-content, #0F172A) 70%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-badge-late { white-space: nowrap; padding: 0 0.5rem; height: 1.5rem; display: inline-flex; align-items: center; border-radius: 0.375rem; color: var(--color-warning, #B45309); background: color-mix(in oklab, var(--color-warning, #B45309) 8%, var(--color-base-100, #FFFFFF)); border: 1px solid color-mix(in oklab, var(--color-warning, #B45309) 10%, transparent); } .ds-call { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; margin: auto 1rem auto 0.5rem; border-radius: 0.375rem; color: var(--color-primary, #0369A1); } .ds-call:hover { background: color-mix(in oklab, var(--color-base-content, #0F172A) 7%, transparent); } .ds-call:focus-visible { outline: 2px solid var(--color-primary, #0369A1); outline-offset: 2px; } @container (max-width: 28rem) { .ds-row-link { flex-direction: column; align-items: flex-start; gap: 0.25rem; } }"
+      "description": "A whole-row link in a dashboard card: title (up to two lines) over a muted line, a labeled value or soft badge, and, on follow-up rows, 44px tap-to-call and reschedule buttons 8px clear of the link and of each other. Stacks the value under the title in rows narrower than 28rem.",
+      "html": "<ul class=\"ds-rows\"><li class=\"ds-row\"><a class=\"ds-row-link\" href=\"#\"><span class=\"ds-row-text\"><span class=\"ds-row-title\">Kitchen backsplash quote</span><span class=\"ds-row-sub\">Maria Gonzalez · 905-555-0114</span></span><span class=\"ds-badge-late\">6 days late</span></a><span class=\"ds-actions\"><a class=\"ds-call\" href=\"#\" aria-label=\"Call Maria Gonzalez, 905-555-0114\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z\"/></svg></a><button type=\"button\" class=\"ds-call\" aria-label=\"Reschedule follow-up for Maria Gonzalez\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\"/></svg></button></span></li></ul>",
+      "css": ".ds-rows { list-style: none; margin: 0; padding: 0; max-width: 28rem; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; background: var(--color-base-100, #FFFFFF); color: var(--color-base-content, #0F172A); } .ds-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--color-base-300, #E2E8F0); container-type: inline-size; } .ds-row-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; padding: 0.75rem 0.5rem 0.75rem 1.5rem; color: inherit; text-decoration: none; } .ds-row-link:hover { background: color-mix(in oklab, var(--color-base-content, #0F172A) 4%, transparent); } .ds-row-link:focus-visible { outline: 2px solid var(--color-primary, #0369A1); outline-offset: -2px; } .ds-row-text { display: flex; flex-direction: column; min-width: 0; } .ds-row-title { font-weight: 500; } .ds-row-sub { color: color-mix(in oklab, var(--color-base-content, #0F172A) 70%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-badge-late { white-space: nowrap; padding: 0 0.5rem; height: 1.5rem; display: inline-flex; align-items: center; border-radius: 0.375rem; color: var(--color-warning, #B45309); background: color-mix(in oklab, var(--color-warning, #B45309) 8%, var(--color-base-100, #FFFFFF)); border: 1px solid color-mix(in oklab, var(--color-warning, #B45309) 10%, transparent); } .ds-call { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; margin: 0; border: 0; background: transparent; cursor: pointer; border-radius: 0.375rem; color: var(--color-primary, #0369A1); } .ds-call:hover { background: color-mix(in oklab, var(--color-base-content, #0F172A) 7%, transparent); } .ds-call:focus-visible { outline: 2px solid var(--color-primary, #0369A1); outline-offset: 2px; } @container (max-width: 28rem) { .ds-row-link { flex-direction: column; align-items: flex-start; gap: 0.25rem; } } .ds-actions { display: flex; align-items: center; gap: 0.5rem; padding: 0 1rem 0 0.5rem; }"
+    },
+    {
+      "name": "Reschedule Popover",
+      "kind": "custom",
+      "refersTo": "popover",
+      "description": "A form popover anchored under its trigger: one labeled date field and a primary submit. Clipboard White, 8px radius, hairline border, the Float shadow.",
+      "html": "<div class=\"ds-pop\"><label class=\"ds-pop-label\" for=\"ds-pop-date\">Next follow-up</label><input class=\"ds-pop-input\" id=\"ds-pop-date\" type=\"date\" value=\"2026-11-17\"><button type=\"button\" class=\"ds-pop-btn\">Reschedule</button></div>",
+      "css": ".ds-pop { font-family: Inter, ui-sans-serif, system-ui, sans-serif; width: 16rem; display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: var(--color-base-100, #FFFFFF); border: 1px solid var(--color-base-300, #E2E8F0); border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); } .ds-pop-label { font-size: 0.75rem; color: color-mix(in oklab, var(--color-base-content, #0F172A) 70%, transparent); } .ds-pop-input { height: 2.5rem; padding: 0 0.75rem; font: inherit; font-size: 0.875rem; color: var(--color-base-content, #0F172A); background: var(--color-base-100, #FFFFFF); border: 1px solid color-mix(in oklab, var(--color-base-content, #0F172A) 20%, transparent); border-radius: 0.375rem; margin-top: -0.5rem; } .ds-pop-input:focus-visible { outline: 2px solid var(--color-primary, #0369A1); outline-offset: 2px; } .ds-pop-btn { min-height: 2.75rem; padding: 0 0.75rem; font: inherit; font-size: 0.75rem; font-weight: 600; color: var(--color-primary-content, #FFFFFF); background: var(--color-primary, #0369A1); border: 1px solid var(--color-primary, #0369A1); border-radius: 0.375rem; cursor: pointer; transition: background-color 200ms ease-out; } .ds-pop-btn:hover { background: color-mix(in oklab, var(--color-primary, #0369A1), #000 7%); } .ds-pop-btn:focus-visible { outline: 2px solid var(--color-primary, #0369A1); outline-offset: 2px; }"
     }
   ],
   "narrative": {
     "northStar": "The Site Clipboard",
-    "overview": "Jobdeck should feel like the clipboard a good site lead carries: sturdy, plainspoken, and\ntrusted. Everything is in its place and nothing is decorative, so a project manager can read it\nat a glance, whether at the office desk or in a half-finished kitchen with a phone in one hand.\nThe system is a single daisyUI theme, `jobdeck`, on Tailwind v4. Every color a view uses is a\nsemantic token, never a raw value, so a future dark theme can drop in without touching views.\n\nThe look is a dark navy rail holding white pages on a cool off-white canvas. One blue marks\n\"the thing to do next.\" Status is the only other place color appears, through soft tinted badges.\nDensity is office-software compact (14px body text, 12px labels), but every control keeps a\n44px tap height, so the compactness never costs the person on site.\n\nIt is deliberately flat. Depth comes from tone (canvas → white surface → navy rail) and 1px\nhairline borders. Only things that float above the page cast a shadow.",
+    "overview": "Jobdeck should feel like the clipboard a good site lead carries: sturdy, plainspoken, and trusted. Everything is in its place and nothing is decorative, so a project manager can read it at a glance, whether at the office desk or in a half-finished kitchen with a phone in one hand. The system is a single daisyUI theme, `jobdeck`, on Tailwind v4. Every color a view uses is a semantic token, never a raw value, so a future dark theme can drop in without touching views.\n\nThe look is a dark navy rail holding white pages on a cool off-white canvas. One blue marks \"the thing to do next.\" Status is the only other place color appears, through soft tinted badges. Density is office-software compact (14px body text, 12px labels), but every control keeps a 44px tap height, so the compactness never costs the person on site.\n\nIt is deliberately flat. Depth comes from tone (canvas → white surface → navy rail) and 1px hairline borders. Only things that float above the page cast a shadow.",
     "keyCharacteristics": [
       "Navy rail, white pages, off-white canvas: three tones carry the whole structure.",
-      "One blue action color; status colors appear only as soft badges and alerts.",
-      "Inter throughout, self-hosted so the app works offline on site.",
-      "Flat surfaces with 1px hairlines; shadow only on floating layers.",
-      "44px minimum touch target on every button and menu item, including small ones.",
-      "Small uppercase labels over plain values for anything read like a form or record."
+      "e blue action color; status colors appear only as soft badges and alerts.",
+      "ter throughout, self-hosted so the app works offline on site.",
+      "at surfaces with 1px hairlines; shadow only on floating layers.",
+      "px minimum touch target on every button and menu item, including small ones.",
+      "all uppercase labels over plain values for anything read like a form or record."
     ],
     "rules": [
       {
         "name": "The Token-Only Rule",
-        "body": "Views use daisyUI semantic classes (`bg-base-200`, `text-primary`,\n`badge-success`), never hex values or Tailwind's default scales (`gray-*`, `amber-*`). The\nonly exceptions are files outside the Tailwind pipeline (the mailer layout and the PWA\nmanifest), which hardcode the hex values and must be updated by hand.",
+        "body": "Views use daisyUI semantic classes (`bg-base-200`, `text-primary`, `badge-success`), never hex values or Tailwind's default scales (`gray-*`, `amber-*`). The only exceptions are files outside the Tailwind pipeline (the mailer layout and the PWA manifest), which hardcode the hex values and must be updated by hand.",
         "section": "colors"
       },
       {
         "name": "The One Blue Rule",
-        "body": "Job Blue means \"act here.\" A screen has one primary button; other\nactions are ghost or secondary buttons, or live in the row kebab menu.",
+        "body": "Job Blue means \"act here.\" A screen has one primary button; other actions are ghost or secondary buttons, or live in the row kebab menu.",
         "section": "colors"
       },
       {
         "name": "The Status Is Soft Rule",
-        "body": "Status color appears only as a soft-tinted badge or alert (8% tint\nbackground, full-strength text), never as a solid fill or colored row.",
+        "body": "Status color appears only as a soft-tinted badge or alert (8% tint background, full-strength text), never as a solid fill or colored row.",
         "section": "colors"
       },
       {
         "name": "The No Shouting Rule",
-        "body": "Nothing is larger than the page headline except a stat figure. Emphasis\ncomes from weight (600) and placement, not from size.",
+        "body": "Nothing is larger than the page headline except a stat figure. Emphasis comes from weight (600) and placement, not from size.",
         "section": "typography"
       },
       {
         "name": "The Label-Over-Value Rule",
-        "body": "Read-only records show a small uppercase label above a plain body\nvalue (`shared/_detail_list`). An empty value shows an em dash (—), never a blank.",
+        "body": "Read-only records show a small uppercase label above a plain body value (`shared/_detail_list`). An empty value shows an em dash (—), never a blank.",
         "section": "typography"
       },
       {
         "name": "The Only-Floats-Cast-Shadows Rule",
-        "body": "A shadow means \"this is above the page and will go away\"\n(a toast, a popover). Cards, tables, the rail and the top bar never get one; they separate by\ntone and hairline.",
+        "body": "A shadow means \"this is above the page and will go away\" (a toast, a popover). Cards, tables, the rail and the top bar never get one; they separate by tone and hairline.",
         "section": "elevation"
       },
       {
         "name": "The Today-Sheet Rule",
-        "section": "layout",
-        "body": "The dashboard is titled Today with the date and reads in the order the day runs: follow-ups due today, overdue follow-ups, active jobs, money waiting on payment, work not yet billed. No stat strip; each card header carries its own count or labeled total, every right-hand value is labeled, and every View all opens the list pre-filtered to that card."
+        "body": "The dashboard is titled Today with the date and reads in the order the day runs: follow-ups due today, overdue follow-ups, active jobs, money waiting on payment, work not yet billed. No stat strip; each card header carries its own count or labeled total, every right-hand value is labeled, and every View all opens the list pre-filtered to that card.",
+        "section": "components"
       }
     ],
     "dos": [
-      "**Do** use semantic daisyUI classes for every color (`bg-base-100`, `text-base-content/70`, `badge-warning`).",
-      "**Do** keep one Job Blue primary button per screen; put other actions in ghost buttons or the row kebab menu.",
-      "**Do** render status through `status_badge`, so every status has one color everywhere.",
-      "**Do** keep every interactive element at a 44px minimum height.",
-      "**Do** separate surfaces with tone and 1px Chalk Line borders.",
-      "**Do** use the shared partials (`_page_header`, `_card`, `_table`, `_field`, `_detail_list`, `_empty_state`, `_row_actions`) instead of hand-rolling their markup.",
-      "**Do** show an em dash (—) for empty values and money as formatted currency.",
-      "**Do** check layouts at 375px; the on-site phone is a primary device.",
+      "Do use semantic daisyUI classes for every color (`bg-base-100`, `text-base-content/70`, `badge-warning`).",
+      "Do keep one Job Blue primary button per screen; put other actions in ghost buttons or the row kebab menu.",
+      "Do render status through `status_badge`, so every status has one color everywhere.",
+      "Do keep every interactive element at a 44px minimum height.",
+      "Do separate surfaces with tone and 1px Chalk Line borders.",
+      "Do use the shared partials (`_page_header`, `_card`, `_table`, `_field`, `_detail_list`, `_empty_state`, `_row_actions`) instead of hand-rolling their markup.",
+      "Do show an em dash (—) for empty values and money as formatted currency.",
+      "Do check layouts at 375px; the on-site phone is a primary device.",
       "Do switch a row's layout on its container's width (@container), not the viewport, when the same row appears in full-width and half-width cards.",
       "Do give every focusable element, plain links included, the 2px Job Blue ring."
     ],
     "donts": [
-      "**Don't** use raw hex or Tailwind default color scales in a view. Seeing `amber-*` or the old orange `#EA580C` means a regression.",
-      "**Don't** add shadows to cards, tables, the rail, or the top bar; shadows are for toasts and popovers only.",
-      "**Don't** use status colors for anything but status, errors, and destructive actions.",
-      "**Don't** add web fonts or any external font request; Inter is self-hosted for offline use.",
-      "**Don't** use the native `required` attribute on form fields.",
-      "**Don't** size type above the page headline (1.25rem) except stat figures.",
-      "**Don't** use placeholders as labels.",
+      "Don't use raw hex or Tailwind default color scales in a view. Seeing `amber-*` or the old orange `#EA580C` means a regression.",
+      "Don't add shadows to cards, tables, the rail, or the top bar; shadows are for toasts and popovers only.",
+      "Don't use status colors for anything but status, errors, and destructive actions.",
+      "Don't add web fonts or any external font request; Inter is self-hosted for offline use.",
+      "Don't use the native `required` attribute on form fields.",
+      "Don't size type above the page headline (1.25rem) except stat figures.",
+      "Don't use placeholders as labels.",
       "Don't show a bare date or total without saying what it is (Ends, Started, Due, owed, to bill)."
     ]
   }

@@ -103,6 +103,9 @@ components:
     textColor: "{colors.job-blue-content}"
     rounded: "{rounded.field}"
     padding: "8px 12px"
+  popover:
+    backgroundColor: "{colors.clipboard-white}"
+    rounded: "{rounded.box}"
 ---
 
 # Design System: Jobdeck
@@ -220,7 +223,8 @@ value (`shared/_detail_list`). An empty value shows an em dash (—), never a bl
   height.
 - **Page padding:** 16px on phones, 32px from `sm` (640px) up.
 - **Page header:** optional breadcrumb, then the H1 with its action buttons right-aligned on the
-  same row, and 24px below before content.
+  same row, and 24px below before content. The H1 can carry a muted aside after the title in
+  regular weight (the dashboard's "Today" plus its date); it never gets its own line.
 - **Forms:** centered in a 672px column (`max-w-2xl`), or 768px (`max-w-3xl`) for the wide
   Quote/Order editors, with fields stacked at 16px gaps.
 - **Record views:** detail lists in two columns from `sm`, single column below, with 48px between
@@ -238,7 +242,8 @@ no bevel, gradient, or inner shadow.
 
 ### Shadow Vocabulary
 - **Float** (`box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)`,
-  Tailwind's `shadow`): flash toasts and the row-actions popover menu. Nothing else.
+  Tailwind's `shadow`): flash toasts and popovers (the row-actions menu, the dashboard's
+  reschedule popover). Nothing else.
 
 ### Named Rules
 **The Only-Floats-Cast-Shadows Rule.** A shadow means "this is above the page and will go away"
@@ -300,6 +305,19 @@ Sturdy and plain: large enough for a gloved thumb, with no ornament.
   follow-up card, keeps Title, Follow-up (lateness badge stacked over a call button) and the
   row menu, down to 360px.
 
+### Popovers
+A small floating layer tied to the button that opened it, for a short task that needs neither a
+new page nor a modal.
+- **Style:** Clipboard White, 8px radius, 1px Chalk Line border, the Float shadow. A menu (the
+  row-actions kebab) is 144px wide with 4px padding and 44px items; a form (the dashboard's
+  reschedule) is 256px wide with 16px padding.
+- **Behavior:** the browser's Popover API, no JavaScript: light-dismiss on an outside tap or
+  Escape. Anchored under its trigger with CSS anchor positioning and aligned to the trigger's
+  end when the trigger sits at a row's right edge, so it stays on a 375px screen. Firefox has no
+  anchor positioning and centers it in the viewport instead.
+- **Motion:** fades in and grows from 95% over 0.2s (daisyUI's standard ease); off under
+  reduced motion.
+
 ### Preview lists (dashboard)
 - Short previews inside a narrow card (the dashboard's 5-row cards) are lists, not tables
   (`dashboard/_preview_row`): a squeezed 3–4 column table pushed the money column off-card.
@@ -336,6 +354,11 @@ never a bare date. Money rows are titled by job, with "Customer · ORD-…" bene
 read "$X owed" / "$X to bill" at title size and are left off an empty card. A job past its end
 date gets a soft Caution Amber "N days over" badge, and Active Jobs sorts by urgency (running
 over first, then nearest end date) so that job is never cut from the 5-row preview.
+
+**The Today-Sheet Rule.** The dashboard is titled Today with the date and reads in the order the
+day runs: follow-ups due today, overdue follow-ups, active jobs, money waiting on payment, work
+not yet billed. No stat strip; each card header carries its own count or labeled total, every
+right-hand value is labeled, and every View all opens the list pre-filtered to that card.
 
 ### Inputs / Fields
 - **Style:** white field, 1px border of Ink at 20%, 6px radius, 40px tall, 12px horizontal
@@ -391,6 +414,9 @@ moves focus to a neighbor. Line items below follow the same row pattern.
   `_empty_state`, `_row_actions`) instead of hand-rolling their markup.
 - **Do** show an em dash (—) for empty values and money as formatted currency.
 - **Do** check layouts at 375px; the on-site phone is a primary device.
+- **Do** switch a row's layout on its container's width (@container), not the viewport, when the
+  same row appears in full-width and half-width cards.
+- **Do** give every focusable element, plain links included, the 2px Job Blue ring.
 
 ### Don't:
 - **Don't** use raw hex or Tailwind default color scales in a view. Seeing `amber-*` or the old
@@ -402,3 +428,5 @@ moves focus to a neighbor. Line items below follow the same row pattern.
 - **Don't** use the native `required` attribute on form fields.
 - **Don't** size type above the page headline (1.25rem) except stat figures.
 - **Don't** use placeholders as labels.
+- **Don't** show a bare date or total without saying what it is (Ends, Started, Due, owed, to
+  bill).
