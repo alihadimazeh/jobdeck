@@ -1,6 +1,8 @@
 <%#
   locals: path:, title:, subtitle:, aside: (captured html, right-hand value - a date, or a total + badge),
-          call: nil ({ phone:, name: } - adds a tap-to-call button beside the row)
+          call: nil ({ phone:, name: } - adds a tap-to-call button beside the row),
+          reschedule: nil (a Lead - adds a reschedule button and ids the row so leads#reschedule
+            can remove it; pass it only when policy(lead).update?)
 
   One dashboard preview row. A list item rather than a table row: the cards are narrow at every
   width (a third of the page on desktop, the full phone width on site), and a 3-4 column table
@@ -9,12 +11,14 @@
   button sits beside that link rather than inside it (a link can't contain another link).
 %>
 <% call = local_assigns[:call] %>
-<li class="@container flex items-stretch">
+<% reschedule = local_assigns[:reschedule] %>
+<% trailing = call || reschedule %>
+<%= tag.li id: (dom_id(reschedule, :dashboard_row) if reschedule), class: "@container flex items-stretch" do %>
   <%# In a narrow row the value stacks under the title instead of beside it: a badge or date
       plus the call button took ~170px of a 375px row and cut titles to one word. The switch is
       a container query on the row (@md = 28rem), not a viewport breakpoint - a half-width card
       at 1024px is as narrow as a phone. %>
-  <%= link_to path, class: "flex flex-1 min-w-0 flex-col gap-1 @md:flex-row @md:items-center @md:justify-between @md:gap-4 min-h-11 py-3 pl-6 #{call ? "pr-2" : "pr-6"} hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
+  <%= link_to path, class: "flex flex-1 min-w-0 flex-col gap-1 @md:flex-row @md:items-center @md:justify-between @md:gap-4 min-h-11 py-3 pl-6 #{trailing ? "pr-2" : "pr-6"} hover:bg-base-content/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary" do %>
     <div class="min-w-0">
       <%# Two lines before clipping, not one: similar titles ("Kitchen Renovation — Mitchell
           Residence") differ at the end, which single-line truncation hides on a phone. %>
@@ -25,11 +29,12 @@
         @md:block restores their stacked, right-aligned form. %>
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1 @md:block @md:shrink-0 @md:text-right tabular-nums whitespace-nowrap"><%= aside %></div>
   <% end %>
-  <% if call %>
-    <%# pl-2 leaves a gap between the row link's hit area and the call button's, so a thumb
-        aimed at one doesn't land on the other. %>
-    <div class="flex items-center pl-2 pr-4">
-      <%= render "shared/call_button", phone: call[:phone], name: call[:name] %>
+  <% if trailing %>
+    <%# pl-2 leaves a gap between the row link's hit area and the buttons', so a thumb aimed at
+        one doesn't land on the other. %>
+    <div class="flex items-center gap-2 pl-2 pr-4">
+      <%= render "shared/call_button", phone: call[:phone], name: call[:name] if call %>
+      <%= render "shared/reschedule_button", lead: reschedule if reschedule %>
     </div>
   <% end %>
-</li>
+<% end %>

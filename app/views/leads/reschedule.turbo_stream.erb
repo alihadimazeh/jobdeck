@@ -1,0 +1,13 @@
+<% if @date.nil? %>
+  <%= turbo_stream.update dom_id(@lead, :reschedule_error), "Pick a date to reschedule to." %>
+<% else %>
+  <%= turbo_stream.remove dom_id(@lead, :dashboard_row) %>
+  <% unless @due_today_count.nil? %>
+    <%= turbo_stream.update "due_today_count", @due_today_count %>
+    <%= turbo_stream.update "due_today_rows", partial: "dashboard/due_today_empty" if @due_today_count.zero? %>
+  <% end %>
+  <% unless @overdue_count.nil? %>
+    <%= turbo_stream.update "overdue_count", @overdue_count %>
+    <%= turbo_stream.update "overdue_rows", partial: "dashboard/overdue_empty" if @overdue_count.zero? %>
+  <% end %>
+<% end %>
