@@ -39,3 +39,9 @@
 
 /.idea/*
 .idea
+
+# Claude Code: personal settings, agent worktrees, project-local skill installs
+/.claude/settings.local.json
+/.claude/worktrees/
+/.claude/skills/
+/.claude/agents/
