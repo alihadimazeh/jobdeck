@@ -3,7 +3,7 @@
 A project management app for a small construction business — customers, sales leads, quotes, active jobs, and billing, all in one place. Built to mirror how a flooring/tile installer's business actually runs: a walk-in inquiry becomes a lead, a lead becomes a quote with real room measurements, an accepted quote becomes a job, and a job gets billed through one or more orders.
 
 [![CI](https://github.com/alihadimazeh/jobdeck/actions/workflows/ci.yml/badge.svg)](https://github.com/alihadimazeh/jobdeck/actions/workflows/ci.yml)
-![Ruby](https://img.shields.io/badge/Ruby-3.4.7-CC342D?logo=ruby&logoColor=white)
+![Ruby](https://img.shields.io/badge/Ruby-3.4.13-CC342D?logo=ruby&logoColor=white)
 ![Rails](https://img.shields.io/badge/Rails-8.1-CC0000?logo=rubyonrails&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -82,7 +82,7 @@ A Lead can have several Quotes (a revision, or split scopes like tile vs. floori
 
 ### Prerequisites
 
-- Ruby 3.4.7 (see `.ruby-version` — use whichever version manager you prefer: rbenv, mise, rvm)
+- Ruby 3.4.13 (see `.ruby-version` — use whichever version manager you prefer: rbenv, mise, rvm)
 - PostgreSQL running locally
 - `libvips` (used by Active Storage for image variants):
   ```sh
