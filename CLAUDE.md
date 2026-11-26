@@ -418,3 +418,64 @@ Lead/Job (see TODO.md → "Needs a product decision").
 - **`tax_rate`'s "0.13 for 13%" input format** — flagged as confusing during the redesign
   (got a clarifying hint, not a semantics change) — actually accepting "13" would need a
   `before_validation` normalization and touches both Quote's and Order's show pages.
+
+---
+
+## Deploying to Prod
+
+**Not deployed yet.** Decided 2026-11-25: Jobdeck goes live first as a **portfolio demo**, and
+later becomes a real store's live system. Choices are made so the demo setup grows into the
+live one without a rewrite.
+
+### Current state (checked 2026-11-16)
+
+- The production image builds cleanly from `main` (`docker build`, ~1 GB). Rails 8 generated the
+  Dockerfile, `bin/docker-entrypoint` (runs `db:prepare` on boot), `config/deploy.yml` and
+  `.kamal/secrets`. The image runs as a non-root user behind Thruster, and includes libvips.
+- Solid Queue/Cache/Cable all live in Postgres (no Redis). Jobs run inside Puma
+  (`SOLID_QUEUE_IN_PUMA`), which is fine on one server.
+- Health check at `/up`, logs to stdout, GitHub Actions CI (brakeman, bundler-audit, rubocop,
+  tests). `config/master.key` is gitignored and dockerignored.
+
+### Target stack
+
+| Piece | Choice | Notes |
+|---|---|---|
+| Server | One AWS **EC2** `t3.small` (x86, to match `builder: arch: amd64`) + an Elastic IP | Chosen over a cheaper VPS for the AWS experience. About $15–20/month on demand (prices from memory; check before buying). |
+| Deploy | **Kamal** | Already set up. Uses Kamal's local registry (the `localhost:5555` in `deploy.yml`), which pushes the image over SSH, so no Docker Hub/ECR account. |
+| HTTPS | Kamal proxy + Let's Encrypt | `proxy: ssl: true, host: <domain>`, plus `assume_ssl`/`force_ssl` in `production.rb`. |
+| Database | **Postgres 17** as a Kamal accessory on the same server, data on a persistent volume | Needs the four databases from `database.yml` (`jobdeck_production` + `_cache`/`_queue`/`_cable`). |
+| DB backups | Nightly `pg_dump` to S3 | |
+| Uploaded files | **S3** via Active Storage (adds `aws-sdk-s3`) | The industry standard. Bucket accessed by an IAM user scoped to that one bucket. |
+| Email | **Resend** over plain SMTP (no gem) | Easiest for a first setup: verify the domain with a few DNS records, free tier covers invites/resets. SES was skipped because new accounts start in a sandbox that needs an AWS request to leave. Switching later is just new SMTP settings. |
+| Domain | User's own domain (to be bought) | DNS points at the Elastic IP and verifies Resend. |
+
+**When it becomes a live store:** move Postgres to **RDS** (automatic backups, point-in-time
+restore, roughly $15–25/month more). The app only needs a new `DB_HOST`. Set an AWS billing alarm
+before creating anything.
+
+### Plan, in order
+
+1. **Security fixes PR**, found in a full review on 2026-11-15:
+   - uploaded documents are readable signed-out via their Active Storage link, which never
+     expires; serve them through an authenticated, `authorize`d controller instead;
+   - a blank password is accepted by `AccountSetupsController`/`PasswordsController#update`;
+   - a password reset doesn't destroy the user's existing sessions;
+   - only sign-in is rate-limited, not password reset or account setup.
+   - Optionally: turn on the CSP (the initializer is all commented out), and lock quote/order
+     number generation (two simultaneous creates can collide on the unique index).
+2. **Production config PR**:
+   - `force_ssl`/`assume_ssl`, `secure:` session cookie, `config.hosts`;
+   - mailer host, SMTP settings, and a real `ApplicationMailer` sender (it's `from@example.com`).
+     Email must work before launch: invites and resets are the only way staff get accounts;
+   - database host/password from env (`database.yml` production still points at `localhost`);
+   - Active Storage service → S3 (`production.rb` uses `:local` today);
+   - seeds: demo business data only on request. Today `db:seed` on an empty production database
+     creates the fake business along with the users, which the live store won't want.
+3. **AWS + DNS setup**: billing alarm, EC2 + Elastic IP + security group (22/80/443), S3 bucket +
+   scoped IAM user, DNS records for the server and Resend.
+4. **Fill in `config/deploy.yml`** (still has placeholder server `192.168.0.1`; set the domain,
+   proxy SSL, Postgres accessory, `DB_HOST`, secrets), then `kamal setup` and seed the demo users
+   with `SEED_PASSWORD`.
+5. **After launch**: nightly backups to S3, a free uptime monitor, free-tier error tracking (none
+   is set up today).
